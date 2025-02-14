@@ -38,8 +38,13 @@ jobs:
             ssh-add /home/opc/oci-1
             # Add GitHub to known hosts
             ssh-keyscan -t rsa github.com >> /home/opc/.ssh/known_hosts
-            # Clone the repository
+            # Determine if ref is a branch or tag
+            if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            ref_name=$(echo "${{ github.ref }}" | sed 's/refs\/tags\///')
+            git clone --branch "$ref_name" git@github.com:petervidaHU/scheduler-app.git scheduler-app
+            else
             git clone --branch ${{ github.ref }} git@github.com:petervidaHU/scheduler-app.git scheduler-app
+            fi
             cd scheduler-app
             npm install
             npm run build
