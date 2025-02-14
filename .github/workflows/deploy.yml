@@ -2,23 +2,35 @@ name: Deploy to OCI
 
 on:
   push:
-    branches: [ dev ]
+    branches:
+      - 'main'
+      - 'develop'
+      - 'release/*'
+    tags:
+      - 'v*.*.*'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Deploy to OCI Instance via SSH
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: 140.238.78.26
-        username: opc
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          cd /home/opc/scheduler-app
-          git pull origin main
-          npm install
-          npm run build
-          pm2 restart next-app || pm2 start npm --name "next-app" -- start
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to OCI Instance
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: 140.238.78.26
+          username: opc
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/opc
+            rm -rf scheduler-app
+            git clone git@github.com:petervidaHU/scheduler-app.git scheduler-app
+            cd scheduler-app
+            npm install
+            npm run build
+            pm2 restart next-app || pm2 start npm --name "next-app" -- start
