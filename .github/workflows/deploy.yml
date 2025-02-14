@@ -24,6 +24,25 @@ jobs:
           host: 140.238.78.26
           username: opc
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+
+          script: |
+            cd /home/opc
+            rm -rf scheduler-app
+            # Set up SSH for GitHub inside OCI instance
+            echo "${{ secrets.OCI_SSH_KEY }}" > /home/opc/oci-1
+            chmod 600 /home/opc/oci-1
+            eval "$(ssh-agent -s)"
+            ssh-add /home/opc/oci-1
+            # Add GitHub to known hosts
+            ssh-keyscan -t rsa github.com >> /home/opc/.ssh/known_hosts
+            # Clone the repository
+            git clone git@github.com:petervidaHU/scheduler-app.git scheduler-app
+            cd scheduler-app
+            npm install
+            npm run build
+            pm2 restart next-app || pm2 start npm --name "next-app" -- start
+
           script: |
             cd /home/opc
             rm -rf scheduler-app
