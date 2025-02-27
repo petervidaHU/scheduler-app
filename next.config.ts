@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     PORT: process.env.PORT || 3000,
     HOST: '0.0.0.0',
   },
+  serverExternalPackages: ['oracledb'],
 };
 
 export default nextConfig;
