@@ -1,33 +1,131 @@
-"use client";
+'use client';
 
-import { hash } from "bcryptjs";
-import { redirect } from "next/navigation";
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { handleSubmit } from './actions'; // Import the server action
 
-export default function SignUpPage() {
-  async function handleSignUp(formData: FormData) {
-    "use server";
-    
-    // Add your user creation logic here
-    const email = formData.get("email");
-    const password = await hash(formData.get("password") as string, 12);
-    
-    // Save user to database (mock example)
-    console.log({ email, password });
-    
-    redirect("/signin");
-  }
+const SignUp = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+    firstname: '',
+    lastname: '',
+    password: '',
+  });
+  const [errors, setErrors] = useState<{
+    email?: null | string,
+    firstname?: null | string,
+    lastname?: null | string,
+    password?: null | string,
+  }>({});
+  const router = useRouter();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+
+    // Clear the error message for this field
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [name]: '',
+    }));
+  };
+  const validate = () => {
+    const newErrors: { [key: string]: string }  = {};
+
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email address is invalid';
+    }
+
+    // First name validation
+    if (!formData.firstname) {
+      newErrors.firstname = 'First name is required';
+    }
+
+    // Last name validation
+    if (!formData.lastname) {
+      newErrors.lastname = 'Last name is required';
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters long';
+    }
+
+    setErrors(newErrors);
+
+    // Return true if no errors
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleClientSubmit = (e) => {
+    if (!validate()) {
+      e.preventDefault();
+    }
+  };
 
   return (
-    <form action={handleSignUp}>
-      <div>
-        <label>Email</label>
-        <input name="email" type="email" required />
-      </div>
-      <div>
-        <label>Password</label>
-        <input name="password" type="password" required />
-      </div>
-      <button type="submit">Sign Up</button>
-    </form>
+    <div>
+      <h1>Sign Up</h1>
+      <form action={handleSubmit} onSubmit={handleClientSubmit}>
+        <div>
+          <label>Email:</label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+          />
+          {errors.email && <p style={{ color: 'red' }}>{errors.email}</p>}
+        </div>
+        <div>
+          <label>First Name:</label>
+          <input
+            type="text"
+            name="firstname"
+            value={formData.firstname}
+            onChange={handleChange}
+          />
+          {errors.firstname && (
+            <p style={{ color: 'red' }}>{errors.firstname}</p>
+          )}
+        </div>
+        <div>
+          <label>Last Name:</label>
+          <input
+            type="text"
+            name="lastname"
+            value={formData.lastname}
+            onChange={handleChange}
+          />
+          {errors.lastname && (
+            <p style={{ color: 'red' }}>{errors.lastname}</p>
+          )}
+        </div>
+        <div>
+          <label>Password:</label>
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+          />
+          {errors.password && (
+            <p style={{ color: 'red' }}>{errors.password}</p>
+          )}
+        </div>
+        <button type="submit">Sign Up</button>
+      </form>
+    </div>
   );
-}
+};
+
+export default SignUp;

@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 export default function SignInPageLogic() {
   const { data: session, status } = useSession();
-  console.log('session', session, status)
+  console.log('session in signin page::', session, status)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
