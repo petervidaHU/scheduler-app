@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import "./globals.css";
 import { theme } from "./theme";
-import { HeaderSearch } from "../components/HeaderSearch";
+import HeaderWithSession from "@/components/HeaderWithSession";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +38,7 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
           <MantineProvider defaultColorScheme="auto" theme={theme}>
-            <HeaderSearch />
+            <HeaderWithSession />
             {children}
           </MantineProvider>
       </body>

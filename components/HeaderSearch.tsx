@@ -1,9 +1,12 @@
 'use client'
 
 import { IconSearch } from '@tabler/icons-react';
+import { useSession, signOut } from 'next-auth/react';
 import { Autocomplete, Burger, Group } from '@mantine/core';
 import classes from './HeaderSearch.module.css';
 import { useDisclosure } from '@mantine/hooks';
+import { Button } from '@mantine/core';
+import { useRouter } from 'next/navigation';
 
 const links = [
   { link: '/about', label: 'Features' },
@@ -13,7 +16,9 @@ const links = [
 ];
 
 export function HeaderSearch() {
-      const [opened, { toggle }] = useDisclosure(false);
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [opened, { toggle }] = useDisclosure(false);
   const items = links.map((link) => (
     <a
       key={link.label}
@@ -25,9 +30,32 @@ export function HeaderSearch() {
     </a>
   ));
 
+  console.log('session in header session::', session);
+  console.log('status in header session::', status);
+
   return (
     <header className={classes.header}>
       <div className={classes.inner}>
+        <Group>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (status === 'authenticated') {
+                signOut();
+              } else {
+                router.push('/auth/signin');
+              }
+            }}
+          >
+            {status === 'authenticated' ? 'Log out' : 'Log in'}
+          </Button>
+        </Group>
+        <Group>
+          {status === 'authenticated' && session?.user?.name &&
+            session?.user?.name
+          }
+
+        </Group>
         <Group>
           <Burger opened={opened} onClick={toggle} size="sm" hiddenFrom="sm" />
         </Group>
