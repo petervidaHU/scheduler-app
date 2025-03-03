@@ -70,6 +70,13 @@ class DatabaseService {
       throw error;
     }
   }
+
+  // tenancy
+  async createTenancy(name: string, email: string) {
+    const query = `INSERT INTO tenancy (name, email) VALUES (:name : email)`;
+    const bindVariables = [name, email];
+    await this.executeQuery(query, bindVariables);
+  }
 }
 
 export default DatabaseService;

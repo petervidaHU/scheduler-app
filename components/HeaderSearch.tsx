@@ -64,6 +64,17 @@ export function HeaderSearch() {
           <Group ml={50} gap={5} className={classes.links} visibleFrom="sm">
             {items}
           </Group>
+          <Group>
+            <Button
+              variant="outline"
+              onClick={() => {
+                router.push('/tenancy');
+              }
+              }
+            >
+              {status === 'authenticated' ? 'Log out' : 'Log in'}
+            </Button>
+          </Group>
           <Autocomplete
             className={classes.search}
             placeholder="Search"

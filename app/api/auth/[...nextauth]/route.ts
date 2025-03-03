@@ -1,11 +1,11 @@
-import NextAuth from 'next-auth';
+import NextAuth, { SessionStrategy } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { verifyPassword } from '../../../../lib/auth';
 import DatabaseService from '@/lib/database/db';
 
 const database = new DatabaseService();
 
-const handler = NextAuth({
+export const authOptions = {
     providers: [
         CredentialsProvider({
             name: 'Credentials',
@@ -34,7 +34,7 @@ const handler = NextAuth({
         newUser: '/auth/new-user'
     },
     session: {
-        strategy: 'jwt'
+        strategy: 'jwt' as SessionStrategy
     },
     callbacks: {
         async jwt({ token, user }) {
@@ -56,6 +56,8 @@ const handler = NextAuth({
             return session;
         }
     }
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST }

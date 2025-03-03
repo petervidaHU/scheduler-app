@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { handleSubmit } from './actions'; // Import the server action
+import { handleSubmit } from './actions'; 
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -19,41 +19,36 @@ const SignUp = () => {
   }>({});
   const router = useRouter();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
     }));
-
-    // Clear the error message for this field
     setErrors((prevErrors) => ({
       ...prevErrors,
       [name]: '',
     }));
   };
+
   const validate = () => {
     const newErrors: { [key: string]: string }  = {};
 
-    // Email validation
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email address is invalid';
     }
 
-    // First name validation
     if (!formData.firstname) {
       newErrors.firstname = 'First name is required';
     }
 
-    // Last name validation
     if (!formData.lastname) {
       newErrors.lastname = 'Last name is required';
     }
 
-    // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -62,11 +57,10 @@ const SignUp = () => {
 
     setErrors(newErrors);
 
-    // Return true if no errors
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleClientSubmit = (e) => {
+  const handleClientSubmit = (e: React.FormEvent) => {
     if (!validate()) {
       e.preventDefault();
     }
