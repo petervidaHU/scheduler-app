@@ -1,11 +1,13 @@
-import NextAuth, { SessionStrategy } from 'next-auth';
+import NextAuth from 'next-auth';
+import "next-auth/jwt";
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { verifyPassword } from '../../../../lib/auth';
 import DatabaseService from '@/lib/database/db';
+import { verifyPassword } from '../../../../lib/utils';
 
 const database = new DatabaseService();
 
 export const authOptions = {
+    debug: true,
     providers: [
         CredentialsProvider({
             name: 'Credentials',
@@ -34,10 +36,10 @@ export const authOptions = {
         newUser: '/auth/new-user'
     },
     session: {
-        strategy: 'jwt' as SessionStrategy
+        strategy: 'jwt' as const,
     },
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user }: any) {
             if (token && user) {
                 // TODO mapping authorize object
                 const { FIRST_NAME, LAST_NAME, USER_ID, EMAIL } = user as any;
@@ -48,16 +50,28 @@ export const authOptions = {
             }
             return token;
         },
-        async session({ session, token, user }) {
+        async session({ session, token, user }: any) {
             if (session.user) {
                 session.user.name = `${token.firstName} ${token.lastName}`;
                 session.user.email = token.email;
             }
             return session;
         }
-    }
+    },
+    experimental: { enableWebAuthn: true },
 };
 
-const handler = NextAuth(authOptions);
+declare module "next-auth" {
+    interface Session {
+      accessToken?: string
+    }
+  }
+  
+  declare module "next-auth/jwt" {
+    interface JWT {
+      accessToken?: string
+    }
+  }
 
-export { handler as GET, handler as POST }
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
+export const { GET, POST } = handlers;

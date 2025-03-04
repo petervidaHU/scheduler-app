@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { handleSubmit } from './actions'; 
+import { signupLogic } from './signUpLogic'; 
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -69,7 +69,7 @@ const SignUp = () => {
   return (
     <div>
       <h1>Sign Up</h1>
-      <form action={handleSubmit} onSubmit={handleClientSubmit}>
+      <form action={signupLogic} onSubmit={handleClientSubmit}>
         <div>
           <label>Email:</label>
           <input

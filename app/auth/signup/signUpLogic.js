@@ -1,10 +1,10 @@
 'use server';
 
 import DatabaseService from '@/lib/database/db';
-import { hashPassword } from '@/lib/auth';
+import { hashPassword } from '@/lib/utils';
 import { redirect } from 'next/navigation';
 
-export async function handleSubmit(formData) {
+export async function signupLogic(formData) {
   const email = formData.get('email');
   const password = formData.get('password');
   const firstname = formData.get('firstname');

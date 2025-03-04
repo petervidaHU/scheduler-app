@@ -14,7 +14,7 @@
     "@tabler/icons-react": "^3.30.0",
     "bcryptjs": "^3.0.2",
     "next": "15.1.7",
-    "next-auth": "^4.24.11",
+    "next-auth": "beta",
     "oracledb": "^6.7.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

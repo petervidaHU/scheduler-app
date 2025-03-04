@@ -1,12 +1,14 @@
 'use client'
 
+import { FC } from 'react';
+import { Session } from 'next-auth';
+import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { IconSearch } from '@tabler/icons-react';
-import { useSession, signOut } from 'next-auth/react';
 import { Autocomplete, Burger, Group } from '@mantine/core';
-import classes from './HeaderSearch.module.css';
 import { useDisclosure } from '@mantine/hooks';
 import { Button } from '@mantine/core';
-import { useRouter } from 'next/navigation';
+import classes from './HeaderSearch.module.css';
 
 const links = [
   { link: '/about', label: 'Features' },
@@ -15,8 +17,13 @@ const links = [
   { link: '/community', label: 'Community' },
 ];
 
-export function HeaderSearch() {
-  const { data: session, status } = useSession();
+interface props {
+  session: UserSession,
+}
+
+export const HeaderSearch: FC<props> = ({session}) => {
+  console.log('sessionserver in header session::', session);
+  const { name, status } = session;
   const router = useRouter();
   const [opened, { toggle }] = useDisclosure(false);
   const items = links.map((link) => (
@@ -30,8 +37,6 @@ export function HeaderSearch() {
     </a>
   ));
 
-  console.log('session in header session::', session);
-  console.log('status in header session::', status);
 
   return (
     <header className={classes.header}>
@@ -51,8 +56,8 @@ export function HeaderSearch() {
           </Button>
         </Group>
         <Group>
-          {status === 'authenticated' && session?.user?.name &&
-            session?.user?.name
+          {status === 'authenticated' && name &&
+            name
           }
 
         </Group>

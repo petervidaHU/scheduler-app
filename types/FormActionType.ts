@@ -1,4 +1,5 @@
 export interface FormActionType {
     error: null | string,
-    data: null | any
+    data: null | any,
+    message?: string
 }

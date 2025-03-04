@@ -3,7 +3,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button, TextInput } from '@mantine/core';
 import { createTenancyAction } from '@/app/tenancy/createTenancyAction';
-import { FormActionType } from '@/app/types/FormActionType';
+import { FormActionType } from '@/types/FormActionType';
 
 const initState: FormActionType = { error: null, data: null };
 
