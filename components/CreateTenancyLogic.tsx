@@ -8,7 +8,7 @@ import { FormActionType } from '@/types/FormActionType';
 const initState: FormActionType = { error: null, data: null };
 
 export default function CreateTenancyLogic() {
-    const [ state, action, isPending ] = useActionState(createTenancyAction, initState);
+    const [state, action, isPending] = useActionState(createTenancyAction, initState);
     const { data: session, status } = useSession();
     const [name, setName] = useState('');
     const router = useRouter();
@@ -32,8 +32,8 @@ export default function CreateTenancyLogic() {
         {!isSignedIn ? (
             <div>
                 <h1>Sign in or sign up to create a tenancy</h1>
-                <button onClick={() => router.push('/auth/signin')}>Sign In</button>
-                <button onClick={() => router.push('/auth/signup')}>Sign Up</button>
+                <button onClick={() => router.push('/auth/signin?source=/tenancy')}>Sign In</button>
+                <button onClick={() => router.push('/auth/signup?source=/tenancy')} className="ml-2">Sign Up</button>
             </div>
         ) : (
             <div>

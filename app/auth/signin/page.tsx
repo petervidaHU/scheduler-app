@@ -1,13 +1,15 @@
-"use client";
-
 import SessionWrapper from "../../SessionWrapper";
 import SignInPageLogic from "./SignInPage";
 
-export default function SignInPage() {
- 
+interface SignInPageProps {
+  searchParams: { source?: string };
+}
+export default async function SignInPage({searchParams}: SignInPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const source = resolvedSearchParams.source ?? '';
   return (
    <SessionWrapper>
-    <SignInPageLogic />
+    <SignInPageLogic source={source} />
    </SessionWrapper>
   );
 }
