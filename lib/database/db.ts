@@ -1,4 +1,3 @@
-import { QueryResult } from "@/types/databaseTypes";
 import { User } from "@/types/UserTypes";
 import oracledb, {
   BindParameters,
@@ -27,7 +26,7 @@ class DatabaseService {
     try {
       this.connection = await oracledb.getConnection(dbConfig);
     } catch (err) {
-      console.log("Error connecting to Oracle database:", err);
+      console.error("Error connecting to Oracle database:", err);
     }
   }
 
@@ -61,14 +60,13 @@ class DatabaseService {
     try {
       result = await conn.execute(query, bindVariables, params);
     } catch (error) {
-      console.error(`Error executing query: ${error}`);
+      console.error(`Error executing ${query} query: ${error}`);
       throw error;
     } finally {
-      if (!connectionParam) {
+      if (!connectionParam && conn) {
         await conn.close();
       }
     }
-    console.log("execute Query result:", result);
     if (!result || !result["rows"]) {
       throw new Error("The database query resulted no result");
     } else {
@@ -90,7 +88,6 @@ class DatabaseService {
       result = await conn.execute(query, bindVariables, params);
       if (autocommit) await conn.commit();
     } catch (error) {
-      console.error(`Error executing command in executeCommand: ${error}`);
       throw error;
     } finally {
       // closing self managed connection, but keep open if connection comes from scope
@@ -120,7 +117,6 @@ class DatabaseService {
         bindVariables,
         conn
       )) as User[];
-      console.log("result in getuserbyemail", result);
       if (result.length === 0) {
         throw new Error("User not found");
       }
@@ -164,7 +160,7 @@ class DatabaseService {
     const query = `INSERT INTO user_roles (user_id, tenancy_id, role_id) VALUES (:userId, :tenancyId, :roleId)`;
     const bindVariables = [userId, tenancyId, roleId];
     const result = await this.executeCommand(query, bindVariables, false, conn);
-    console.log("insertUserRoles result", result);
+    // console.log("insertUserRoles result", result);
     return result
   }
 
@@ -202,21 +198,38 @@ class DatabaseService {
         false, // autocommit
         conn
       );
-      console.log(
-        "---------------------------------------------tenancyResult",
-        tenancyResult
-      );
       const newTenancyId = tenancyResult.outBinds.newId[0];
 
       await this.insertUserRoles(userId, newTenancyId, ADMIN_ROLE_ID, conn);
-
       await conn.commit();
+
       return newTenancyId;
     } catch (error) {
       await conn.rollback();
       throw error;
     } finally {
       await conn.close();
+    }
+  }
+
+  async getTenanciesByUser(userEmail: string): Promise<any[]> {
+    const conn = await this.getConnection();
+    const userResult = await this.getUserByEmail(userEmail, conn);
+    const userId = userResult.USER_ID;
+    const query = `
+    SELECT t.*, ur.role_id, r.role_name
+    FROM tenancies t
+    JOIN user_roles ur ON t.tenancy_id = ur.tenancy_id
+    JOIN roles r ON ur.role_id = r.role_id
+    WHERE ur.user_id = :userId
+  `;
+    const bindVariables = [userId];
+    try {
+      const result = await this.executeQuery(query, bindVariables, conn);
+      return result;
+    } catch (error) {
+      console.error(`Error getting tenancies by user: ${error}`);
+      throw error;
     }
   }
 }

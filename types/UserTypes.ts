@@ -1,6 +1,7 @@
 export interface UserSession {
     name: string | null,
     email: string | null,
+    tenancyId: string | null,
     status: 'authenticated' | 'unauthenticated'
 }
 

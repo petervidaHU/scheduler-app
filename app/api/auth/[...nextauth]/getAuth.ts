@@ -1,3 +1,4 @@
+import { UserSession } from "@/types/UserTypes";
 import { auth } from "./route";
 
 export const getAuth = async (): Promise<UserSession> => {
@@ -6,13 +7,15 @@ export const getAuth = async (): Promise<UserSession> => {
         return {
             email: null,
             name: null,
+            tenancyId: null,
             status: 'unauthenticated',
         };
     } else {
-        const { user } = session;
+        const { user } = session as any;
         return  {
             email: user.email || null,
             name: user.name || null,
+            tenancyId: user.tenancyId || null,
             status: !!user.email && !!user.name ? 'authenticated' : 'unauthenticated',
         };
     }
