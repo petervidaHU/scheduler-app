@@ -1,11 +1,14 @@
+import { QueryResult } from "@/types/databaseTypes";
+import { User } from "@/types/UserTypes";
 import oracledb, {
   BindParameters,
   ExecuteOptions,
   OUT_FORMAT_OBJECT,
+  Result,
 } from "oracledb";
 import path from "path";
 
-const ADMIN_ROLE_ID = 1;
+const ADMIN_ROLE_ID = 3;
 
 class DatabaseService {
   connection: oracledb.Connection | null;
@@ -28,36 +31,16 @@ class DatabaseService {
     }
   }
 
-  async executeQuery(
-    query: string,
-    bindVariables: BindParameters,
-    params: ExecuteOptions = { outFormat: OUT_FORMAT_OBJECT },
-  ): Promise<oracledb.Result<any> | null> {
+  async getConnection() {
     if (!this.connection) {
       console.log("Connecting to Oracle database...");
       await this.connect();
     }
-    //console.log('Executing query:', query);
-    const result = await this.connection?.execute(query, bindVariables, params);
-    await this.connection?.commit();
-    console.log('execute Query result:', result);
-    return result || null;
-  }
-  async executeCommand(
-    query: string,
-    bindVariables: BindParameters,
-    params: ExecuteOptions = { outFormat: OUT_FORMAT_OBJECT },
-    autocommit: boolean = true,
-  ): Promise<oracledb.Result<any> | null> {
-    if (!this.connection) {
-      console.log("Connecting to Oracle database...");
-      await this.connect();
+    if (!!this.connection) {
+      return this.connection;
+    } else {
+      throw new Error("Can not connect to database!");
     }
-    //console.log('Executing query:', query);
-    const result = await this.connection?.execute(query, bindVariables, params);
-    await this.connection?.commit();
-    // console.log('Query result:', result);
-    return result || null;
   }
 
   async closeConnection() {
@@ -66,14 +49,86 @@ class DatabaseService {
     }
   }
 
-  // user queries
-  async getUserByEmail(email: string) {
+  async executeQuery(
+    query: string,
+    bindVariables: BindParameters,
+    connectionParam: oracledb.Connection | null = null,
+    params: ExecuteOptions = { outFormat: OUT_FORMAT_OBJECT }
+  ): Promise<unknown[]> {
+    const conn = connectionParam || (await this.getConnection());
+    let result: oracledb.Result<unknown>;
+
+    try {
+      result = await conn.execute(query, bindVariables, params);
+    } catch (error) {
+      console.error(`Error executing query: ${error}`);
+      throw error;
+    } finally {
+      if (!connectionParam) {
+        await conn.close();
+      }
+    }
+    console.log("execute Query result:", result);
+    if (!result || !result["rows"]) {
+      throw new Error("The database query resulted no result");
+    } else {
+      return result.rows;
+    }
+  }
+
+  async executeCommand(
+    query: string,
+    bindVariables: BindParameters,
+    autocommit: boolean = true,
+    connectionParam: oracledb.Connection | null = null,
+    params: ExecuteOptions = { outFormat: OUT_FORMAT_OBJECT }
+  ): Promise<oracledb.Result<any>> {
+    const conn = connectionParam || (await this.getConnection());
+    let result: oracledb.Result<unknown>;
+
+    try {
+      result = await conn.execute(query, bindVariables, params);
+      if (autocommit) await conn.commit();
+    } catch (error) {
+      console.error(`Error executing command in executeCommand: ${error}`);
+      throw error;
+    } finally {
+      // closing self managed connection, but keep open if connection comes from scope
+      if (!connectionParam) {
+        await conn.close();
+      }
+    }
+
+    if (!result) {
+      throw new Error(
+        "The database query resulted no result or error in database executeCommand"
+      );
+    }
+    return result;
+  }
+
+  // user
+  async getUserByEmail(
+    email: string,
+    conn: oracledb.Connection | null = null
+  ): Promise<User> {
     const query = `SELECT * FROM users WHERE email = :email`;
     const bindVariables = [email];
-    console.log("bind variables in getuserbyemnail", bindVariables);
-    const result = await this.executeQuery(query, bindVariables);
-    console.log("result in getuserbyemail", result);
-    return result?.rows && result?.rows.length > 0 ? result.rows[0] : null;
+    try {
+      const result = (await this.executeQuery(
+        query,
+        bindVariables,
+        conn
+      )) as User[];
+      console.log("result in getuserbyemail", result);
+      if (result.length === 0) {
+        throw new Error("User not found");
+      }
+      return result[0];
+    } catch (error) {
+      console.error(`Error getting user by email: ${error}`);
+      throw error;
+    }
   }
 
   async createUser(
@@ -82,80 +137,86 @@ class DatabaseService {
     firstname: string,
     lastname: string
   ) {
-    // console.log('getAllUsers', await this.getAllUsers());
     const query = `INSERT INTO users (email, password_hash, first_name, last_name) VALUES (:email, :password, :firstname, :lastname)`;
     const bindVariables = [email, password, firstname, lastname];
-    // console.log('bbbbbbind variables', bindVariables)
     await this.executeQuery(query, bindVariables);
   }
 
-  async getAllUsers(): Promise<any[]> {
+  async getAllUsers(): Promise<User[]> {
     try {
       const query = `SELECT * FROM users`;
       // console.log(`Executing query: ${query}`);
-      const result = await this.executeQuery(query, []);
+      const result = (await this.executeQuery(query, [])) as User[];
       // console.log(`Query result: ${JSON.stringify(result)}`);
-      return result?.rows || [];
+      return result;
     } catch (error) {
       console.error(`Error getting all users: ${error}`);
       throw error;
     }
   }
 
-  async insertUserRoles(userId: number, tenancyId: number, roleId: number) {
+  async insertUserRoles(
+    userId: number,
+    tenancyId: number,
+    roleId: number,
+    conn: oracledb.Connection | null = null
+  ) {
     const query = `INSERT INTO user_roles (user_id, tenancy_id, role_id) VALUES (:userId, :tenancyId, :roleId)`;
     const bindVariables = [userId, tenancyId, roleId];
-    this.executeQuery(query, bindVariables);
+    const result = await this.executeCommand(query, bindVariables, false, conn);
+    console.log("insertUserRoles result", result);
+    return result
   }
 
   // tenancy
 
-  async getTenancyByName(name: string) {
+  async getTenancyByName(
+    name: string,
+    conn: oracledb.Connection | null = null
+  ) {
     const query = `SELECT * FROM tenancies WHERE name = :name`;
     const bindVariables = [name];
-    const result = await this.executeQuery(query, bindVariables);
-    return result?.[0] || null;
+    const result = await this.executeQuery(query, bindVariables, conn);
+    return result;
   }
 
   async createTenancy(tenancyName: string, userEmail: string): Promise<number> {
+    const conn = await this.getConnection();
     try {
-      const userResult = await this.getUserByEmail(userEmail);
-      if (!userResult || userResult?.rows?.length === 0) {
-        throw new Error(
-          "The provided email does not match any registered user."
-        );
-      }
-      const userId = userResult.rows[0].USER_ID;
+      const userResult = await this.getUserByEmail(userEmail, conn);
 
-      const tenancyCheckResult = await this.getTenancyByName(tenancyName);
-      if (tenancyCheckResult.rows && tenancyCheckResult.rows.length > 0) {
-        throw new Error("The tenancy name is already in use.");
-      }
+      const userId = userResult.USER_ID;
 
       const insertTenancyQuery = `
-        INSERT INTO tenancies (name)
+        INSERT INTO tenancies (tenancy_name)
         VALUES (:name)
-        RETURNING id INTO :newId
+        RETURNING tenancy_id INTO :newId
       `;
       const bindVars = {
         name: tenancyName,
         newId: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
       };
-      const tenancyResult = await this.executeQuery(
+      const tenancyResult = await this.executeCommand(
         insertTenancyQuery,
-        bindVars
+        bindVars,
+        false, // autocommit
+        conn
+      );
+      console.log(
+        "---------------------------------------------tenancyResult",
+        tenancyResult
       );
       const newTenancyId = tenancyResult.outBinds.newId[0];
 
-      await this.insertUserRoles(userId, newTenancyId, ADMIN_ROLE_ID);
+      await this.insertUserRoles(userId, newTenancyId, ADMIN_ROLE_ID, conn);
 
-      await this.connection.commit();
+      await conn.commit();
       return newTenancyId;
     } catch (error) {
-      await this.connection.rollback();
+      await conn.rollback();
       throw error;
     } finally {
-      // await this.connection.close();
+      await conn.close();
     }
   }
 }
