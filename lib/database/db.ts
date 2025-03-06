@@ -50,7 +50,6 @@ class DatabaseService {
     let result: oracledb.Result<unknown>;
 
     try {
-      const tenancyId = await this.getTenancy();
       result = await conn.execute(query, bindVariables, params);
     } catch (error) {
       console.error(`Error executing ${query} query: ${error}`);
