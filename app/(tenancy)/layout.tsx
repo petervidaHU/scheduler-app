@@ -1,13 +1,14 @@
 import { redirect } from "next/navigation";
 import { getAuth } from "../api/auth/[...nextauth]/getAuth";
 import { UserSession } from "@/types/UserTypes";
+import { TenancyHeader } from "./TenancyHeader";
 
 export default async function TenancyLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-    let session: UserSession;
+  let session: UserSession;
   try {
     session = await getAuth();
     if (!session || !session.userId || !session.tenancyId) {
@@ -19,7 +20,7 @@ export default async function TenancyLayout({
 
   return (
     <>
-      <div>tenancy Header - {session.tenancyId}</div>
+      <TenancyHeader />
       {children}
     </>
   );
