@@ -1,10 +1,8 @@
 import NextAuth from "next-auth";
 import "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
-import DatabaseService from "@/lib/database/db";
 import { verifyPassword } from "../../../../lib/utils";
-
-const database = new DatabaseService();
+import db from "@/lib/database/bd-instance";
 
 export const authOptions = {
   debug: true,
@@ -17,16 +15,16 @@ export const authOptions = {
       },
       authorize: async (credentials: any) => {
         // console.log('credentials in auth sign in::', credentials)
-        const user = await database.getUserByEmail(credentials.email);
-        const tenancies = await database.getTenanciesByUser(credentials.email);
-        // console.log("user in authorize::", user, tenancies);
+        const user = await db.getUserByEmail(credentials.email);
+        const tenancies = await db.getTenanciesByUser(credentials.email);
+        console.log("user in authorize::", user, tenancies);
 
         if (
           user &&
           tenancies.length > 0 &&
           (await verifyPassword(credentials.password, user.password_hash))
         ) {
-          return { ...user, tenancyId: tenancies[0] };
+          return { ...user, tenancy: tenancies[0] };
         } else {
           return null;
         }
@@ -45,23 +43,25 @@ export const authOptions = {
   },
   callbacks: {
     async jwt({ token, user, session, trigger }: any) {
-      // console.log("in jwt callback:", user);
+       console.log("in jwt callback:", user);
       if (trigger === "update" && session) {
         token.tenancyId = session.tenancyId;
       }
       if (token && user) {
         // TODO mapping authorize object
-        const { FIRST_NAME, LAST_NAME, USER_ID, EMAIL } = user as any;
+        const { FIRST_NAME, LAST_NAME, USER_ID, EMAIL, tenancy } = user as any;
         token.id = USER_ID;
         token.firstName = FIRST_NAME;
         token.lastName = LAST_NAME;
         token.email = EMAIL;
+        token.tenancyId = tenancy.TENANCY_ID;
       }
       return token;
     },
     async session({ session, token, user }: any) {
-      //   console.log("in session callback:", token);
+      console.log("in session callback:", token);
       if (session.user) {
+        session.user.userId = token.id;
         session.user.name = `${token.firstName} ${token.lastName}`;
         session.user.email = token.email;
         session.user.tenancyId = token.tenancyId;

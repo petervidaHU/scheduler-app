@@ -1,5 +1,6 @@
 import { auth } from "@/app/api/auth/[...nextauth]/route";
-import { User, UserSession } from "@/types/UserTypes";
+import { ROLES } from "@/constants/constants";
+import { Roles, User, UserSession } from "@/types/UserTypes";
 import oracledb, {
   BindParameters,
   ExecuteOptions,
@@ -7,8 +8,7 @@ import oracledb, {
   Result,
 } from "oracledb";
 import path from "path";
-
-const ADMIN_ROLE_ID = 3;
+import { getRoleName } from "../utils";
 
 class DatabaseService {
   constructor() {}
@@ -119,6 +119,30 @@ class DatabaseService {
     }
   }
 
+  async getUserRoleInTenancy(
+    userId: string,
+    tenancyId: string,
+    conn: oracledb.Connection | null = null
+  ): Promise<Roles> {
+    const query = `SELECT role_id FROM user_roles WHERE user_id = :userId AND tenancy_id = :tenancyId`;
+    const bindVariables = [userId, tenancyId];
+    try {
+      const result = (await this.executeQuery(
+        query,
+        bindVariables,
+        conn
+      )) as { ROLE_ID: number }[];
+      if (result.length === 0) {
+        throw new Error("User not found");
+      }
+
+      return getRoleName(result[0].ROLE_ID);
+    } catch (error) {    
+      console.error(`Error getting user role in tenancy: ${error}`);
+      throw error;
+    }
+  }
+  
   async createUser(
     email: string,
     password: string,
@@ -240,7 +264,7 @@ class DatabaseService {
       );
       const newTenancyId = tenancyResult.outBinds.newId[0];
 
-      await this.insertUserRoles(userId, newTenancyId, ADMIN_ROLE_ID, conn);
+      await this.insertUserRoles(userId, newTenancyId, ROLES.admin, conn);
       await conn.commit();
 
       return newTenancyId;

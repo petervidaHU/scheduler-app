@@ -9,12 +9,13 @@ import { useDisclosure } from '@mantine/hooks';
 import { Button, Select } from '@mantine/core';
 import classes from './HeaderSearch.module.css';
 import { UserSession } from '@/types/UserTypes';
+import Link from 'next/link';
 
 const links = [
-  { link: '/about', label: 'Features' },
-  { link: '/pricing', label: 'Pricing' },
-  { link: '/learn', label: 'Learn' },
-  { link: '/community', label: 'Community' },
+  { link: '/my-tenancy', label: 'my tenancy' },
+  { link: '/pricing', label: 'pricing' },
+  { link: '/classes', label: 'classes' },
+  { link: '/schedules', label: 'schedules' },
 ];
 
 interface props {
@@ -30,14 +31,14 @@ export const HeaderSearch: FC<props> = ({session, tenancies}) => {
   const router = useRouter();
   const [opened, { toggle }] = useDisclosure(false);
   const items = links.map((link) => (
-    <a
+    <Link
     key={link.label}
     href={link.link}
     className={classes.link}
-    onClick={(event) => event.preventDefault()}
+    onClick={(event) => {console.log('click on menu')}}
     >
       {link.label}
-    </a>
+    </Link>
   ));
   
   const getTenancies = () => {
@@ -81,13 +82,13 @@ export const HeaderSearch: FC<props> = ({session, tenancies}) => {
           >
             {status === 'authenticated' ? 'Log out' : 'Log in'}
           </Button>
-        </Group>
         <Group>
           {status === 'authenticated' && name &&
             name
           }
-
+          </Group>
         </Group>
+
         <Group>
           <Burger opened={opened} onClick={toggle} size="sm" hiddenFrom="sm" />
         </Group>
@@ -97,13 +98,13 @@ export const HeaderSearch: FC<props> = ({session, tenancies}) => {
             {items}
           </Group>
          
-          <Autocomplete
+         {/*} <Autocomplete
             className={classes.search}
             placeholder="Search"
             leftSection={<IconSearch size={16} stroke={1.5} />}
             data={['React', 'Angular', 'Vue', 'Next.js', 'Riot.js', 'Svelte', 'Blitz.js']}
             visibleFrom="xs"
-          />
+          /> */}
         </Group>
       </div>
     </header>

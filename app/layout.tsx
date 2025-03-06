@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import '@mantine/core/styles.css';
 import { Geist, Geist_Mono } from "next/font/google";
-import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import { MantineProvider } from '@mantine/core';
 import "./globals.css";
 import { theme } from "./theme";
 import HeaderWithSession from "@/components/HeaderWithSession";
