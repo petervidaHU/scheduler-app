@@ -23,6 +23,7 @@ interface props {
 }
 
 export const HeaderSearch: FC<props> = ({session, tenancies}) => {
+  console.log('tenancies in header', tenancies);
   const { update } = useSession();
   const [selectedTenancy, setSelectedTenancy] = useState<string>('');
   const { name, status } = session;

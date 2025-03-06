@@ -1,4 +1,5 @@
-import { User } from "@/types/UserTypes";
+import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { User, UserSession } from "@/types/UserTypes";
 import oracledb, {
   BindParameters,
   ExecuteOptions,
@@ -10,41 +11,32 @@ import path from "path";
 const ADMIN_ROLE_ID = 3;
 
 class DatabaseService {
-  connection: oracledb.Connection | null;
-  constructor() {
-    this.connection = null;
+  constructor() {}
+
+  async getTenancy() {
+    const session = await auth();
+    if (session) {
+      const tenancyId = (session.user as UserSession).tenancyId;
+      if (tenancyId !== null) {
+        return tenancyId;
+      }
+    }
+    throw new Error("User or tenancy not authenticated");
   }
 
-  async connect() {
+  async getConnection(): Promise<oracledb.Connection> {
     process.env.TNS_ADMIN = path.join(__dirname, "wallet");
     const dbConfig = {
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       connectString: process.env.DB_CONNECTION_STRING,
     };
-
+    console.log("Connecting to Oracle database...");
     try {
-      this.connection = await oracledb.getConnection(dbConfig);
+      return await oracledb.getConnection(dbConfig);
     } catch (err) {
       console.error("Error connecting to Oracle database:", err);
-    }
-  }
-
-  async getConnection() {
-    if (!this.connection) {
-      console.log("Connecting to Oracle database...");
-      await this.connect();
-    }
-    if (!!this.connection) {
-      return this.connection;
-    } else {
-      throw new Error("Can not connect to database!");
-    }
-  }
-
-  async closeConnection() {
-    if (this.connection) {
-      await this.connection.close();
+      throw err;
     }
   }
 
@@ -58,6 +50,7 @@ class DatabaseService {
     let result: oracledb.Result<unknown>;
 
     try {
+      const tenancyId = await this.getTenancy();
       result = await conn.execute(query, bindVariables, params);
     } catch (error) {
       console.error(`Error executing ${query} query: ${error}`);
@@ -133,9 +126,11 @@ class DatabaseService {
     firstname: string,
     lastname: string
   ) {
+    const conn = this.getConnection();
     const query = `INSERT INTO users (email, password_hash, first_name, last_name) VALUES (:email, :password, :firstname, :lastname)`;
     const bindVariables = [email, password, firstname, lastname];
-    await this.executeQuery(query, bindVariables);
+    const result = await this.executeCommand(query, bindVariables);
+    const tenancy = await this.createTenancy("self-tenancy", email);
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -144,6 +139,52 @@ class DatabaseService {
       // console.log(`Executing query: ${query}`);
       const result = (await this.executeQuery(query, [])) as User[];
       // console.log(`Query result: ${JSON.stringify(result)}`);
+      return result;
+    } catch (error) {
+      console.error(`Error getting all users: ${error}`);
+      throw error;
+    }
+  }
+
+  async getUserByEmailInTenancy(
+    email: string,
+    conn: oracledb.Connection | null = null
+  ): Promise<User> {
+    try {
+      const tenancyId = await this.getTenancy();
+      const query = `
+        SELECT u.*
+        FROM users u
+        INNER JOIN user_roles ur ON u.user_id = ur.user_id
+        WHERE u.email = :email 
+          AND ur.tenancy_id = :tenancyId
+      `;
+      const bindVariables = { email, tenancyId };
+      const result = (await this.executeQuery(query, bindVariables, conn)) as User[];
+      if (result.length === 0) {
+        throw new Error("User not found within the current tenancy.");
+      }
+      return result[0];
+    } catch (error) {
+      console.error(`Error getting user by email: ${error}`);
+      throw error;
+    }
+  }
+
+  async getAllUsersInTenancy(): Promise<User[]> {
+    try {
+      const tenancyId = await this.getTenancy();
+      const query = `
+        SELECT *
+        FROM users
+        WHERE user_id IN (
+          SELECT user_id
+          FROM user_roles
+          WHERE tenancy_id = :tenancyId
+        )
+      `;
+      const bindVariables = { tenancyId };
+      const result = (await this.executeQuery(query, bindVariables)) as User[];
       return result;
     } catch (error) {
       console.error(`Error getting all users: ${error}`);
@@ -161,7 +202,7 @@ class DatabaseService {
     const bindVariables = [userId, tenancyId, roleId];
     const result = await this.executeCommand(query, bindVariables, false, conn);
     // console.log("insertUserRoles result", result);
-    return result
+    return result;
   }
 
   // tenancy

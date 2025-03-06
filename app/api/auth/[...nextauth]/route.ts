@@ -18,13 +18,15 @@ export const authOptions = {
       authorize: async (credentials: any) => {
         // console.log('credentials in auth sign in::', credentials)
         const user = await database.getUserByEmail(credentials.email);
-        console.log("user in authorize::", user);
+        const tenancies = await database.getTenanciesByUser(credentials.email);
+        // console.log("user in authorize::", user, tenancies);
 
         if (
           user &&
+          tenancies.length > 0 &&
           (await verifyPassword(credentials.password, user.password_hash))
         ) {
-          return user;
+          return { ...user, tenancyId: tenancies[0] };
         } else {
           return null;
         }
@@ -42,8 +44,8 @@ export const authOptions = {
     strategy: "jwt" as const,
   },
   callbacks: {
-    async jwt({ token , user, session, trigger }: any) {
-    //   console.log("in jwt callback:", session, trigger);
+    async jwt({ token, user, session, trigger }: any) {
+      // console.log("in jwt callback:", user);
       if (trigger === "update" && session) {
         token.tenancyId = session.tenancyId;
       }
@@ -58,7 +60,7 @@ export const authOptions = {
       return token;
     },
     async session({ session, token, user }: any) {
-    //   console.log("in session callback:", token);
+      //   console.log("in session callback:", token);
       if (session.user) {
         session.user.name = `${token.firstName} ${token.lastName}`;
         session.user.email = token.email;
