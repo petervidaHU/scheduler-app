@@ -1,5 +1,7 @@
 export interface FormActionType {
-    error: null | string,
+    error: any,
     data: null | any,
-    message?: string
+    success: boolean,
+    message?: string,
+    pending?: boolean
 }

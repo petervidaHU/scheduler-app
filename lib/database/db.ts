@@ -9,6 +9,7 @@ import oracledb, {
 } from "oracledb";
 import path from "path";
 import { getRoleName } from "../utils";
+import { Class, ClassRoom, ID, Speciality, Subject, Teacher } from "@/types/databaseTypes";
 
 class DatabaseService {
   constructor() {}
@@ -96,7 +97,7 @@ class DatabaseService {
     return result;
   }
 
-  // user
+  // --------------- USERS ---------------
   async getUserByEmail(
     email: string,
     conn: oracledb.Connection | null = null
@@ -127,22 +128,20 @@ class DatabaseService {
     const query = `SELECT role_id FROM user_roles WHERE user_id = :userId AND tenancy_id = :tenancyId`;
     const bindVariables = [userId, tenancyId];
     try {
-      const result = (await this.executeQuery(
-        query,
-        bindVariables,
-        conn
-      )) as { ROLE_ID: number }[];
+      const result = (await this.executeQuery(query, bindVariables, conn)) as {
+        ROLE_ID: number;
+      }[];
       if (result.length === 0) {
         throw new Error("User not found");
       }
 
       return getRoleName(result[0].ROLE_ID);
-    } catch (error) {    
+    } catch (error) {
       console.error(`Error getting user role in tenancy: ${error}`);
       throw error;
     }
   }
-  
+
   async createUser(
     email: string,
     password: string,
@@ -183,7 +182,11 @@ class DatabaseService {
           AND ur.tenancy_id = :tenancyId
       `;
       const bindVariables = { email, tenancyId };
-      const result = (await this.executeQuery(query, bindVariables, conn)) as User[];
+      const result = (await this.executeQuery(
+        query,
+        bindVariables,
+        conn
+      )) as User[];
       if (result.length === 0) {
         throw new Error("User not found within the current tenancy.");
       }
@@ -228,7 +231,7 @@ class DatabaseService {
     return result;
   }
 
-  // tenancy
+  // ----------------- TENANCIES -------------------
 
   async getTenancyByName(
     name: string,
@@ -294,6 +297,195 @@ class DatabaseService {
     } catch (error) {
       console.error(`Error getting tenancies by user: ${error}`);
       throw error;
+    }
+  }
+
+  // ----------------- SPECIALITIES ----------------------
+
+  async createSpeciality(name: string, desc: string): Promise<void> {
+    const conn = await this.getConnection();
+    const tenancyId = await this.getTenancy();
+    const query = `INSERT INTO specialties (specialty_name, description, tenancy_id) VALUES (:name, :description, :tenancyId)`;
+    try {
+      const bindVariables = [name, desc, tenancyId];
+      const  res = await this.executeCommand(query, bindVariables, true, conn);
+      console.log('res:', res)
+    } catch (error) {
+      console.error(`Error creating speciality: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async getAllSpeciality(): Promise<Speciality[]> {
+    const conn = await this.getConnection();
+    const tenancyId = await this.getTenancy();
+    const query = `SELECT * FROM specialties WHERE(tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
+    try {
+      const result = await this.executeQuery(query, [tenancyId], conn);
+      // console.log('spec res:::', result)
+      return result as Speciality[];
+    } catch (error) {
+      console.error(`Error getting speciality: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  // ----------------- SUBJECT-TEACHER -------------------
+
+  async createSubject(name: string, description: string, specialityId: ID | null,): Promise<void> {
+    const conn = await this.getConnection();
+    const query = `INSERT INTO subjects (subject_name, specialty_id, tenancy_id, description) VALUES (:name, :specialityId, :tenancyId, :description)`;
+    try {
+      const tenancyId = await this.getTenancy();
+      const bindVariables = [name, specialityId || null, tenancyId, description];
+      await this.executeCommand(query, bindVariables, true, conn);
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async createTeacher(name: string, email: string): Promise<void> {
+    const conn = await this.getConnection();
+    const query = `INSERT INTO teachers (name, email, tenancy_id) VALUES (:name, :email, :tenancyId)`;
+    try {
+      const tenancyId = await this.getTenancy();
+      const bindVariables = [name, email, tenancyId];
+      await this.executeCommand(query, bindVariables, false, conn);
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async deleteTeacher(teacherId: number): Promise<void> {
+    const conn = await this.getConnection();
+    const query = `DELETE FROM teachers WHERE teacher_id = :teacherId`;
+    const bindVariables = [teacherId];
+    try {
+      await this.executeCommand(query, bindVariables, false, conn);
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async getTeachers(): Promise<Teacher[]> {
+    const conn = await this.getConnection();
+    const query = `SELECT * FROM teachers`;
+    try {
+      const result = await this.executeQuery(query, [], conn);
+      return result as Teacher[];
+    } catch (error) {
+      console.error(`Error getting teachers: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async getAllSubjects(): Promise<Subject[]> {
+    const conn = await this.getConnection();
+    const tenancyId = await this.getTenancy();
+    const query = `SELECT * FROM subjects WHERE tenancy_id = :tenancyId`;
+    try {
+      const result = await this.executeQuery(query, [tenancyId], conn);
+      return result as Subject[];
+    } catch (error) {
+      console.error(`Error getting subjects: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  // ----------------- CLASS-CLASSROOM -------------------
+  async createClass(name: string, numberOfStudents: string): Promise<void> {
+    const conn = await this.getConnection();
+    const query = `INSERT INTO classes (class_name, number_of_students, tenancy_id) VALUES (:name, :numberOfStudents, :tenancyId)`;
+    try {
+      const tenancyId = await this.getTenancy();
+      const bindVariables = [name, numberOfStudents, tenancyId];
+      await this.executeCommand(query, bindVariables, false, conn);
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async getAllClasses(): Promise<Class[]> {
+    const conn = await this.getConnection();
+    const query = `SELECT * FROM classes WHERE tenancy_id = :tenancyId`;
+    try {
+      const tenancyId = await this.getTenancy();
+      const result = await this.executeQuery(query, [tenancyId], conn);
+      return result as Class[];
+    } catch (error) {
+      console.error(`Error getting classes: ${error}`);
+      throw error; 
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async deleteClass(classId: number): Promise<void> {
+    const conn = await this.getConnection();
+    const query = `DELETE FROM classes WHERE class_id = :classId`;
+    const bindVariables = [classId];
+    try {
+      await this.executeCommand(query, bindVariables, false, conn);
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async createClassRoom(name: string, capacity: number, specialityId: ID | null): Promise<void> {
+    const conn = await this.getConnection();
+    const query = `INSERT INTO classrooms (classroom_name, capacity, speciality_id, tenancy_id) VALUES (:name, :capacity, :specialityId, :tenancyId)`;
+    try {
+      const tenancyId = await this.getTenancy();
+      const bindVariables = [name, capacity, specialityId, tenancyId];
+      await this.executeCommand(query, bindVariables, false, conn);
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async getAllClassRooms(): Promise<ClassRoom[]> {
+    const conn = await this.getConnection();
+    const query = `SELECT * FROM classes WHERE tenancy_id = :tenancyId`;
+    try {
+      const tenancyId = await this.getTenancy();
+      const result = await this.executeQuery(query, [tenancyId], conn);
+      return result as ClassRoom[];
+    } catch (error) {
+      console.error(`Error getting class rooms: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
     }
   }
 }

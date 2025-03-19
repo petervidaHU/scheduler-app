@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
-import {  Container, Group, Button } from '@mantine/core';
-import  Link  from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Container, Group, Button } from "@mantine/core";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+const basePath='/my-tenancy'
 
 export const TenancyHeader = () => {
   const router = useRouter();
 
   const secondaryLinks = [
-    { link: '/tenancy-settings', label: 'Settings' },
-    { link: '/users', label: 'Users' },
+    { link: `${basePath}/admin`, label: "Admin settings" },
+    { link: `${basePath}/users`, label: "Users" },
+    { link: `${basePath}/schedules`, label: "Schedules" },
   ];
 
   return (
     <Container fluid>
       <Group style={{ height: 56 }}>
-        <Button
-          variant="outline"
-          onClick={() => router.push('/tenancy')}
-        >
+        <Button variant="outline" onClick={() => router.push("/my-tenancy")}>
           Dashboard
         </Button>
         <Group>
@@ -29,14 +29,6 @@ export const TenancyHeader = () => {
           ))}
         </Group>
       </Group>
-      <Group>
-              <Link href="/classes">
-                <Button variant="subtle">Classes</Button>
-              </Link>
-              <Link href="/schedules">
-                <Button variant="subtle">Schedules</Button>
-              </Link>
-            </Group>
-    </Container>
+          </Container>
   );
 };
