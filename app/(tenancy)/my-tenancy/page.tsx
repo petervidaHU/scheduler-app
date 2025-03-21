@@ -2,46 +2,59 @@ import React from "react";
 import { NoRoleContent } from "./NoRoleContent";
 import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
 import db from "@/lib/database/bd-instance";
-import { Class, ClassRoom, Speciality } from "@/types/databaseTypes";
+import { Class, ClassRoom, Speciality, Subject, Teacher } from "@/types/databaseTypes";
 import TabsWithTable from "@/components/TabsWithTable";
 import { dataFetcherAll } from "./dashboarDataFetcher";
-import { error } from "console";
+import { TableData } from "@mantine/core";
+
+const tableDataMapper = (data: any[]): TableData => {
+  console.log('data in mapper', data)
+  const head: string[] = Object.keys(data[0] || []);
+  const body: any[] = data.map(row => Object.values(row));
+  return {
+    head,
+    body,
+  }
+}
 
 export default async function MyTenancyPage() {
   const { tenancyId, userRole } = await getAuth();
 
-  const [specialities, classRooms, classes, teachers] = await Promise.all([
+  const [specialities, classRooms, classes, teachers, subjects] = await Promise.all([
     dataFetcherAll<Speciality>(db.getAllSpeciality),
     dataFetcherAll<ClassRoom>(db.getAllClassRooms),
     dataFetcherAll<Class>(db.getAllClasses),
-    dataFetcherAll<any>(db.getAllTeachers),
+    dataFetcherAll<Teacher>(db.getAllTeachers),
+    dataFetcherAll<Subject>(db.getAllSubjects),
   ])
+
 
   const tabsData = [
     {
       label: "specialities",
       error: specialities.error,
-      data: specialities.data.map((spec) => ({
-        name: spec.SPECIALTY_NAME,
-        id: spec.SPECIALTY_ID,
-      })),
+      data: tableDataMapper(specialities.data),
     },
     {
       label: "classRooms",
       error: classRooms.error,
-      data: classRooms.data.map((croom) => ({
-        name: croom.CLASSROOM_NAME,
-        id: croom.CLASSROOM_ID,
-      })),
+      data: tableDataMapper(classRooms.data),
     },
     {
       label: "classes",
       error: classes.error,
-      data: classes.data.map((c) => ({
-        name: c.CLASS_NAME,
-        id: c.CLASS_ID,
-      })),
+      data: tableDataMapper(classes.data),
     },
+    {
+      label: "teachers",
+      error: teachers.error,
+      data: tableDataMapper(teachers.data),
+    },
+    {
+      label: "subjects",
+      error: subjects.error,
+      data: tableDataMapper(subjects.data),
+    }, 
   ];
 
   if (!userRole || userRole === "norole") {

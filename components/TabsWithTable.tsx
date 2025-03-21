@@ -1,14 +1,11 @@
 "use client";
 
-import { Tabs } from "@mantine/core";
+import { Table, TableData, Tabs } from "@mantine/core";
 
 interface TabData {
   label: string;
   error?: string | null;
-  data: {
-    name: string;
-    id: string | number;
-  }[];
+  data: TableData;
 }
 
 interface Props {
@@ -18,7 +15,7 @@ interface Props {
 const TabsWithTable: React.FC<Props> = ({ tabs }) => {
   const getList = (tabs: TabData[]) => {
     return (
-      <ul>
+      <Tabs.List>
         {tabs.map((item) => (
           <Tabs.Tab
             leftSection={item.error ? "!" : ""}
@@ -28,28 +25,28 @@ const TabsWithTable: React.FC<Props> = ({ tabs }) => {
             {item.label}
           </Tabs.Tab>
         ))}
-      </ul>
+      </Tabs.List>
     );
   };
 
   const getTabPanels = (tab: TabData) => {
     return (
       <Tabs.Panel key={tab.label} value={tab.label}>
-        <ul>
-          {tab.data.map((row) => {
-            return <li key={row.id}>{row.name}</li>;
-          })}
-        </ul>
+        <Table
+          stickyHeader
+          highlightOnHover
+          striped
+          withRowBorders={false}
+          data={tab.data}
+        />
       </Tabs.Panel>
     );
   };
-
+  console.log("table data", tabs);
   return (
     <Tabs defaultValue={tabs[0].label}>
-      <Tabs.List>{getList(tabs)}</Tabs.List>
-      {tabs.map((tab) => {
-        return getTabPanels(tab);
-      })}
+      {getList(tabs)}
+      {tabs.map((tab) => getTabPanels(tab))}
     </Tabs>
   );
 };
