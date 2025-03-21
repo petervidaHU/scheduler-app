@@ -595,7 +595,7 @@ class DatabaseService {
 
   async getAllClassRooms(): Promise<ClassRoom[]> {
     const conn = await this.getConnection();
-    const query = `SELECT * FROM classes WHERE tenancy_id = :tenancyId`;
+    const query = `SELECT * FROM classrooms WHERE tenancy_id = :tenancyId`;
     try {
       const tenancyId = await this.getTenancy();
       const result = await this.executeQuery(query, [tenancyId], conn);

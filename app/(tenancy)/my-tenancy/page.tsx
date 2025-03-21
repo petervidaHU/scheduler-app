@@ -1,69 +1,43 @@
 import React from "react";
 import { NoRoleContent } from "./NoRoleContent";
 import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
-import { Roles } from "@/types/UserTypes";
 import db from "@/lib/database/bd-instance";
 import { Class, ClassRoom, Speciality } from "@/types/databaseTypes";
 import TabsWithTable from "@/components/TabsWithTable";
+import { dataFetcherAll } from "./dashboarDataFetcher";
+import { error } from "console";
 
 export default async function MyTenancyPage() {
   const { tenancyId, userRole } = await getAuth();
-  const specialities: Speciality[] = [];
-  const classRooms: ClassRoom[] = [];
-  const classes: Class[] = [];
-  const teachers: any[] = [];
 
-  // DATA FETCHING
-  try {
-    const specials = await db.getAllSpeciality();
-    if (specials.length > 0) {
-      specialities.push(...specials);
-    }
-  } catch (error) {
-    console.error("Error fetching specialities:", error);
-  }
-
-  try {
-    const classrooms = await db.getAllClassRooms();
-    if (classrooms.length > 0) {
-      classRooms.push(...classrooms);
-    }
-  } catch (error) {
-    console.error("Error fetching classRooms:", error);
-  }
-
-  try {
-    const classes = await db.getAllClasses();
-    if (classes.length > 0) {
-      classes.push(...classes);
-    }
-  } catch (error) {
-    console.error("Error fetching classes:", error);
-  }
-
-  console.log("classRooms", classRooms);
-  console.log("specialities", specialities);
-  console.log("userRole", userRole);
-  console.log("classes", classes);
+  const [specialities, classRooms, classes, teachers] = await Promise.all([
+    dataFetcherAll<Speciality>(db.getAllSpeciality),
+    dataFetcherAll<ClassRoom>(db.getAllClassRooms),
+    dataFetcherAll<Class>(db.getAllClasses),
+    dataFetcherAll<any>(db.getAllTeachers),
+  ])
 
   const tabsData = [
     {
       label: "specialities",
-      data: specialities.map((spec) => ({
+      error: specialities.error,
+      data: specialities.data.map((spec) => ({
         name: spec.SPECIALTY_NAME,
         id: spec.SPECIALTY_ID,
       })),
     },
     {
       label: "classRooms",
-      data: classRooms.map((croom) => ({
+      error: classRooms.error,
+      data: classRooms.data.map((croom) => ({
         name: croom.CLASSROOM_NAME,
         id: croom.CLASSROOM_ID,
       })),
     },
     {
       label: "classes",
-      data: classes.map((c) => ({
+      error: classes.error,
+      data: classes.data.map((c) => ({
         name: c.CLASS_NAME,
         id: c.CLASS_ID,
       })),

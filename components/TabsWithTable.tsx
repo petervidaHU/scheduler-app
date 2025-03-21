@@ -4,6 +4,7 @@ import { Tabs } from "@mantine/core";
 
 interface TabData {
   label: string;
+  error?: string | null;
   data: {
     name: string;
     id: string | number;
@@ -15,11 +16,15 @@ interface Props {
 }
 
 const TabsWithTable: React.FC<Props> = ({ tabs }) => {
-  const getList = (tab: TabData[]) => {
+  const getList = (tabs: TabData[]) => {
     return (
       <ul>
-        {tab.map((item) => (
-          <Tabs.Tab value={item.label} key={item.label}>
+        {tabs.map((item) => (
+          <Tabs.Tab
+            leftSection={item.error ? "!" : ""}
+            value={item.label}
+            key={item.label}
+          >
             {item.label}
           </Tabs.Tab>
         ))}
@@ -30,7 +35,7 @@ const TabsWithTable: React.FC<Props> = ({ tabs }) => {
   const getTabPanels = (tab: TabData) => {
     return (
       <Tabs.Panel key={tab.label} value={tab.label}>
-        <ul >
+        <ul>
           {tab.data.map((row) => {
             return <li key={row.id}>{row.name}</li>;
           })}
