@@ -9,10 +9,38 @@ import oracledb, {
 } from "oracledb";
 import path from "path";
 import { getRoleName } from "../utils";
-import { Class, ClassRoom, ID, Speciality, Subject, Teacher } from "@/types/databaseTypes";
+import {
+  Class,
+  ClassRoom,
+  ID,
+  Speciality,
+  Subject,
+  Teacher,
+} from "@/types/databaseTypes";
+import { error } from "console";
+import { NormalizedSyllabus } from "@/app/(tenancy)/_actions/createClass";
+
+interface ExtendedExecuteOptions extends ExecuteOptions {
+  bindDefs?: {
+    type: any;
+    dir: any;
+    name: string;
+  }[];
+}
 
 class DatabaseService {
+  private static instance: Promise<DatabaseService> | null = null;
   constructor() {}
+
+  public static async getInstance(): Promise<DatabaseService> {
+    if (!DatabaseService.instance) {
+      DatabaseService.instance = new Promise((resolve) => {
+        const ins = new DatabaseService();
+        resolve(ins);
+      });
+    }
+    return DatabaseService.instance;
+  }
 
   async getTenancy() {
     const session = await auth();
@@ -47,9 +75,14 @@ class DatabaseService {
     connectionParam: oracledb.Connection | null = null,
     params: ExecuteOptions = { outFormat: OUT_FORMAT_OBJECT }
   ): Promise<unknown[]> {
-    const conn = connectionParam || (await this.getConnection());
     let result: oracledb.Result<unknown>;
-
+    let conn: oracledb.Connection;
+    try {
+      conn = connectionParam || (await this.getConnection());
+    } catch (error) {
+      console.error(`Error connecting to Oracle database: ${error}`);
+      throw error;
+    }
     try {
       result = await conn.execute(query, bindVariables, params);
     } catch (error) {
@@ -72,7 +105,7 @@ class DatabaseService {
     bindVariables: BindParameters,
     autocommit: boolean = true,
     connectionParam: oracledb.Connection | null = null,
-    params: ExecuteOptions = { outFormat: OUT_FORMAT_OBJECT }
+    params: ExtendedExecuteOptions = { outFormat: OUT_FORMAT_OBJECT }
   ): Promise<oracledb.Result<any>> {
     const conn = connectionParam || (await this.getConnection());
     let result: oracledb.Result<unknown>;
@@ -148,7 +181,7 @@ class DatabaseService {
     firstname: string,
     lastname: string
   ) {
-    const conn = this.getConnection();
+    const conn = await this.getConnection();
     const query = `INSERT INTO users (email, password_hash, first_name, last_name) VALUES (:email, :password, :firstname, :lastname)`;
     const bindVariables = [email, password, firstname, lastname];
     const result = await this.executeCommand(query, bindVariables);
@@ -308,8 +341,8 @@ class DatabaseService {
     const query = `INSERT INTO specialties (specialty_name, description, tenancy_id) VALUES (:name, :description, :tenancyId)`;
     try {
       const bindVariables = [name, desc, tenancyId];
-      const  res = await this.executeCommand(query, bindVariables, true, conn);
-      console.log('res:', res)
+      const res = await this.executeCommand(query, bindVariables, true, conn);
+      console.log("res:", res);
     } catch (error) {
       console.error(`Error creating speciality: ${error}`);
       throw error;
@@ -336,12 +369,21 @@ class DatabaseService {
 
   // ----------------- SUBJECT-TEACHER -------------------
 
-  async createSubject(name: string, description: string, specialityId: ID | null,): Promise<void> {
+  async createSubject(
+    name: string,
+    description: string,
+    specialityId: ID | null
+  ): Promise<void> {
     const conn = await this.getConnection();
     const query = `INSERT INTO subjects (subject_name, specialty_id, tenancy_id, description) VALUES (:name, :specialityId, :tenancyId, :description)`;
     try {
       const tenancyId = await this.getTenancy();
-      const bindVariables = [name, specialityId || null, tenancyId, description];
+      const bindVariables = [
+        name,
+        specialityId || null,
+        tenancyId,
+        description,
+      ];
       await this.executeCommand(query, bindVariables, true, conn);
     } catch (error) {
       await conn.rollback();
@@ -351,12 +393,16 @@ class DatabaseService {
     }
   }
 
-  async createTeacher(name: string, email: string): Promise<void> {
+  async createTeacher(
+    name: string,
+    email: string,
+    description: string
+  ): Promise<void> {
     const conn = await this.getConnection();
-    const query = `INSERT INTO teachers (name, email, tenancy_id) VALUES (:name, :email, :tenancyId)`;
+    const query = `INSERT INTO teachers (teacher_name, teacher_email, description, tenancy_id) VALUES (:name, :email, :description, :tenancyId)`;
     try {
       const tenancyId = await this.getTenancy();
-      const bindVariables = [name, email, tenancyId];
+      const bindVariables = [name, email, description, tenancyId];
       await this.executeCommand(query, bindVariables, false, conn);
       await conn.commit();
     } catch (error) {
@@ -382,11 +428,12 @@ class DatabaseService {
     }
   }
 
-  async getTeachers(): Promise<Teacher[]> {
+  async getAllTeachers(): Promise<Teacher[]> {
     const conn = await this.getConnection();
-    const query = `SELECT * FROM teachers`;
+    const tenancyId = await this.getTenancy();
+    const query = `SELECT * FROM teachers WHERE tenancy_id = :tenancyId`;
     try {
-      const result = await this.executeQuery(query, [], conn);
+      const result = await this.executeQuery(query, [tenancyId], conn);
       return result as Teacher[];
     } catch (error) {
       console.error(`Error getting teachers: ${error}`);
@@ -411,14 +458,82 @@ class DatabaseService {
     }
   }
 
+  async createSyllabus(
+    classId: ID,
+    subjectId: ID,
+    teacherId: ID | null,
+    occurrence: number,
+    tenancyIdProp: ID | null = null,
+    commonConn?: oracledb.Connection
+  ): Promise<void> {
+    const conn = commonConn || (await this.getConnection());
+    const query = `INSERT INTO syllabus (class_id, subject_id, teacher_id, tenancy_id, occurrence) VALUES (:classId, :subjectId, :teacherId, :tenancyId, :occurrence)`;
+    try {
+      const tenancyId = tenancyIdProp || (await this.getTenancy());
+      const bindVariables = [
+        classId,
+        subjectId,
+        teacherId,
+        tenancyId,
+        occurrence,
+      ];
+      await this.executeCommand(query, bindVariables, false, conn);
+      if (!commonConn) {
+        await conn.commit();
+      }
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      if (!commonConn) await conn.close();
+    }
+  }
+
   // ----------------- CLASS-CLASSROOM -------------------
-  async createClass(name: string, numberOfStudents: string): Promise<void> {
+  async createClass(
+    name: string,
+    numberOfStudents: string,
+    syllabus: NormalizedSyllabus
+  ): Promise<void> {
     const conn = await this.getConnection();
-    const query = `INSERT INTO classes (class_name, number_of_students, tenancy_id) VALUES (:name, :numberOfStudents, :tenancyId)`;
+    const query = `
+      INSERT INTO classes (class_name, number_of_students, tenancy_id)
+      VALUES (:name, :numberOfStudents, :tenancyId)
+      RETURNING class_id INTO :classId`;
     try {
       const tenancyId = await this.getTenancy();
-      const bindVariables = [name, numberOfStudents, tenancyId];
-      await this.executeCommand(query, bindVariables, false, conn);
+      const bindVariables = {
+        name,
+        numberOfStudents,
+        tenancyId,
+        classId: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT },
+      };
+      const result = await this.executeCommand(
+        query,
+        bindVariables,
+        false,
+        conn
+      );
+      const classId = result.outBinds.classId[0];
+      if (!classId) {
+        throw new Error(
+          "Failed to create class, there is no ID for the newly created class"
+        );
+      }
+
+      console.log("classId", classId);
+
+      syllabus.forEach(([subjectId, occurrence, teacherId]) =>
+        this.createSyllabus(
+          classId,
+          subjectId,
+          teacherId,
+          occurrence,
+          tenancyId,
+          conn
+        )
+      );
+
       await conn.commit();
     } catch (error) {
       await conn.rollback();
@@ -437,7 +552,7 @@ class DatabaseService {
       return result as Class[];
     } catch (error) {
       console.error(`Error getting classes: ${error}`);
-      throw error; 
+      throw error;
     } finally {
       await conn.close();
     }
@@ -458,7 +573,11 @@ class DatabaseService {
     }
   }
 
-  async createClassRoom(name: string, capacity: number, specialityId: ID | null): Promise<void> {
+  async createClassRoom(
+    name: string,
+    capacity: number,
+    specialityId: ID | null
+  ): Promise<void> {
     const conn = await this.getConnection();
     const query = `INSERT INTO classrooms (classroom_name, capacity, speciality_id, tenancy_id) VALUES (:name, :capacity, :specialityId, :tenancyId)`;
     try {

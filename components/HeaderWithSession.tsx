@@ -1,14 +1,17 @@
 import SessionWrapper from "@/app/SessionWrapper";
 import { HeaderSearch } from "./HeaderSearch";
 import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
-import DatabaseService from "@/lib/database/db";
+import db from "@/lib/database/bd-instance";
 
 export default async function HeaderWithSession() {
-  const db = new DatabaseService();
   const session = await getAuth();
   let userTenancies = [];
   if (session && session.email) {
-    userTenancies = await db.getTenanciesByUser(session.email);
+    try {
+      userTenancies = await db.getTenanciesByUser(session.email);
+    } catch (error) {
+      console.error("Error fetching user tenancies:", error);
+    }
   }
 
   return (

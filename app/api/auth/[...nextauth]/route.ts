@@ -15,8 +15,10 @@ export const authOptions = {
       },
       authorize: async (credentials: any) => {
         // console.log('credentials in auth sign in::', credentials)
+        try{
         const user = await db.getUserByEmail(credentials.email);
         const tenancies = await db.getTenanciesByUser(credentials.email);
+
         // console.log("user in authorize::", user, tenancies);
 
         if (
@@ -28,6 +30,10 @@ export const authOptions = {
         } else {
           return null;
         }
+      } catch (error) {
+        console.error("Error in authorize:", error);
+        return null;
+      }
       },
     }),
   ],

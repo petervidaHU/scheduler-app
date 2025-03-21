@@ -8,6 +8,8 @@ import { Class, ClassRoom, Speciality, Subject } from "@/types/databaseTypes";
 import db from "@/lib/database/bd-instance";
 import CreateClass from "@/components/forms/CreateClass";
 import CreateSubject from "@/components/forms/CreateSubject";
+import { SelectOptions } from "@/types/FormActionType";
+import CreateTeacher from "@/components/forms/CreateTeacher";
 
 interface AdminPageProps {
   searchParams: { new?: string };
@@ -50,18 +52,29 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             subjects.push(...subs);
           }
         } catch (error) {
-          console.error("Error fetching specialities:", error);
+          console.error("Error fetching subjects:", error);
         }
+        const subjectList: SelectOptions[] = subjects.map(s => ({value: s.SUBJECT_ID.toString(), label: s.SUBJECT_NAME}))
+
+        let teachers: any[] = [];
+        try {
+          const tchs = await db.getAllTeachers();
+          if (tchs.length > 0) {
+            teachers.push(...tchs);
+          }
+        } catch (error) {
+          console.error("Error fetching teachers:", error);
+        } 
+        const teachersList: SelectOptions[] = teachers.map(t => ({value: t.TEACHER_ID.toString(), label: t.TEACHER_NAME}))
 
         return (
           <>
             <h2>Create new class</h2>
-            <CreateClass subjectsList={subjects} />
+            <CreateClass subjectsList={subjectList} teachersList={teachersList}/>
           </>
         );
       },
       speciality: () => {
-
         return (
         <>
           <h2>Create new speciality</h2>
@@ -84,6 +97,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <CreateSubject specialities={specialities} />
         </>
       )
+    },
+    teacher: async () => {
+      return (
+        <>
+          <h2>Create new teacher</h2>
+          <CreateTeacher />
+        </>
+      );
     },
     };
 

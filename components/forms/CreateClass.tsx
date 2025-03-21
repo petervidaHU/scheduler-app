@@ -9,12 +9,17 @@ import {
   Stack,
   Select,
   NumberInput,
+  MultiSelect,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { FormActionType } from "@/types/FormActionType";
+import {
+  FormActionType,
+  SelectOptions,
+  SyllabusInputForm,
+} from "@/types/FormActionType";
 import { redirect } from "next/navigation";
 import { createClass } from "@/app/(tenancy)/_actions/createClass";
-import { Subject } from "@/types/databaseTypes";
+import { ID } from "@/types/databaseTypes";
 
 const init: FormActionType = {
   error: null,
@@ -23,39 +28,43 @@ const init: FormActionType = {
 };
 
 interface props {
-    subjectsList: Subject[];
+  subjectsList: SelectOptions[];
+  teachersList: SelectOptions[];
 }
 
-export const CreateClass: React.FC<props> = ({subjectsList}) => {
-    console.log('subjectsList', subjectsList)
+interface SyllabusData {
+  [subject: ID]: SyllabusInputForm;
+}
+
+export const CreateClass: React.FC<props> = ({
+  subjectsList,
+  teachersList,
+}) => {
   const [isPending, startTransition] = useTransition();
   const [state, action] = useActionState(createClass, {
     ...init,
   });
-  const [subjects, setSubjects] = useState([
-    { subjectName: '', occurrencePerWeek: 0 },
-  ]);
+  const [syllabus, setSyllabus] = useState<SyllabusData>({});
 
-  const handleAddSubject = () => {
-    setSubjects([...subjects, { subjectName: '', occurrencePerWeek: 0 }]);
+  const handleSubjectChange = (
+    subject: ID,
+    value: unknown,
+    field: keyof SyllabusInputForm
+  ) => {
+    setSyllabus((prev) => ({
+      ...prev,
+      [subject]: {
+        ...prev[subject],
+        [field]: value,
+      },
+    }));
   };
-
-  const handleSubjectChange = (index, field, value) => {
-    setSubjects(
-      subjects.map((subject, i) => {
-        if (i === index) {
-          return { ...subject, [field]: value };
-        }
-        return subject;
-      })
-    );
-  };
-
 
   const classForm = useForm({
     initialValues: {
       className: "",
       numberOfStudents: "",
+      syllabus: {},
     },
     validate: {
       className: (value) =>
@@ -65,17 +74,24 @@ export const CreateClass: React.FC<props> = ({subjectsList}) => {
     },
   });
 
-  const handleClassRoomSubmit = (values: typeof classForm.values) => {
-    console.log("values", values);
+  const handleClassSubmit = (values: typeof classForm.values) => {
+    const filteredSyllabus = Object.entries(syllabus)
+      .filter(([_subject, { occurence }]) => occurence > 0)
+      .reduce(
+        (acc, [subject, syll]) => ({ ...acc, [subject]: syll }),
+        {}
+      );
+    values.syllabus = filteredSyllabus;
+    console.log("front end values", filteredSyllabus);
+
     startTransition(() => {
       action(values);
     });
   };
-  console.log("classroom state in editor", isPending, state);
 
   return (
     <Container size="md" my="xl">
-      <form onSubmit={classForm.onSubmit(handleClassRoomSubmit)}>
+      <form onSubmit={classForm.onSubmit(handleClassSubmit)}>
         <Stack>
           <TextInput
             label="Class Name"
@@ -90,28 +106,32 @@ export const CreateClass: React.FC<props> = ({subjectsList}) => {
           />
           add syllabus
           <Group mt="md">
-          {subjects.map((subject, index) => (
-        <Group key={index} mt="md">
-          <Select
-            label="Subject Name"
-            placeholder="Subject Name"
-            data={[
-              { value: 'Math', label: 'Math' },
-              { value: 'Science', label: 'Science' },
-              // Add more subjects here
-            ]}
-            value={subject.subjectName}
-            onChange={(value) => handleSubjectChange(index, 'subjectName', value)}
-          />
-          <NumberInput
-            label="Occurrence per week"
-            placeholder="Occurrence per week"
-            value={subject.occurrencePerWeek}
-            onChange={(value) => handleSubjectChange(index, 'occurrencePerWeek', value)}
-          />
-        </Group>
-      ))}
-      <Button onClick={handleAddSubject}>Add new subject</Button>
+            {subjectsList.map((subject, index) => (
+              <Group key={index} mt="md">
+                <div> {subject.label}</div>
+                <NumberInput
+                  label="Occurrence per week"
+                  placeholder="Occurrence per week"
+                  value={
+                    syllabus[subject.value as keyof SyllabusData]?.occurence ||
+                    0
+                  }
+                  onChange={(inputValue) =>
+                    handleSubjectChange(subject.value, inputValue, "occurence")
+                  }
+                />
+                <MultiSelect
+                  searchable
+                  clearable
+                  data={teachersList}
+                  label="Teacher"
+                  placeholder="Select teacher(s)"
+                  onChange={(inputValue) =>
+                    handleSubjectChange(subject.value, inputValue, "teachers")
+                  }
+                />
+              </Group>
+            ))}
           </Group>
           <Group mt="md">
             <Button disabled={isPending} type="submit">

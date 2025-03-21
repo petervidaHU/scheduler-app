@@ -5,13 +5,13 @@ import { FormActionType } from "@/types/FormActionType";
 
 export const createTeacher = async (
   state: FormActionType,
-  { name, email }: { name: string; email: string }
+  { teacherName, teacherEmail, description }: { teacherName: string; teacherEmail: string, description: string }
 ): Promise<FormActionType> => {
-  if (!email || !name) {
+  if (!teacherEmail || !teacherName) {
     return { success: false, error: "Email and name are required", data: null };
   }
   try {
-    const result = await db.createTeacher(name, email);
+    const result = await db.createTeacher(teacherName, teacherEmail, description);
     return { success: true, data: result, error: null };
   } catch (error) {
     console.error(`Error creating teacher: ${error}`);

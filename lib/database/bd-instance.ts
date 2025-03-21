@@ -1,7 +1,5 @@
-// lib/database/db-instance.ts
-
 import DatabaseService from "./db";
 
-const db = new DatabaseService();
+const db = await DatabaseService.getInstance();
 
 export default db;

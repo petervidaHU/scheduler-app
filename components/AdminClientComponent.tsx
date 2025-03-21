@@ -19,6 +19,9 @@ const AdminClientComponent = () => {
       <Button onClick={() => redirect("/my-tenancy/admin?new=subject")}>
         Create a New Subject
       </Button>
+      <Button onClick={() => redirect("/my-tenancy/admin?new=teacher")}>
+        Create a New Teacher
+      </Button>
     </>
   );
 };
