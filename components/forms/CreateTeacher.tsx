@@ -5,7 +5,7 @@ import { Container, TextInput, Button, Group, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { createTeacher } from "@/app/(tenancy)/_actions/createTeacher";
+import { createTeacher } from "@/app/[locale]/(tenancy)/_actions/createTeacher";
 
 const init: FormActionType = {
   error: null,

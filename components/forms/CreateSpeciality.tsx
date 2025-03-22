@@ -15,8 +15,8 @@ import {
 import { useForm } from "@mantine/form";
 import { FormActionType } from "@/types/FormActionType";
 import { Speciality } from "@/types/databaseTypes";
-import { createSpeciality } from "@/app/(tenancy)/_actions/createSpeciality";
 import { redirect } from "next/navigation";
+import { createSpeciality } from "@/app/[locale]/(tenancy)/_actions/createSpeciality";
 
 const init: FormActionType = {
   error: null,

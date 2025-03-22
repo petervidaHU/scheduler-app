@@ -1,0 +1,7 @@
+{
+    "dashboard": {
+        "message1": "Dashboard",
+        "message2": "wow it is the main page",
+        "message3": "hello it is fallback message"
+    }
+}

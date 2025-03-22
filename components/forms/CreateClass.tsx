@@ -18,8 +18,8 @@ import {
   SyllabusInputForm,
 } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { createClass } from "@/app/(tenancy)/_actions/createClass";
 import { ID } from "@/types/databaseTypes";
+import { createClass } from "@/app/[locale]/(tenancy)/_actions/createClass";
 
 const init: FormActionType = {
   error: null,

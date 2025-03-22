@@ -9,7 +9,8 @@ import { useDisclosure } from '@mantine/hooks';
 import { Button, Select } from '@mantine/core';
 import classes from './HeaderSearch.module.css';
 import { UserSession } from '@/types/UserTypes';
-import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { Link } from '@/lib/i18n/navigation';
 
 const links = [
   { link: '/my-tenancy', label: 'my tenancy' },
@@ -25,6 +26,11 @@ interface props {
 
 export const HeaderSearch: FC<props> = ({session, tenancies}) => {
   // console.log('tenancies in header', tenancies);
+  const t = useTranslations('dashboard');
+  const loc = useLocale();
+
+  console.log('i18n messages', t('message2'), 'locale in client side:', loc);
+
   const { update } = useSession();
   const [selectedTenancy, setSelectedTenancy] = useState<string>('');
   const { name, status } = session;

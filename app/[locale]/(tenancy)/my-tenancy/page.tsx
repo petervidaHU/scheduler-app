@@ -8,7 +8,7 @@ import { dataFetcherAll } from "./dashboarDataFetcher";
 import { TableData } from "@mantine/core";
 
 const tableDataMapper = (data: any[]): TableData => {
-  console.log('data in mapper', data)
+  // console.log('data in mapper', data)
   const head: string[] = Object.keys(data[0] || []);
   const body: any[] = data.map(row => Object.values(row));
   return {

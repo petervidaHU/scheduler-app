@@ -1,8 +1,7 @@
 "use client";
 
+import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Container, Group, Button } from "@mantine/core";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 const basePath='/my-tenancy'
 

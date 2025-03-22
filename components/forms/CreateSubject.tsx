@@ -13,9 +13,9 @@ import {
 import { useForm } from "@mantine/form";
 import { FormActionType } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { createClassRoom } from "@/app/(tenancy)/_actions/createClassRoom";
 import { Speciality } from "@/types/databaseTypes";
-import { createSubject } from "@/app/(tenancy)/_actions/createSubject";
+import { createSubject } from "@/app/[locale]/(tenancy)/_actions/createSubject";
+import { useLocale } from "next-intl";
 
 const init: FormActionType = {
   error: null,
@@ -28,6 +28,8 @@ interface props {
 }
 
 export const CreateSubject: React.FC<props> = ({specialities}) => {
+  const loc = useLocale();
+  console.log("locale in form", loc);
   const [ isPending, startTransition ] = useTransition();
   const [subjectState, subjectAction] = useActionState(createSubject, {
     ...init,

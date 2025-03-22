@@ -13,8 +13,8 @@ import {
 import { useForm } from "@mantine/form";
 import { FormActionType } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { createClassRoom } from "@/app/(tenancy)/_actions/createClassRoom";
 import { Speciality } from "@/types/databaseTypes";
+import { createClassRoom } from "@/app/[locale]/(tenancy)/_actions/createClassRoom";
 
 const init: FormActionType = {
   error: null,

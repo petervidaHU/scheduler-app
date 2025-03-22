@@ -17,8 +17,7 @@ import {
   Subject,
   Teacher,
 } from "@/types/databaseTypes";
-import { error } from "console";
-import { NormalizedSyllabus } from "@/app/(tenancy)/_actions/createClass";
+import { NormalizedSyllabus } from "@/app/[locale]/(tenancy)/_actions/createClass";
 
 interface ExtendedExecuteOptions extends ExecuteOptions {
   bindDefs?: {
@@ -523,7 +522,7 @@ class DatabaseService {
 
       console.log("classId", classId);
 
-      syllabus.forEach(([subjectId, occurrence, teacherId]) =>
+      syllabus.forEach(([subjectId, occurrence, teacherId]: any[]) =>
         this.createSyllabus(
           classId,
           subjectId,

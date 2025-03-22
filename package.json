@@ -16,6 +16,7 @@
     "bcryptjs": "^3.0.2",
     "next": "15.1.7",
     "next-auth": "beta",
+    "next-intl": "^4.0.2",
     "oracledb": "^6.7.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
