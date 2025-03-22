@@ -2,5 +2,9 @@
     "dashboard": {
         "message1": "intéző",
         "message2": "wow ez a kezdő oldal"
+    },
+    "pricing": {
+        "message1": "árazás",
+        "message2": "wow ez az árazá oldal"
     }
 }

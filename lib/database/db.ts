@@ -520,8 +520,6 @@ class DatabaseService {
         );
       }
 
-      console.log("classId", classId);
-
       syllabus.forEach(([subjectId, occurrence, teacherId]: any[]) =>
         this.createSyllabus(
           classId,

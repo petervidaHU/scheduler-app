@@ -47,12 +47,10 @@ export const CreateClassRoom: React.FC<props> = ({specialities}) => {
   });
 
   const handleClassRoomSubmit = (values: typeof classRoomForm.values) => {
-    console.log("values", values);
     startTransition(() => {
       crAction(values);
     });
   };
-  console.log("classroom state in editor", isPending, crState);
 
   return (
     <Container size="md" my="xl">

@@ -1,11 +1,10 @@
-import { getLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 
 export default async function PricingPage() {
-    const loc = await getLocale();
-    console.log("locale in server side pricing", loc);
+    const t = await getTranslations('pricing');
     return (
         <div>
-            <h1>Pricing</h1>
+            <h1>{t('message1')}</h1>
         </div>
     );
 }

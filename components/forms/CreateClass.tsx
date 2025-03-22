@@ -82,7 +82,6 @@ export const CreateClass: React.FC<props> = ({
         {}
       );
     values.syllabus = filteredSyllabus;
-    console.log("front end values", filteredSyllabus);
 
     startTransition(() => {
       action(values);

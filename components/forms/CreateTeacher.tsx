@@ -39,7 +39,6 @@ export const CreateTeacher = () => {
       action(values);
     });
   };
-  console.log("state", state);
 
   if (state.success === true) {
     teacherForm.reset();

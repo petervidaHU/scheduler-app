@@ -10,7 +10,6 @@ export default async function TenancyLayout({
   children: React.ReactNode;
 }) {
   const locale = await getLocale();
-  console.log('locale in tenancy layout', locale)
   let session: UserSession;
   try {
     session = await getAuth();

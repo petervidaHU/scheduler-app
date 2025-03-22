@@ -14,7 +14,6 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials: any) => {
-        // console.log('credentials in auth sign in::', credentials)
         try{
         const user = await db.getUserByEmail(credentials.email);
         const tenancies = await db.getTenanciesByUser(credentials.email);

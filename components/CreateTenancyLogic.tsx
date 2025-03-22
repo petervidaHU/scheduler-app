@@ -26,7 +26,6 @@ export default function CreateTenancyLogic() {
     }
 
     const isSignedIn = status === 'authenticated';
-    console.log('state in ui', isPending, state);
 
     return (<>
         {!isSignedIn ? (

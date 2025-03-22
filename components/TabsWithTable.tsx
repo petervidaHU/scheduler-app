@@ -42,7 +42,6 @@ const TabsWithTable: React.FC<Props> = ({ tabs }) => {
       </Tabs.Panel>
     );
   };
-  console.log("table data", tabs);
   return (
     <Tabs defaultValue={tabs[0].label}>
       {getList(tabs)}
