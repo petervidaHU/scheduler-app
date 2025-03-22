@@ -8,7 +8,6 @@ import HeaderWithSession from "@/components/HeaderWithSession";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import routing from "@/lib/i18n/routing";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,11 +32,8 @@ export default async function RootLayout({
   params:  Promise<{locale: string}>;
 }>) {
   const { locale } = await params;
-  console.log('locale in layout', locale)
   if (!hasLocale(routing.locales, locale)) {
     notFound();
-  } else {
-    setRequestLocale(locale);
   }
   return (
     <html lang={locale}>

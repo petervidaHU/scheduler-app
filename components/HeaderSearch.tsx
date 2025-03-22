@@ -1,7 +1,6 @@
 'use client'
 
 import { FC, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { IconSearch } from '@tabler/icons-react';
 import { Autocomplete, Burger, Group } from '@mantine/core';
@@ -10,7 +9,8 @@ import { Button, Select } from '@mantine/core';
 import classes from './HeaderSearch.module.css';
 import { UserSession } from '@/types/UserTypes';
 import { useLocale, useTranslations } from 'next-intl';
-import { Link } from '@/lib/i18n/navigation';
+import { Link, useRouter } from '@/lib/i18n/navigation';
+import LocaleSwitcher from './LocaleSwitcher';
 
 const links = [
   { link: '/my-tenancy', label: 'my tenancy' },
@@ -24,12 +24,17 @@ interface props {
   tenancies: any[],
 }
 
-export const HeaderSearch: FC<props> = ({session, tenancies}) => {
-  // console.log('tenancies in header', tenancies);
-  const t = useTranslations('dashboard');
-  const loc = useLocale();
+const languages = [
+  { code: 'en', name: 'English' },
+  { code: 'fr', name: 'Français' },
+  { code: 'es', name: 'Español' },
+];
 
-  console.log('i18n messages', t('message2'), 'locale in client side:', loc);
+
+export const HeaderSearch: FC<props> = ({session, tenancies}) => {
+  const t = useTranslations('dashboard');
+
+  // console.log('i18n messages', t('message2'), 'locale in client side:', locale);
 
   const { update } = useSession();
   const [selectedTenancy, setSelectedTenancy] = useState<string>('');
@@ -103,7 +108,7 @@ export const HeaderSearch: FC<props> = ({session, tenancies}) => {
           <Group ml={50} gap={5} className={classes.links} visibleFrom="sm">
             {items}
           </Group>
-         
+         <LocaleSwitcher />
          {/*} <Autocomplete
             className={classes.search}
             placeholder="Search"
