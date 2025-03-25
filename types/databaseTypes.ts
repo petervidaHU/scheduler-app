@@ -37,7 +37,7 @@ export interface ClassRoom {
     SPECIALITY_ID: ID;
 }
 
-export interface Class {
+export interface Classes {
     CLASS_ID: ID;
     CLASS_NAME: string;
     NUMBER_OF_STUDENTS: number;
