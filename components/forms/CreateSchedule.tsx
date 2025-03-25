@@ -7,6 +7,7 @@ import { FormActionType } from "@/types/FormActionType";
 import { useActionState, useTransition, useState } from "react";
 import { Classes, ClassRoom, Teacher } from "@/types/databaseTypes";
 import SchedulePlanner from "../SchedulePlanner";
+import { useStore } from "@/store/store";
 
 const init: FormActionType = {
   error: null,
@@ -25,6 +26,9 @@ interface props {
 const SchedulePage: React.FC<props> = ({
   data: { classRooms, teachers, classes },
 }) => {
+  const store = useStore();
+  //store.decreaseNumberOfDays();
+  console.log("store", store);
   const [ numberOfDays, setNumberOfDays] = useState(0);
   const [isPending, startTransition] = useTransition();
   const [sState, sAction] = useActionState(createSchedule, {
