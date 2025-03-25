@@ -187,6 +187,51 @@ class DatabaseService {
     const tenancy = await this.createTenancy("self-tenancy", email);
   }
 
+  async updateUser(
+    id: ID,
+    updateData: {
+      email?: string;
+      first_name?: string;
+      last_name?: string;
+      password_hash?: string;
+    }
+  ) {
+    const keys = Object.keys(updateData);
+    if (keys.length === 0) {
+      throw new Error("No data provided for update.");
+    }
+  
+    const setClauses: string[] = [];
+    const bindVariables: { [key: string]: any } = {};
+    const fieldOfUser = [
+      "email",
+      "first_name",
+      "last_name",
+      "password_hash",
+    ];
+
+    fieldOfUser.forEach((field) => {
+      if (updateData[field as keyof typeof updateData] !== undefined) {
+        setClauses.push(`${field} = :${field}`);
+        bindVariables[field] = updateData[field as keyof typeof updateData];
+      }
+    });
+   
+    const query = `
+      UPDATE users
+      SET ${setClauses.join(", ")}
+      WHERE user_id = :id
+    `;
+    bindVariables.id = id;
+  
+    const result = await this.executeCommand(query, bindVariables);
+    
+    if (result.rowsAffected === 0) {
+      throw new Error("User not found or no changes applied.");
+    }
+    return result;
+  }
+
   async getAllUsers(): Promise<User[]> {
     try {
       const query = `SELECT * FROM users`;

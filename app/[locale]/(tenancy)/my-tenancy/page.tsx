@@ -5,10 +5,10 @@ import db from "@/lib/database/bd-instance";
 import { Class, ClassRoom, Speciality, Subject, Teacher } from "@/types/databaseTypes";
 import TabsWithTable from "@/components/TabsWithTable";
 import { dataFetcherAll } from "./dashboarDataFetcher";
-import { TableData } from "@mantine/core";
+import { ActionIcon, TableData } from "@mantine/core";
+import { IconPencil } from "@tabler/icons-react";
 
 const tableDataMapper = (data: any[]): TableData => {
-  // console.log('data in mapper', data)
   const head: string[] = Object.keys(data[0] || []);
   const body: any[] = data.map(row => Object.values(row));
   return {

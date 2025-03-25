@@ -1,7 +1,7 @@
 "use server";
 
-import DatabaseService from "@/lib/database/db";
-import { getAuth } from "../api/auth/[...nextauth]/getAuth";
+import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
+import db from "@/lib/database/bd-instance";
 
 export const createTenancyAction = async (state: any, formData: FormData) => {
     const session = await getAuth();
@@ -15,7 +15,6 @@ export const createTenancyAction = async (state: any, formData: FormData) => {
         return {error: 'Logged in user not found', data: null};
     }
 
-    const databaseService = new DatabaseService();
-    const result = await databaseService.createTenancy(tenancyName, userEmail);
+    const result = await db.createTenancy(tenancyName, userEmail);
     return { data: result, error: null };
 }
