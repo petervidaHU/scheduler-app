@@ -10,12 +10,14 @@ import oracledb, {
 import path from "path";
 import { getRoleName } from "../utils";
 import {
-  Class,
+  Classes,
   ClassRoom,
+  GlobalTimeslot,
   ID,
   Speciality,
   Subject,
   Teacher,
+  Timeslots,
 } from "@/types/databaseTypes";
 import { NormalizedSyllabus } from "@/app/[locale]/(tenancy)/_actions/createClass";
 
@@ -411,6 +413,23 @@ class DatabaseService {
     }
   }
 
+  // ----------------- SLOTS ----------------------
+
+  async getBasicTimeSlots(global: GlobalTimeslot): Promise<Timeslots[]> {
+    const conn = await this.getConnection();
+    console.log('::::::::::::::::::::::::::::::', global)
+    const query = `SELECT * FROM TIMESLOT_TEMPLATE WHERE GLOBAL_TEMPLATE = :global AND TENANCY_ID IS NULL`; ;
+    try {
+      const result = await this.executeQuery(query, [global], conn);
+      return result as Timeslots[];
+    } catch (error) {
+      console.error(`Error getting timeslots: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
   // ----------------- SUBJECT-TEACHER -------------------
 
   async createSubject(
@@ -585,13 +604,13 @@ class DatabaseService {
     }
   }
 
-  async getAllClasses(): Promise<Class[]> {
+  async getAllClasses(): Promise<Classes[]> {
     const conn = await this.getConnection();
     const query = `SELECT * FROM classes WHERE tenancy_id = :tenancyId`;
     try {
       const tenancyId = await this.getTenancy();
       const result = await this.executeQuery(query, [tenancyId], conn);
-      return result as Class[];
+      return result as Classes[];
     } catch (error) {
       console.error(`Error getting classes: ${error}`);
       throw error;

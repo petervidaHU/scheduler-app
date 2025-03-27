@@ -2,11 +2,10 @@ import React from "react";
 import { NoRoleContent } from "./NoRoleContent";
 import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
 import db from "@/lib/database/bd-instance";
-import { Class, ClassRoom, Speciality, Subject, Teacher } from "@/types/databaseTypes";
+import { Classes, ClassRoom, Speciality, Subject, Teacher } from "@/types/databaseTypes";
 import TabsWithTable from "@/components/TabsWithTable";
 import { dataFetcherAll } from "./dashboarDataFetcher";
-import { ActionIcon, TableData } from "@mantine/core";
-import { IconPencil } from "@tabler/icons-react";
+import { TableData } from "@mantine/core";
 
 const tableDataMapper = (data: any[]): TableData => {
   const head: string[] = Object.keys(data[0] || []);
@@ -23,7 +22,7 @@ export default async function MyTenancyPage() {
   const [specialities, classRooms, classes, teachers, subjects] = await Promise.all([
     dataFetcherAll<Speciality>(db.getAllSpeciality),
     dataFetcherAll<ClassRoom>(db.getAllClassRooms),
-    dataFetcherAll<Class>(db.getAllClasses),
+    dataFetcherAll<Classes>(db.getAllClasses),
     dataFetcherAll<Teacher>(db.getAllTeachers),
     dataFetcherAll<Subject>(db.getAllSubjects),
   ])

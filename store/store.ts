@@ -1,25 +1,36 @@
-import { devtools, persist, createJSONStorage } from 'zustand/middleware';
-import { create } from 'zustand';
+import { devtools, persist, createJSONStorage } from "zustand/middleware";
+import { create } from "zustand";
+import { DayPlan } from "@/types/ScheduleTypes";
 
 interface ScheduleState {
-  numberOfDays: number;
-  days: any[];
-  increaseNumberOfDays: () => void;
-  decreaseNumberOfDays: () => void;
+  days: DayPlan[];
+  addDay: (payload: any) => void;
+  deleteLastDay: () => void;
+  deleteDay: (payload: any) => void;
+  updateDay: (payload: any) => void;
 }
 
 const createScheduleSlice = (set: any): ScheduleState => ({
-  numberOfDays: 0,
   days: [],
-  increaseNumberOfDays: () =>
+  addDay: (payload: DayPlan) =>
     set((state: ScheduleState) => ({
       ...state,
-      numberOfDays: state.numberOfDays + 1,
+      days: [...state.days, payload],
     })),
-  decreaseNumberOfDays: () =>
+  deleteLastDay: () =>
     set((state: ScheduleState) => ({
       ...state,
-      numberOfDays: state.numberOfDays - 1,
+      days: state.days.slice(0, state.days.length - 1),
+    })),
+  deleteDay: (payload: string) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      days: state.days.filter((day) => day.id !== payload),
+    })),
+  updateDay: (payload: DayPlan) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      days: [...state.days, payload],
     })),
 });
 
@@ -29,7 +40,7 @@ interface UserState {
 }
 
 const createUserSlice = (set: any): UserState => ({
-  name: '',
+  name: "",
   setName: (name: string) => set(() => ({ name })),
 });
 
@@ -43,10 +54,10 @@ export const useStore = create<AppState>()(
         ...createUserSlice(set),
       }),
       {
-        name: 'app-storage',
+        name: "app-storage",
         storage: createJSONStorage(() => localStorage),
       }
     ),
-    { name: 'AppStoreDevTools' }
+    { name: "AppStoreDevTools" }
   )
 );

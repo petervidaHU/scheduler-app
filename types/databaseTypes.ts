@@ -42,3 +42,13 @@ export interface Classes {
     CLASS_NAME: string;
     NUMBER_OF_STUDENTS: number;
 }
+
+export interface Timeslots {
+    TEMPLATE_ID: ID;
+    NAME: string;
+    PERIOD_START: string;
+    PERIOD_END: string;
+    TENANCY_ID: ID | null;
+}
+
+export type GlobalTimeslot= 'HUN1';

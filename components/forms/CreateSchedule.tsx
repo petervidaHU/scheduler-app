@@ -6,8 +6,8 @@ import { createSchedule } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_a
 import { FormActionType } from "@/types/FormActionType";
 import { useActionState, useTransition, useState } from "react";
 import { Classes, ClassRoom, Teacher } from "@/types/databaseTypes";
-import SchedulePlanner from "../SchedulePlanner";
 import { useStore } from "@/store/store";
+import { nanoid } from "nanoid";
 
 const init: FormActionType = {
   error: null,
@@ -26,10 +26,7 @@ interface props {
 const SchedulePage: React.FC<props> = ({
   data: { classRooms, teachers, classes },
 }) => {
-  const store = useStore();
-  //store.decreaseNumberOfDays();
-  console.log("store", store);
-  const [ numberOfDays, setNumberOfDays] = useState(0);
+  const { addDay } = useStore();
   const [isPending, startTransition] = useTransition();
   const [sState, sAction] = useActionState(createSchedule, {
     ...init,
@@ -42,17 +39,11 @@ const SchedulePage: React.FC<props> = ({
 
   const form = useForm({
     initialValues: {
-      days: 0,
       class: "",
-      variations: 0,
       description: "",
       owner: null,
-      weekly: false,
     },
     validate: {
-      days: (value) => (value < 0 ? "Days must be positive" : null),
-      variations: (value) =>
-        value <= 0 ? "Variations must be positive" : null,
       owner: (value) => (!value ? "Owner is required" : null),
     },
   });
@@ -66,19 +57,26 @@ const SchedulePage: React.FC<props> = ({
   const handleWeeklyCheckboxChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (event.target.checked) {
-      form.setFieldValue("days", 5);
-      form.setFieldValue("weekly", true);
-    } else {
-      form.setFieldValue("weekly", false);
+    // TODO: implement weekly plan
+    console.log('to be done')
+     };
+
+  const handleAddDay = (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    const newDay = {
+      id: nanoid(),
+      timeSlots: []
     }
-  };
+    addDay(newDay)
+     };
+
   console.log(sState);
 
   return (<>
     <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
       <Checkbox label="weekly schedule" name="weekly" onChange={handleWeeklyCheckboxChange} />
-      <Button onClick={() => setNumberOfDays(prev => prev + 1)}>add day</Button>
+      <Button onClick={handleAddDay}>add day</Button>
      
       <Select
         label="Class"
@@ -98,11 +96,7 @@ const SchedulePage: React.FC<props> = ({
       />
       <Button type="submit">Create Schedule</Button>
     </form>
-    <SchedulePlanner 
-    numberOfDays={numberOfDays}
-    setter={(e:any) => {console.log('setter?', e)}}
     
-    />
     </>
   );
 };
