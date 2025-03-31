@@ -8,6 +8,7 @@ import HeaderWithSession from "@/components/HeaderWithSession";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import routing from "@/lib/i18n/routing";
 import { notFound } from "next/navigation";
+import { ModalProvider } from "@/components/ModalProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,8 +48,10 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <MantineProvider defaultColorScheme="auto" theme={theme}>
           <NextIntlClientProvider>
+          <ModalProvider>
             <HeaderWithSession />
             {children}
+          </ModalProvider>
           </NextIntlClientProvider>
         </MantineProvider>
       </body>

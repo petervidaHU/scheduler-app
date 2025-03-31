@@ -18,7 +18,7 @@ const SchedulePlanner: React.FC<props> = ({ basicTimeslots }) => {
       return (
         <>
           <div
-            onClick={() => console.log("hour", hour, id)}
+            // onClick={() => console.log("hour", hour, id)}
             key={hour}
             style={{
               position: "absolute",

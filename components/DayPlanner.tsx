@@ -5,6 +5,7 @@ import { Text } from "@mantine/core";
 import { DayPlan } from "@/types/ScheduleTypes";
 import { Timeslots } from "@/types/databaseTypes";
 import { useStore } from "@/store/store";
+import { useModal } from "./ModalProvider";
 
 interface DayPlannerProps {
   day: DayPlan;
@@ -12,12 +13,17 @@ interface DayPlannerProps {
 }
 
 const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
+  const { openModal } = useModal();
   const { windowHeight } = useStore();
   // console.log("slotTemplates", slotTemplates);
 
   const minutes = (d: string) => {
     const date = new Date(d);
     return date.getHours() * 60 + date.getMinutes();
+  };
+  const handleOpenModal = (slot: Timeslots) => {
+    console.log("slot", slot);
+    openModal(<div>This is a globally accessible modal!{JSON.stringify(slot)}</div>);
   };
 
   return (
@@ -30,7 +36,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
           ((endMinutes - startMinutes) / windowHeight) * windowHeight;
         return (
           <div
-            onClick={() => console.log("slot", slot)}
+            onClick={() => handleOpenModal(slot)}
             key={slot.TEMPLATE_ID}
             style={{
               position: "absolute",
@@ -43,6 +49,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
               borderRadius: "4px",
               padding: "2px 4px",
               boxSizing: "border-box",
+              zIndex: 100,
             }}
           >
             <Text size="xs">{slot.NAME}</Text>
