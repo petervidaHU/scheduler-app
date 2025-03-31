@@ -5,4 +5,5 @@ export interface DayPlan {
     order: string;
     identifier: string;
     timeSlots: Timeslots[];
+     
 }

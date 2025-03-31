@@ -18,3 +18,12 @@ export interface SyllabusInputForm {
     teachers: ID[];
     subject: ID;
 }
+
+export interface LessonInput {
+    timeslot: ID;
+    day: ID;
+    teacher: ID;
+    classroom: ID | null;
+    subject: ID;
+    classId: ID;
+}

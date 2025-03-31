@@ -3,6 +3,7 @@ import { Speciality, ClassRoom, Classes, Teacher, Timeslots } from "@/types/data
 import { dataFetcherAll } from "../dashboarDataFetcher";
 import CreateSchedule from "@/components/forms/CreateSchedule";
 import SchedulePlanner from "@/components/SchedulePlanner";
+import SyllabusTable from "@/components/forms/SyllabusTable";
 
 export default async function SchedulesPage() {
     const [specialities, classRooms, classes, teachers, timeslots] = await Promise.all([
@@ -31,6 +32,7 @@ export default async function SchedulesPage() {
                 classes: classes.data,
                 teachers: teachers.data
             }}/>
+            <SyllabusTable />
             <SchedulePlanner basicTimeslots={timeslots.data}/>
         </div>
     );

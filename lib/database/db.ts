@@ -14,12 +14,15 @@ import {
   ClassRoom,
   GlobalTimeslot,
   ID,
+  Lesson,
   Speciality,
   Subject,
+  Syllabus,
   Teacher,
   Timeslots,
 } from "@/types/databaseTypes";
 import { NormalizedSyllabus } from "@/app/[locale]/(tenancy)/_actions/createClass";
+import { LessonInput } from "@/types/FormActionType";
 
 interface ExtendedExecuteOptions extends ExecuteOptions {
   bindDefs?: {
@@ -549,6 +552,45 @@ class DatabaseService {
       throw error;
     } finally {
       if (!commonConn) await conn.close();
+    }
+  }
+
+  async getSyllabus(classId: ID): Promise<Syllabus[]> {
+    const conn = await this.getConnection();
+    const tenancyId = await this.getTenancy();
+    const query = `SELECT * FROM syllabus WHERE tenancy_id = :tenancyId AND class_id = :classId`;
+    try {
+      const result = await this.executeQuery(query, [tenancyId, classId], conn);
+      return result as Syllabus[];
+    } catch (error) {
+      console.error(`Error getting syllabus: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  // ----------------- LESSON -------------------
+
+  async createLesson(lesson: LessonInput): Promise<void> {
+    const conn = await this.getConnection();
+    const query = `INSERT INTO lessons (timeslot_id, teacher_id, classroom_id, subject_id, class_id, tenancy_id) VALUES (:timeslotId, :teacherId, :classroomId, :subjectId, :classId, :tenancyId)`;
+    try {
+      const tenancyId = await this.getTenancy();
+      const bindVariables = [
+        lesson.timeslot,
+        lesson.teacher,
+        lesson.classId,
+        lesson.day,
+        lesson.classroom,
+        tenancyId,
+      ];
+      await this.executeCommand(query, bindVariables, false, conn);
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.close();
     }
   }
 

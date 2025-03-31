@@ -8,10 +8,13 @@ interface ScheduleState {
   deleteLastDay: () => void;
   deleteDay: (payload: any) => void;
   updateDay: (payload: any) => void;
+  syllabus: any;
+  updateSyllabus: (payload: any) => void;
 }
 
 const createScheduleSlice = (set: any): ScheduleState => ({
   days: [],
+  syllabus: {},
   addDay: (payload: DayPlan) =>
     set((state: ScheduleState) => ({
       ...state,
@@ -32,26 +35,31 @@ const createScheduleSlice = (set: any): ScheduleState => ({
       ...state,
       days: [...state.days, payload],
     })),
+  updateSyllabus: (payload: any) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      syllabus: payload,
+    })),
 });
 
-interface UserState {
-  name: string;
-  setName: (name: string) => void;
+interface scheduleGeneralState {
+  windowHeight: number;
+  setWindowHeight: (h: number) => void;
 }
 
-const createUserSlice = (set: any): UserState => ({
-  name: "",
-  setName: (name: string) => set(() => ({ name })),
+const scheduleGeneralSlice = (set: any): scheduleGeneralState => ({
+  windowHeight: 1440,
+  setWindowHeight: (h: number) => set(() => ({ windowHeight: h })),
 });
 
-type AppState = ScheduleState & UserState;
+type AppState = ScheduleState & scheduleGeneralState;
 
 export const useStore = create<AppState>()(
   devtools(
     persist(
       (set, get) => ({
         ...createScheduleSlice(set),
-        ...createUserSlice(set),
+        ...scheduleGeneralSlice(set),
       }),
       {
         name: "app-storage",

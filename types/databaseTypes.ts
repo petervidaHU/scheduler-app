@@ -51,4 +51,23 @@ export interface Timeslots {
     TENANCY_ID: ID | null;
 }
 
+export interface Lesson {
+    TIMESLOT_ID: ID;
+    TENANCY_ID: ID;
+    TEACHER_ID: ID;
+    SUBJECT_ID: ID;
+    CLASS_ID: ID;
+    CLASSROOM_ID: ID;
+    TEMPLATE_ID: ID;
+}
+
+export interface Syllabus {
+    SYLLABUS_ID: ID;
+    CLASS_ID: ID;
+    SUBJECT_ID: ID;
+    TEACHER_ID: ID | null;
+    TENANCY_ID: ID;
+    OCCURRENCE: number;
+}
+
 export type GlobalTimeslot= 'HUN1';
