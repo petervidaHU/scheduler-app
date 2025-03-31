@@ -1,5 +1,4 @@
 import db from "@/lib/database/bd-instance";
-import { ID, Timeslots } from "@/types/databaseTypes";
 import { LessonInput } from "@/types/FormActionType";
 
 export const createLesson = (props: LessonInput) => {

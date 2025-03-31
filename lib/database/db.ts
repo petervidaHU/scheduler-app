@@ -592,7 +592,7 @@ class DatabaseService {
     } finally {
       await conn.close();
     }
-  }
+  } 
 
   // ----------------- CLASS-CLASSROOM -------------------
   async createClass(
