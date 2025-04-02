@@ -6,6 +6,7 @@ import { DayPlan } from "@/types/ScheduleTypes";
 import { Timeslots } from "@/types/databaseTypes";
 import { useStore } from "@/store/store";
 import { useModal } from "./ModalProvider";
+import CreateLessonModal from "./modals/CreateLessonModal";
 
 interface DayPlannerProps {
   day: DayPlan;
@@ -23,7 +24,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
   };
   const handleOpenModal = (slot: Timeslots) => {
     console.log("slot", slot);
-    openModal(<div>This is a globally accessible modal!{JSON.stringify(slot)}</div>);
+    openModal(<CreateLessonModal slot={slot} />);
   };
 
   return (

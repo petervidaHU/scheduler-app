@@ -1,7 +1,7 @@
 "use server";
 
 import db from "@/lib/database/bd-instance";
-import { ID } from "@/types/databaseTypes";
+import { ID, Syllabus } from "@/types/databaseTypes";
 
 export const getSyllabusAction = async (classId: ID) => {
   try {

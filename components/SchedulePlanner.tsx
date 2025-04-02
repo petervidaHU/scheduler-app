@@ -3,8 +3,9 @@
 import React from "react";
 import DayPlanner from "./DayPlanner";
 import { useStore } from "@/store/store";
-import { ActionIcon, Flex, Grid, Group, Table } from "@mantine/core";
+import { ActionIcon, Flex, Grid } from "@mantine/core";
 import { Timeslots } from "@/types/databaseTypes";
+
 interface props {
   basicTimeslots: Timeslots[];
 }
@@ -18,7 +19,6 @@ const SchedulePlanner: React.FC<props> = ({ basicTimeslots }) => {
       return (
         <>
           <div
-            // onClick={() => console.log("hour", hour, id)}
             key={hour}
             style={{
               position: "absolute",
@@ -77,7 +77,11 @@ const SchedulePlanner: React.FC<props> = ({ basicTimeslots }) => {
                 }}
               >
                 <ActionIcon>use regular plan</ActionIcon>
-                <ActionIcon onClick={() => useStore.getState().deleteDay(day.id)}>remove day</ActionIcon>
+                <ActionIcon
+                  onClick={() => useStore.getState().deleteDay(day.id)}
+                >
+                  remove day
+                </ActionIcon>
                 {day.identifier || day.id}
               </Flex>
               <div

@@ -1,6 +1,8 @@
 import { devtools, persist, createJSONStorage } from "zustand/middleware";
 import { create } from "zustand";
-import { DayPlan } from "@/types/ScheduleTypes";
+import { DayPlan, SyllabusForm } from "@/types/ScheduleTypes";
+import { Syllabus } from "@/types/databaseTypes";
+import { SelectOptions } from "@/types/FormActionType";
 
 interface ScheduleState {
   days: DayPlan[];
@@ -8,13 +10,24 @@ interface ScheduleState {
   deleteLastDay: () => void;
   deleteDay: (payload: any) => void;
   updateDay: (payload: any) => void;
-  syllabus: any;
+  syllabus: SyllabusForm;
   updateSyllabus: (payload: any) => void;
+  subjectOptions: SelectOptions[];
+  teacherOptions: SelectOptions[];
+  classRoomOptions: SelectOptions[];
+  updateSubjectOptions: (payload: any) => void;
+  updateTeacherOptions: (payload: any) => void;
+  updateClassRoomOptions: (payload: any) => void;
 }
 
 const createScheduleSlice = (set: any): ScheduleState => ({
   days: [],
-  syllabus: {},
+  subjectOptions: [],
+  teacherOptions: [],
+  classRoomOptions: [],
+  syllabus: {
+    subjects: [],
+  },
   addDay: (payload: DayPlan) =>
     set((state: ScheduleState) => ({
       ...state,
@@ -39,6 +52,21 @@ const createScheduleSlice = (set: any): ScheduleState => ({
     set((state: ScheduleState) => ({
       ...state,
       syllabus: payload,
+    })),
+  updateSubjectOptions: (payload: any) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      subjectOptions: payload,
+    })),
+  updateTeacherOptions: (payload: any) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      teacherOptions: payload,
+    })),
+  updateClassRoomOptions: (payload: any) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      classRoomOptions: payload,
     })),
 });
 

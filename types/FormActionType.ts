@@ -14,7 +14,7 @@ export interface SelectOptions {
 }
 
 export interface SyllabusInputForm {
-    occurence: number;
+    occurrence: number;
     teachers: ID[];
     subject: ID;
 }

@@ -1,10 +1,9 @@
-// ModalProvider.jsx
 "use client";
 
+import { Button } from "@mantine/core";
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 
-// Create a context to manage modal state
 const ModalContext = createContext({openModal: (content: React.ReactNode) => {}, closeModal: () => {}});
 
 export function ModalProvider({ children }: { children: React.ReactNode }) {
@@ -32,19 +31,17 @@ function Modal({ children, onClose }: { children: React.ReactNode, onClose: () =
     <div className="modal-overlay" style={overlayStyles}>
       <div className="modal-content" style={modalStyles}>
         {children}
-        <button onClick={onClose} style={buttonStyles}>Close</button>
+        <Button onClick={onClose} style={buttonStyles}>Close</Button>
       </div>
     </div>,
     document.body
   );
 }
 
-// Hook to use modal context in any component
 export function useModal() {
   return useContext(ModalContext);
 }
 
-// Some basic inline styles for demonstration
 const overlayStyles:  React.CSSProperties = {
   position: "fixed",
   top: 0,
@@ -54,6 +51,7 @@ const overlayStyles:  React.CSSProperties = {
   background: "rgba(0,0,0,0.5)",
   display: "flex",
   alignItems: "center",
+  zIndex: 200,
   justifyContent: "center"
 };
 
@@ -62,7 +60,8 @@ const modalStyles = {
   padding: "2rem",
   borderRadius: "8px",
   maxWidth: "500px",
-  width: "100%"
+  width: "100%",
+  color: "black",
 };
 
 const buttonStyles = {

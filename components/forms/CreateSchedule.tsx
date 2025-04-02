@@ -3,12 +3,26 @@
 import { useForm } from "@mantine/form";
 import { NumberInput, Select, Textarea, Button, Checkbox } from "@mantine/core";
 import { createSchedule } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
-import { FormActionType } from "@/types/FormActionType";
-import { useActionState, useTransition, useState } from "react";
-import { Classes, ClassRoom, Teacher } from "@/types/databaseTypes";
+import { FormActionType, SelectOptions } from "@/types/FormActionType";
+import {
+  useActionState,
+  useTransition,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
+import {
+  Classes,
+  ClassRoom,
+  Speciality,
+  Subject,
+  Syllabus,
+  Teacher,
+} from "@/types/databaseTypes";
 import { useStore } from "@/store/store";
 import { nanoid } from "nanoid";
 import { getSyllabusAction } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getSyllabusAction";
+import { SyllabusForm } from "@/types/ScheduleTypes";
 
 const init: FormActionType = {
   error: null,
@@ -21,17 +35,54 @@ interface props {
     classRooms: ClassRoom[];
     teachers: Teacher[];
     classes: Classes[];
+    subjects: Subject[];
+    specialities: Speciality[];
+    classRoomOptions: SelectOptions[];
+    teacherOptions: SelectOptions[];
+    subjectOptions: SelectOptions[];
   };
 }
 
 const SchedulePage: React.FC<props> = ({
-  data: { classRooms, teachers, classes },
+  data: {
+    classRooms,
+    teachers,
+    classes,
+    subjects,
+    specialities,
+    subjectOptions,
+    teacherOptions,
+    classRoomOptions,
+  },
 }) => {
-  const { addDay, updateSyllabus } = useStore();
+  const {
+    addDay,
+    updateSyllabus,
+    updateClassRoomOptions,
+    updateSubjectOptions,
+    updateTeacherOptions,
+  } = useStore();
   const [isPending, startTransition] = useTransition();
   const [sState, sAction] = useActionState(createSchedule, {
     ...init,
   });
+
+  const updateStore = useCallback(() => {
+    updateClassRoomOptions(classRoomOptions);
+    updateSubjectOptions(subjectOptions);
+    updateTeacherOptions(teacherOptions);
+  }, [
+    classRoomOptions,
+    subjectOptions,
+    teacherOptions,
+    updateClassRoomOptions,
+    updateSubjectOptions,
+    updateTeacherOptions,
+  ]);
+
+  useMemo(() => {
+    updateStore();
+  }, [updateStore]);
 
   const classOptions = classes.map((c) => ({
     value: c.CLASS_ID.toString(),
@@ -51,7 +102,47 @@ const SchedulePage: React.FC<props> = ({
       if (values.class !== form.values.class && values.class !== "") {
         const newSyllabus = await getSyllabusAction(values.class);
         console.log("change", newSyllabus);
-        updateSyllabus(newSyllabus);
+
+        if (!newSyllabus) {
+          return;
+        }
+// TODO migrate it to backend
+        const syllabusMapping = (syllabus: Syllabus[]): SyllabusForm => {
+          const subjectsMapped = syllabus.map((item) => {
+            const subjectLabel = subjects.find(
+              (subject) => subject.SUBJECT_ID === item.SUBJECT_ID
+            )?.SUBJECT_NAME;
+            const teacherLabel = teachers.find(
+              (teacher) => teacher.TEACHER_ID === item.TEACHER_ID
+            )?.TEACHER_NAME;
+            const subjectSpecialityId =
+              subjects
+                .find((subject) => subject.SUBJECT_ID === item.SUBJECT_ID)
+                ?.SPECIALITY_ID?.toString() || "";
+            const subjectSpeciality = subjectSpecialityId
+              ? specialities.find(
+                  (speciality) =>
+                    speciality.SPECIALTY_ID === subjectSpecialityId
+                )?.SPECIALTY_NAME
+              : null;
+
+            return {
+              value: item.SUBJECT_ID.toString(),
+              label: subjectLabel || "",
+              preferredTeacher: teacherLabel && item.TEACHER_ID
+                ? { label: teacherLabel, value: item.TEACHER_ID?.toString() }
+                : null,
+              occurrence: item.OCCURRENCE,
+              speciality: subjectSpeciality
+                ? { label: subjectSpeciality, value: subjectSpecialityId }
+                : null,
+            };
+          });
+
+          return { subjects: subjectsMapped };
+        };
+
+        updateSyllabus(syllabusMapping(newSyllabus));
       }
     },
   });

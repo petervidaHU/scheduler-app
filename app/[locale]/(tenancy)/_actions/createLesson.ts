@@ -1,7 +1,9 @@
-import db from "@/lib/database/bd-instance";
-import { LessonInput } from "@/types/FormActionType";
+"use server";
 
-export const createLesson = (props: LessonInput) => {
+import db from "@/lib/database/bd-instance";
+import { FormActionType, LessonInput } from "@/types/FormActionType";
+
+export const createLesson = async (state: FormActionType, props: LessonInput): Promise<FormActionType>  => {
     const {
         timeslot,
         teacher,
@@ -10,10 +12,18 @@ export const createLesson = (props: LessonInput) => {
         classId,
         day, 
     } = props;
-    if (timeslot && teacher && classroom && subject && classId && day) {
-        return "error input";
+    if (!timeslot || !teacher || !classroom || !subject || !classId || !day) {
+        return {
+            ...state,
+            error: "All fields are required",
+
+        };
     }
     const result = db.createLesson(props)
 
-    return {};
+    return {
+        ...state,
+        success: true,
+        error: null,
+    };
 };
