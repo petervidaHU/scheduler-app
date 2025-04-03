@@ -9,6 +9,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import routing from "@/lib/i18n/routing";
 import { notFound } from "next/navigation";
 import { ModalProvider } from "@/components/ModalProvider";
+import ToastContainer from "@/components/toast/Toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +52,7 @@ export default async function RootLayout({
           <ModalProvider>
             <HeaderWithSession />
             {children}
+            <ToastContainer />
           </ModalProvider>
           </NextIntlClientProvider>
         </MantineProvider>

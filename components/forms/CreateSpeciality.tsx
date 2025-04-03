@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useTransition, useActionState } from "react";
+import React, { useTransition, useActionState, use, useEffect } from "react";
 import {
   Container,
   Title,
@@ -17,6 +17,7 @@ import { FormActionType } from "@/types/FormActionType";
 import { Speciality } from "@/types/databaseTypes";
 import { redirect } from "next/navigation";
 import { manageSpeciality } from "@/app/[locale]/(tenancy)/_actions/manageSpeciality";
+import { useStore } from "@/store/store";
 
 const init: FormActionType = {
   error: null,
@@ -25,11 +26,12 @@ const init: FormActionType = {
 };
 
 interface props {
-  entity?: Speciality
+  entity?: Speciality;
 }
 
-export const CreateSpeciality: React.FC<props> = ({entity}) => {
-  console.log("entity", entity)
+export const CreateSpeciality: React.FC<props> = ({ entity }) => {
+  // console.log("entity", entity)
+  const { addToast } = useStore();
   const [isPending, startTransition] = useTransition();
   const [specialityState, specialityAction] = useActionState(manageSpeciality, {
     ...init,
@@ -38,7 +40,7 @@ export const CreateSpeciality: React.FC<props> = ({entity}) => {
   const specialityForm = useForm({
     initialValues: {
       id: entity?.SPECIALTY_ID || null,
-      specialityName: entity?.SPECIALTY_NAME ||"",
+      specialityName: entity?.SPECIALTY_NAME || "",
       description: entity?.DESCRIPTION || "",
     },
     validate: {
@@ -53,8 +55,35 @@ export const CreateSpeciality: React.FC<props> = ({entity}) => {
     });
   };
 
+  useEffect(() => {
+    if (specialityState.success === true) {
+      specialityForm.reset();
+      specialityState.success = false;
+      const toastMessage = entity?.SPECIALTY_ID
+        ? "Speciality updated successfully"
+        : "Speciality created successfully";
+
+      addToast({
+        message: toastMessage,
+        title: "Success",
+        type: "success",
+        autoClose: true,
+        id: Date.now().toString(),
+      });
+    } else if (specialityState.error) {
+      addToast({
+        message: specialityState.error.message || "Something went wrong",
+        title: "Error",
+        type: "error",
+        autoClose: true,
+        id: Date.now().toString(),
+      });
+    }
+  }, [specialityState]);
+
   return (
     <Container size="md" my="xl">
+      {JSON.stringify(specialityState)}
       <form onSubmit={specialityForm.onSubmit(handleSpecialityFormSubmit)}>
         <Stack>
           <TextInput
@@ -70,7 +99,9 @@ export const CreateSpeciality: React.FC<props> = ({entity}) => {
             required
           />
           <Group mt="md">
-            <Button disabled={isPending} type="submit">Create speciality</Button>
+            <Button disabled={isPending} type="submit">
+              {entity ? "Update speciality" : "Create speciality"}
+            </Button>
           </Group>
         </Stack>
       </form>

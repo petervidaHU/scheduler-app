@@ -1,5 +1,6 @@
 import Image from "next/image";
 import styles from "../page.module.css";
+import ToastContainer from "@/components/toast/Toast";
 
 export default function Home() {
 
@@ -16,6 +17,7 @@ export default function Home() {
         <footer className={styles.footer}>
 
         </footer>
+       
       </div>
 
   );

@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { DayPlan, SyllabusForm } from "@/types/ScheduleTypes";
 import { Syllabus } from "@/types/databaseTypes";
 import { SelectOptions } from "@/types/FormActionType";
+import { Toast } from "@/types/toastTypes";
 
 interface ScheduleState {
   days: DayPlan[];
@@ -75,7 +76,27 @@ const scheduleGeneralSlice = (set: any): scheduleGeneralState => ({
   setWindowHeight: (h: number) => set(() => ({ windowHeight: h })),
 });
 
-type AppState = ScheduleState & scheduleGeneralState;
+interface ToastState {
+  toast: Toast[];
+  addToast: (payload: Toast) => void;
+  removeToast: (payload: string) => void;  
+}
+
+const toastSlice = (set: any): ToastState => ({
+  toast: [],
+  addToast: (payload: any) =>
+    set((state: ToastState) => ({
+      ...state,
+      toast: [...state.toast, payload],
+    })),
+  removeToast: (payload: any) =>
+    set((state: ToastState) => ({
+      ...state,
+      toast: state.toast.filter((toast) => toast.id !== payload),
+    })),
+})
+
+type AppState = ScheduleState & scheduleGeneralState & ToastState;
 
 export const useStore = create<AppState>()(
   devtools(
@@ -83,6 +104,7 @@ export const useStore = create<AppState>()(
       (set, get) => ({
         ...createScheduleSlice(set),
         ...scheduleGeneralSlice(set),
+        ...toastSlice(set),
       }),
       {
         name: "app-storage",
