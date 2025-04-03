@@ -394,7 +394,6 @@ class DatabaseService {
     const tenancyId = await this.getTenancy();
     const query = `UPDATE specialties SET specialty_name = :name, description = :description WHERE specialty_id = :id AND (tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
     try {
-      throw new Error("Not implemented");
       const bindVariables = [name, desc, id, tenancyId];
       await this.executeCommand(query, bindVariables, true, conn);
     } catch (error) {

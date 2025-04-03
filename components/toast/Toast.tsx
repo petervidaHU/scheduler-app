@@ -18,20 +18,6 @@ const overlayStyles = {
   justifyContent: "center",
 };
 
-const modalStyles = {
-  background: "#fff",
-  padding: "2rem",
-  borderRadius: "8px",
-  maxWidth: "500px",
-  width: "100%",
-  color: "black",
-};
-
-const buttonStyles = {
-  marginTop: "1rem",
-  padding: "0.5rem 1rem",
-};
-
 const toastIcons = {
   success: { icon: <IconCheck size={20} />, color: "teal" },
   error: { icon: <IconX size={20} />, color: "red" },
@@ -60,10 +46,9 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, removeToast }) => {
 
 function ToastContainer() {
   const { toast, removeToast } = useStore();
-  console.log("rtoast in container: ", toast);
 
   return createPortal(
-    <div>
+    <div style={overlayStyles}>
       {toast.map((toast) => (
         <ToastComponent
           key={toast.id}
