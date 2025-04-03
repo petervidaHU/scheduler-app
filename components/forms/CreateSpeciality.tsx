@@ -16,7 +16,7 @@ import { useForm } from "@mantine/form";
 import { FormActionType } from "@/types/FormActionType";
 import { Speciality } from "@/types/databaseTypes";
 import { redirect } from "next/navigation";
-import { createSpeciality } from "@/app/[locale]/(tenancy)/_actions/createSpeciality";
+import { manageSpeciality } from "@/app/[locale]/(tenancy)/_actions/manageSpeciality";
 
 const init: FormActionType = {
   error: null,
@@ -24,16 +24,22 @@ const init: FormActionType = {
   success: false,
 };
 
-export const CreateSpeciality = () => {
+interface props {
+  entity?: Speciality
+}
+
+export const CreateSpeciality: React.FC<props> = ({entity}) => {
+  console.log("entity", entity)
   const [isPending, startTransition] = useTransition();
-  const [specialityState, specialityAction] = useActionState(createSpeciality, {
+  const [specialityState, specialityAction] = useActionState(manageSpeciality, {
     ...init,
   });
 
   const specialityForm = useForm({
     initialValues: {
-      specialityName: "",
-      description: "",
+      id: entity?.SPECIALTY_ID || null,
+      specialityName: entity?.SPECIALTY_NAME ||"",
+      description: entity?.DESCRIPTION || "",
     },
     validate: {
       specialityName: (value) =>

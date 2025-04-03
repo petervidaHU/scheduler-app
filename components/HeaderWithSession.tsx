@@ -1,7 +1,7 @@
 import SessionWrapper from "@/app/[locale]/SessionWrapper";
 import { HeaderSearch } from "./HeaderSearch";
 import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
-import db from "@/lib/database/bd-instance";
+import db from "@/lib/database/db-instance";
 
 export default async function HeaderWithSession() {
   const session = await getAuth();

@@ -1,4 +1,4 @@
-import db from "@/lib/database/bd-instance";
+import db from "@/lib/database/db-instance";
 import {
   Speciality,
   ClassRoom,

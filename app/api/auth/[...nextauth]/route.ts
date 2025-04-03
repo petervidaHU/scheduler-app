@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { verifyPassword } from "../../../../lib/utils";
-import db from "@/lib/database/bd-instance";
+import db from "@/lib/database/db-instance";
 
 export const authOptions = {
   debug: true,

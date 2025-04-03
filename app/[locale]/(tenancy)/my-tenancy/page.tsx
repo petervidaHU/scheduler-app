@@ -1,11 +1,12 @@
 import React from "react";
 import { NoRoleContent } from "./NoRoleContent";
 import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
-import db from "@/lib/database/bd-instance";
+import db from "@/lib/database/db-instance";
 import { Classes, ClassRoom, Speciality, Subject, Teacher } from "@/types/databaseTypes";
 import TabsWithTable from "@/components/TabsWithTable";
 import { dataFetcherAll } from "./dashboarDataFetcher";
 import { TableData } from "@mantine/core";
+import { Entities } from "@/types/Entities";
 
 const tableDataMapper = (data: any[]): TableData => {
   const head: string[] = Object.keys(data[0] || []);
@@ -30,27 +31,27 @@ export default async function MyTenancyPage() {
 
   const tabsData = [
     {
-      label: "specialities",
+      label: Entities.speciality,
       error: specialities.error,
       data: tableDataMapper(specialities.data),
     },
     {
-      label: "classRooms",
+      label: Entities.classroom,
       error: classRooms.error,
       data: tableDataMapper(classRooms.data),
     },
     {
-      label: "classes",
+      label: Entities.class,
       error: classes.error,
       data: tableDataMapper(classes.data),
     },
     {
-      label: "teachers",
+      label: Entities.teacher,
       error: teachers.error,
       data: tableDataMapper(teachers.data),
     },
     {
-      label: "subjects",
+      label: Entities.subject,
       error: subjects.error,
       data: tableDataMapper(subjects.data),
     }, 

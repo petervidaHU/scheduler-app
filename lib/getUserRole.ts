@@ -2,7 +2,7 @@
 
 import { cache } from "react";
 import { Roles } from "@/types/UserTypes";
-import db from "@/lib/database/bd-instance";
+import db from "@/lib/database/db-instance";
 
 export const getUserRole = cache(async function getUserRole(
   userId: string,

@@ -1,7 +1,7 @@
 "use server";
 
 import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
-import db from "@/lib/database/bd-instance";
+import db from "@/lib/database/db-instance";
 
 export const createTenancyAction = async (state: any, formData: FormData) => {
     const session = await getAuth();

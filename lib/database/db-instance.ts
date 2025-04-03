@@ -1,5 +1,5 @@
 import DatabaseService from "./db";
 
-const db = await DatabaseService.getInstance();
+const db = new DatabaseService();
 
 export default db;

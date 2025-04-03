@@ -1,6 +1,6 @@
 "use server";
 
-import db from "@/lib/database/bd-instance";
+import db from "@/lib/database/db-instance";
 import { FormActionType, LessonInput } from "@/types/FormActionType";
 
 export const createLesson = async (state: FormActionType, props: LessonInput): Promise<FormActionType>  => {

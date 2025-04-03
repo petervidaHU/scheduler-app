@@ -4,15 +4,16 @@ import { redirect } from "next/navigation";
 import CreateSpeciality from "@/components/forms/CreateSpeciality";
 import AdminClientComponent from "@/components/AdminClientComponent";
 import CreateClassRoom from "@/components/forms/CreateClassRoom";
-import { Class, ClassRoom, Speciality, Subject } from "@/types/databaseTypes";
-import db from "@/lib/database/bd-instance";
+import { Speciality, Subject } from "@/types/databaseTypes";
+import db from "@/lib/database/db-instance";
 import CreateClass from "@/components/forms/CreateClass";
 import CreateSubject from "@/components/forms/CreateSubject";
 import { SelectOptions } from "@/types/FormActionType";
 import CreateTeacher from "@/components/forms/CreateTeacher";
+import { Entities } from "@/types/Entities";
 
 interface AdminPageProps {
-  searchParams: { new?: string };
+  searchParams: { entity?: string; id?: string };
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
@@ -23,11 +24,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   }
 
   const resolvedSearchParams = await searchParams;
-  const actionType = resolvedSearchParams.new;
+  const { entity, id } = resolvedSearchParams;
 
   const getContent = async () => {
     const contents = {
-      classroom: async () => {
+      [Entities.classroom]: async (id: string) => {
         let specialities: Speciality[] = [];
         try {
           const specials = await db.getAllSpeciality();
@@ -44,7 +45,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </>
         );
       },
-      class: async () => {
+      [Entities.class]: async (id: string) => {
         let subjects: Subject[] = [];
         try {
           const subs = await db.getAllSubjects();
@@ -54,7 +55,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         } catch (error) {
           console.error("Error fetching subjects:", error);
         }
-        const subjectList: SelectOptions[] = subjects.map(s => ({value: s.SUBJECT_ID.toString(), label: s.SUBJECT_NAME}))
+        const subjectList: SelectOptions[] = subjects.map((s) => ({
+          value: s.SUBJECT_ID.toString(),
+          label: s.SUBJECT_NAME,
+        }));
 
         let teachers: any[] = [];
         try {
@@ -64,24 +68,36 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           }
         } catch (error) {
           console.error("Error fetching teachers:", error);
-        } 
-        const teachersList: SelectOptions[] = teachers.map(t => ({value: t.TEACHER_ID.toString(), label: t.TEACHER_NAME}))
+        }
+        const teachersList: SelectOptions[] = teachers.map((t) => ({
+          value: t.TEACHER_ID.toString(),
+          label: t.TEACHER_NAME,
+        }));
 
         return (
           <>
             <h2>Create new class</h2>
-            <CreateClass subjectsList={subjectList} teachersList={teachersList}/>
+            <CreateClass
+              subjectsList={subjectList}
+              teachersList={teachersList}
+            />
           </>
         );
       },
-      speciality: () => {
+      [Entities.speciality]: async (id: string) => {
+        let entityToEdit: {entity: Speciality} | null = null;
+        if (id) {
+          const res = await db.getSpecialityById(+id);
+          entityToEdit = {entity: res};
+        }
         return (
-        <>
-          <h2>Create new speciality</h2>
-          <CreateSpeciality />
-        </>
-      )},
-      subject: async () => { 
+          <>
+            <h2>Create new speciality</h2>
+            <CreateSpeciality {...entityToEdit} />
+          </>
+        );
+      },
+      [Entities.subject]: async (id: string) => {
         let specialities: Speciality[] = [];
         try {
           const specials = await db.getAllSpeciality();
@@ -92,24 +108,25 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           console.error("Error fetching specialities:", error);
         }
         return (
-        <>
-          <h2>Create new subject</h2>
-          <CreateSubject specialities={specialities} />
-        </>
-      )
-    },
-    teacher: async () => {
-      return (
-        <>
-          <h2>Create new teacher</h2>
-          <CreateTeacher />
-        </>
-      );
-    },
+          <>
+            <h2>Create new subject</h2>
+            <CreateSubject specialities={specialities} />
+          </>
+        );
+      },
+      [Entities.teacher]: async (id: string) => {
+        return (
+          <>
+            <h2>Create new teacher</h2>
+            <CreateTeacher />
+          </>
+        );
+      },
     };
+    console.log("actionType", entity);
 
-    return actionType && actionType in contents ? (
-      contents[actionType as keyof typeof contents]()
+    return entity && contents[entity as keyof typeof contents] ? (
+      contents[entity as keyof typeof contents](id || "")
     ) : (
       <div>
         <h1>Admin Dashboard - Create New Entities</h1>

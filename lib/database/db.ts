@@ -33,18 +33,7 @@ interface ExtendedExecuteOptions extends ExecuteOptions {
 }
 
 class DatabaseService {
-  private static instance: Promise<DatabaseService> | null = null;
   constructor() {}
-
-  public static async getInstance(): Promise<DatabaseService> {
-    if (!DatabaseService.instance) {
-      DatabaseService.instance = new Promise((resolve) => {
-        const ins = new DatabaseService();
-        resolve(ins);
-      });
-    }
-    return DatabaseService.instance;
-  }
 
   async getTenancy() {
     const session = await auth();
@@ -400,6 +389,21 @@ class DatabaseService {
     }
   }
 
+  async updateSpeciality(name: string, desc: string, id: number): Promise<void> {
+    const conn = await this.getConnection();
+    const tenancyId = await this.getTenancy();
+    const query = `UPDATE specialties SET specialty_name = :name, description = :description WHERE specialty_id = :id AND (tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
+    try {
+      const bindVariables = [name, desc, id, tenancyId];
+      await this.executeCommand(query, bindVariables, true, conn);
+    } catch (error) {
+      console.error(`Error updating speciality: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
   async getAllSpeciality(): Promise<Speciality[]> {
     const conn = await this.getConnection();
     const tenancyId = await this.getTenancy();
@@ -408,6 +412,21 @@ class DatabaseService {
       const result = await this.executeQuery(query, [tenancyId], conn);
       // console.log('spec res:::', result)
       return result as Speciality[];
+    } catch (error) {
+      console.error(`Error getting speciality: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async getSpecialityById(id: number): Promise<Speciality> {
+    const conn = await this.getConnection();
+    const tenancyId = await this.getTenancy();
+    const query = `SELECT * FROM specialties WHERE specialty_id = :id AND (tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
+    try {
+      const result = await this.executeQuery(query, [id, tenancyId], conn);
+      return (result as Speciality[])[0];
     } catch (error) {
       console.error(`Error getting speciality: ${error}`);
       throw error;

@@ -7,19 +7,19 @@ import { ReactNode } from "react";
 const AdminClientComponent = () => {
   return (
     <>
-      <Button onClick={() => redirect("/my-tenancy/admin?new=classroom")}>
+      <Button onClick={() => redirect("/my-tenancy/admin?entity=classroom")}>
         Create a New Classroom
       </Button>
-      <Button onClick={() => redirect("/my-tenancy/admin?new=class")}>
+      <Button onClick={() => redirect("/my-tenancy/admin?entity=class")}>
         Create a New Class
       </Button>
-      <Button onClick={() => redirect("/my-tenancy/admin?new=speciality")}>
+      <Button onClick={() => redirect("/my-tenancy/admin?entity=speciality")}>
         Create a New Speciality
       </Button>
-      <Button onClick={() => redirect("/my-tenancy/admin?new=subject")}>
+      <Button onClick={() => redirect("/my-tenancy/admin?entity=subject")}>
         Create a New Subject
       </Button>
-      <Button onClick={() => redirect("/my-tenancy/admin?new=teacher")}>
+      <Button onClick={() => redirect("/my-tenancy/admin?entity=teacher")}>
         Create a New Teacher
       </Button>
     </>

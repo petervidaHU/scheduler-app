@@ -1,6 +1,6 @@
 "use server";
 
-import db from "@/lib/database/bd-instance";
+import db from "@/lib/database/db-instance";
 import { FormActionType } from "@/types/FormActionType";
 
 export const createTeacher = async (

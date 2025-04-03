@@ -1,11 +1,15 @@
 "use client";
 
+import { useRouter } from "@/lib/i18n/navigation";
+import { Entities } from "@/types/Entities";
 import { ActionIcon, Table, TableData, Tabs } from "@mantine/core";
 import { IconPencil } from "@tabler/icons-react";
 import { useMemo } from "react";
 
+
+// TODO entities as label thightly coupled? and hardcoded action url as well?
 interface TabData {
-  label: string;
+  label: Entities;
   error?: string | null;
   data: TableData;
 }
@@ -14,22 +18,26 @@ interface Props {
   tabs: TabData[];
 }
 
-const actionButtons = (id: any) => {
-  return (
-    <ActionIcon
-      onClick={() => {
-        console.log("edit", id);
-      }}
-      variant="filled"
-      aria-label="Settings"
-    >
-      <IconPencil style={{ width: "70%", height: "70%" }} stroke={1.5} />
-    </ActionIcon>
-  );
-};
-
 const TabsWithTable: React.FC<Props> = ({ tabs }) => {
+  const router = useRouter();
+
   // TODO restrict actions for admins only
+  const actionButtons = (id: string, label: Entities) => {
+    if (!label || !id) return null;
+    return (
+      <ActionIcon
+        onClick={() => {
+                   console.log("edit", id);
+                   router.push(`/my-tenancy/admin?entity=${label}&id=${id}`);
+        }}
+        variant="filled"
+        aria-label="Settings"
+      >
+        <IconPencil style={{ width: "70%", height: "70%" }} stroke={1.5} />
+      </ActionIcon>
+    );
+  };
+
   const getList = (tabs: TabData[]) => {
     return (
       <Tabs.List>
@@ -55,7 +63,7 @@ const TabsWithTable: React.FC<Props> = ({ tabs }) => {
         {row.map((cell, cellIndex) => (
           <Table.Td key={cellIndex}>{cell}</Table.Td>
         ))}
-        <Table.Td>{actionButtons(row[0])}</Table.Td>
+        <Table.Td>{actionButtons(row[0]?.toString() || "", tab.label)}</Table.Td>
       </Table.Tr>
     ));
     return (
