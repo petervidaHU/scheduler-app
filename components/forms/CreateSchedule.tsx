@@ -37,9 +37,7 @@ interface props {
     classes: Classes[];
     subjects: Subject[];
     specialities: Speciality[];
-    classRoomOptions: SelectOptions[];
     teacherOptions: SelectOptions[];
-    subjectOptions: SelectOptions[];
   };
 }
 
@@ -50,16 +48,13 @@ const SchedulePage: React.FC<props> = ({
     classes,
     subjects,
     specialities,
-    subjectOptions,
     teacherOptions,
-    classRoomOptions,
   },
 }) => {
   const {
     addDay,
     updateSyllabus,
-    updateClassRoomOptions,
-    updateSubjectOptions,
+    updateClassRooms,
     updateTeacherOptions,
   } = useStore();
   const [isPending, startTransition] = useTransition();
@@ -68,16 +63,13 @@ const SchedulePage: React.FC<props> = ({
   });
 
   const updateStore = useCallback(() => {
-    updateClassRoomOptions(classRoomOptions);
-    updateSubjectOptions(subjectOptions);
     updateTeacherOptions(teacherOptions);
+    updateClassRooms(classRooms);
   }, [
-    classRoomOptions,
-    subjectOptions,
     teacherOptions,
-    updateClassRoomOptions,
-    updateSubjectOptions,
     updateTeacherOptions,
+    classRooms,
+    updateClassRooms,
   ]);
 
   useMemo(() => {
@@ -101,7 +93,6 @@ const SchedulePage: React.FC<props> = ({
     onValuesChange: async (values) => {
       if (values.class !== form.values.class && values.class !== "") {
         const newSyllabus = await getSyllabusAction(values.class);
-        console.log("change", newSyllabus);
 
         if (!newSyllabus) {
           return;
@@ -118,7 +109,7 @@ const SchedulePage: React.FC<props> = ({
             const subjectSpecialityId =
               subjects
                 .find((subject) => subject.SUBJECT_ID === item.SUBJECT_ID)
-                ?.SPECIALITY_ID?.toString() || "";
+                ?.SPECIALTY_ID || null;
             const subjectSpeciality = subjectSpecialityId
               ? specialities.find(
                   (speciality) =>
@@ -134,7 +125,7 @@ const SchedulePage: React.FC<props> = ({
                 : null,
               occurrence: item.OCCURRENCE,
               speciality: subjectSpeciality
-                ? { label: subjectSpeciality, value: subjectSpecialityId }
+                ? { label: subjectSpeciality, value: subjectSpecialityId?.toString() || ''}
                 : null,
             };
           });

@@ -16,23 +16,46 @@ interface props {
   slot: Timeslots;
 }
 
+type classRoomsGroupedOptions = [
+  {
+    group: "preferred by speciality";
+    items: any[];
+  },
+  {
+    group: "other";
+    items: any[];
+  },
+];
 const init: FormActionType = {
   error: null,
   data: null,
   success: false,
 };
+const classRoomReduceInitialState: classRoomsGroupedOptions = [
+  {
+    group: "preferred by speciality",
+    items: [],
+  },
+  {
+    group: "other",
+    items: [],
+  },
+];
 
 const CreateLessonModal: React.FC<props> = ({ slot }) => {
-  const { syllabus, subjectOptions, teacherOptions, classRoomOptions } =
-    useStore();
+  const { syllabus, teacherOptions, classRooms } = useStore();
+  const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
   const [preferredTeacherCheckbox, setPreferredTeacherCheckbox] =
     useState(false);
+  const [subjectSpecialityId, setSubjectSpecialityId] = useState<string | null>(
+    null
+  );
   const [preferredTeacher, setPreferredTeacher] =
     useState<SelectOptions | null>(null);
+  const [groupedClassRooms, setGroupedClassRooms] =
+    useState<classRoomsGroupedOptions | null>(null);
   const [sState, sAction] = useActionState(createLesson, { ...init });
-  console.log("in modal syllabus", syllabus);
-  console.log("in modal teacherOptions", teacherOptions);
 
   const form = useForm({
     initialValues: {
@@ -40,19 +63,66 @@ const CreateLessonModal: React.FC<props> = ({ slot }) => {
       classRoom: "",
       teacher: "",
     },
+    validateInputOnChange: ["classRoom"],
     validate: {
       subject: (value) => (!value ? "subject is required" : null),
+      classRoom: (value, values) => {
+        const isSpecialityFit =
+          classRooms.find((classRoom) => classRoom.CLASSROOM_ID == value)
+            ?.SPECIALITY_ID == subjectSpecialityId;
+        if (!isSpecialityFit && value) {
+          setWarnings((prev) => ({
+            ...prev,
+            classRoom: "Speciality does not fit",
+          }));
+        } else {
+          setWarnings((prev) => ({ ...prev, classRoom: "" }));
+        }
+        return null;
+      },
     },
     onValuesChange: (values, previous) => {
-      if (values.subject && values.subject !== previous.subject) {
-        const teacher = form.values.subject
-          ? syllabus.subjects.find(
-              (subject) => subject.value === form.values.subject
-            )?.preferredTeacher
-          : null;
-        if (teacher) {
-          form.setFieldValue("teacher", teacher?.value || "");
-          setPreferredTeacher(teacher);
+      console.log("valuesOnChange", values.subject, previous.subject, values.subject !== previous.subject);
+      if (!values.subject) setGroupedClassRooms(null);
+       if (values.subject /* &&values.subject !== previous.subject*/) {
+        const newSubject = syllabus.subjects.find(
+          (subject) => subject.value === values.subject
+        );
+
+        if (newSubject?.preferredTeacher) {
+          form.setFieldValue(
+            "teacher",
+            newSubject?.preferredTeacher.value || ""
+          );
+          setPreferredTeacher(newSubject?.preferredTeacher);
+        }
+
+        if (newSubject?.speciality?.value) {
+          const groupedBySubjectClassRooms =
+            classRooms.reduce<classRoomsGroupedOptions>(
+              (acc, classRoomItem) => {
+                if (
+                  classRoomItem.SPECIALITY_ID == newSubject?.speciality?.value
+                ) {
+                  acc[0].items.push(classRoomItem);
+                } else {
+                  acc[1].items.push(classRoomItem);
+                }
+                return acc;
+              },
+              [
+                {
+                  group: "preferred by speciality",
+                  items: [],
+                },
+                {
+                  group: "other",
+                  items: [],
+                },
+              ]
+            );
+          setSubjectSpecialityId(newSubject?.speciality?.value || null);
+          setGroupedClassRooms(groupedBySubjectClassRooms);
         }
       }
     },
@@ -68,10 +138,14 @@ const CreateLessonModal: React.FC<props> = ({ slot }) => {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setPreferredTeacherCheckbox(e.target.checked);
+    form.setFieldValue("teacher", preferredTeacher?.value || "");
   };
+  console.log("warnings", warnings);
+
   return (
     <div>
       CreateLessonModal
+      {JSON.stringify(warnings)}
       <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
         <div>
           <label>subject</label>
@@ -86,7 +160,7 @@ const CreateLessonModal: React.FC<props> = ({ slot }) => {
           <Select
             searchable
             clearable
-            data={classRoomOptions}
+            data={groupedClassRooms || classRooms}
             {...form.getInputProps("classRoom")}
           />
         </div>
@@ -101,7 +175,6 @@ const CreateLessonModal: React.FC<props> = ({ slot }) => {
             searchable
             clearable
             disabled={preferredTeacherCheckbox}
-            value={preferredTeacher?.value || ""}
             data={teacherOptions}
             {...form.getInputProps("teacher")}
           />

@@ -14,17 +14,17 @@ interface ScheduleState {
   updateSyllabus: (payload: any) => void;
   subjectOptions: SelectOptions[];
   teacherOptions: SelectOptions[];
-  classRoomOptions: SelectOptions[];
-  updateSubjectOptions: (payload: any) => void;
+  // TODO any type
+  classRooms: any[];
   updateTeacherOptions: (payload: any) => void;
-  updateClassRoomOptions: (payload: any) => void;
+  updateClassRooms: (payload: any) => void;
 }
 
 const createScheduleSlice = (set: any): ScheduleState => ({
   days: [],
   subjectOptions: [],
   teacherOptions: [],
-  classRoomOptions: [],
+  classRooms: [],
   syllabus: {
     subjects: [],
   },
@@ -53,20 +53,15 @@ const createScheduleSlice = (set: any): ScheduleState => ({
       ...state,
       syllabus: payload,
     })),
-  updateSubjectOptions: (payload: any) =>
-    set((state: ScheduleState) => ({
-      ...state,
-      subjectOptions: payload,
-    })),
   updateTeacherOptions: (payload: any) =>
     set((state: ScheduleState) => ({
       ...state,
       teacherOptions: payload,
     })),
-  updateClassRoomOptions: (payload: any) =>
+  updateClassRooms: (payload: any) =>
     set((state: ScheduleState) => ({
       ...state,
-      classRoomOptions: payload,
+      classRooms: payload,
     })),
 });
 

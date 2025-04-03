@@ -21,7 +21,7 @@ export interface Subject {
     SUBJECT_ID: ID;
     SUBJECT_NAME: string;
     DESCRIPTION: string;
-    SPECIALITY_ID: ID;
+    SPECIALTY_ID: ID;
 }
 
 export interface Speciality {
