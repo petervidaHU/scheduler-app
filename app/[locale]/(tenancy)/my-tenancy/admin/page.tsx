@@ -4,13 +4,14 @@ import { redirect } from "next/navigation";
 import CreateSpeciality from "@/components/forms/CreateSpeciality";
 import AdminClientComponent from "@/components/AdminClientComponent";
 import CreateClassRoom from "@/components/forms/CreateClassRoom";
-import { Speciality, Subject } from "@/types/databaseTypes";
+import { ClassRoom, Speciality, Subject } from "@/types/databaseTypes";
 import db from "@/lib/database/db-instance";
 import CreateClass from "@/components/forms/CreateClass";
 import CreateSubject from "@/components/forms/CreateSubject";
-import { SelectOptions } from "@/types/FormActionType";
+import { ManageFormServerProps, SelectOptions } from "@/types/FormActionType";
 import CreateTeacher from "@/components/forms/CreateTeacher";
 import { Entities } from "@/types/Entities";
+import { Satisfy } from "next/font/google";
 
 interface AdminPageProps {
   searchParams: { entity?: string; id?: string };
@@ -29,6 +30,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const getContent = async () => {
     const contents = {
       [Entities.classroom]: async (id: string) => {
+        let serverProps: ManageFormServerProps<ClassRoom> = {} as any;
         let specialities: Speciality[] = [];
         try {
           const specials = await db.getAllSpeciality();
@@ -38,10 +40,27 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         } catch (error) {
           console.error("Error fetching specialities:", error);
         }
+
+        if (id) {
+          const entity = await db.getClassRoomById(+id);
+          serverProps.entity = entity;
+          serverProps.backBtnUrl = "/my-tenancy";
+          serverProps.backBtnText = "Go Back";
+          serverProps.submitBtnText = "Update Classroom";
+          serverProps.toastMessage = "Classroom updated successfully";
+        } else {
+          serverProps.backBtnUrl = "/my-tenancy/admin";
+          serverProps.backBtnText = "Cancel";
+          serverProps.submitBtnText = "Create Classroom";
+          serverProps.toastMessage = "Classroom created successfully";
+        }
+
+        const title = id ? "Update classroom" : "Create classroom";
+
         return (
           <>
-            <h2>Create new classroom</h2>
-            <CreateClassRoom specialities={specialities} />
+            <h2>{title}</h2>
+            <CreateClassRoom specialities={specialities} {...serverProps} />
           </>
         );
       },
@@ -85,15 +104,27 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         );
       },
       [Entities.speciality]: async (id: string) => {
-        let entityToEdit: {entity: Speciality} | null = null;
+        let serverProps: ManageFormServerProps<Speciality> = {} as any;
+        const title = id ? "Update Speciality" : "Create Speciality";
+
         if (id) {
+          // TODO try-catch error handling with toast and redirect?
           const res = await db.getSpecialityById(+id);
-          entityToEdit = {entity: res};
+          serverProps.entity = res;
+          serverProps.backBtnUrl = "/my-tenancy";
+          serverProps.backBtnText = "Back to dashboard";
+          serverProps.submitBtnText = "Update Speciality";
+          serverProps.toastMessage = "Speciality updated successfully";
+        } else {
+          serverProps.backBtnUrl = "/my-tenancy/admin";
+          serverProps.backBtnText = "Cancel";
+          serverProps.submitBtnText = "Create Speciality";
+          serverProps.toastMessage = "Speciality created successfully";
         }
         return (
           <>
-            <h2>Create new speciality</h2>
-            <CreateSpeciality {...entityToEdit} />
+            <h2>{title}</h2>
+            <CreateSpeciality {...serverProps} />
           </>
         );
       },

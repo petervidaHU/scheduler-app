@@ -194,15 +194,10 @@ class DatabaseService {
     if (keys.length === 0) {
       throw new Error("No data provided for update.");
     }
-  
+
     const setClauses: string[] = [];
     const bindVariables: { [key: string]: any } = {};
-    const fieldOfUser = [
-      "email",
-      "first_name",
-      "last_name",
-      "password_hash",
-    ];
+    const fieldOfUser = ["email", "first_name", "last_name", "password_hash"];
 
     fieldOfUser.forEach((field) => {
       if (updateData[field as keyof typeof updateData] !== undefined) {
@@ -210,16 +205,16 @@ class DatabaseService {
         bindVariables[field] = updateData[field as keyof typeof updateData];
       }
     });
-   
+
     const query = `
       UPDATE users
       SET ${setClauses.join(", ")}
       WHERE user_id = :id
     `;
     bindVariables.id = id;
-  
+
     const result = await this.executeCommand(query, bindVariables);
-    
+
     if (result.rowsAffected === 0) {
       throw new Error("User not found or no changes applied.");
     }
@@ -380,7 +375,6 @@ class DatabaseService {
     try {
       const bindVariables = [name, desc, tenancyId];
       const res = await this.executeCommand(query, bindVariables, true, conn);
-      console.log("res:", res);
     } catch (error) {
       console.error(`Error creating speciality: ${error}`);
       throw error;
@@ -389,7 +383,11 @@ class DatabaseService {
     }
   }
 
-  async updateSpeciality(name: string, desc: string, id: number): Promise<void> {
+  async updateSpeciality(
+    name: string,
+    desc: string,
+    id: number
+  ): Promise<void> {
     const conn = await this.getConnection();
     const tenancyId = await this.getTenancy();
     const query = `UPDATE specialties SET specialty_name = :name, description = :description WHERE specialty_id = :id AND (tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
@@ -439,8 +437,8 @@ class DatabaseService {
 
   async getBasicTimeSlots(global: GlobalTimeslot): Promise<Timeslots[]> {
     const conn = await this.getConnection();
-    console.log('::::::::::::::::::::::::::::::', global)
-    const query = `SELECT * FROM TIMESLOT_TEMPLATE WHERE GLOBAL_TEMPLATE = :global AND TENANCY_ID IS NULL`; ;
+    console.log("::::::::::::::::::::::::::::::", global);
+    const query = `SELECT * FROM TIMESLOT_TEMPLATE WHERE GLOBAL_TEMPLATE = :global AND TENANCY_ID IS NULL`;
     try {
       const result = await this.executeQuery(query, [global], conn);
       return result as Timeslots[];
@@ -611,7 +609,7 @@ class DatabaseService {
     } finally {
       await conn.close();
     }
-  } 
+  }
 
   // ----------------- CLASS-CLASSROOM -------------------
   async createClass(
@@ -695,6 +693,8 @@ class DatabaseService {
     }
   }
 
+  // ----------------- CLASSROOM -------------------
+
   async createClassRoom(
     name: string,
     capacity: number,
@@ -724,6 +724,57 @@ class DatabaseService {
       return result as ClassRoom[];
     } catch (error) {
       console.error(`Error getting class rooms: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async getClassRoomById(id: number): Promise<ClassRoom> {
+    const conn = await this.getConnection();
+    const query = `SELECT * FROM classrooms WHERE classroom_id = :id AND tenancy_id = :tenancyId`;
+    try {
+      const tenancyId = await this.getTenancy();
+      const result = await this.executeQuery(query, [id, tenancyId], conn);
+      return (result as ClassRoom[])[0];
+    } catch (error) {
+      console.error(`Error getting class room: ${error}`);
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async deleteClassRoom(id: number): Promise<void> {
+    const conn = await this.getConnection();
+    const query = `DELETE FROM classrooms WHERE classroom_id = :id`;
+    const bindVariables = [id];
+    try {
+      await this.executeCommand(query, bindVariables, false, conn);
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async updateClassRoom(
+    name: string,
+    capacity: number,
+    specialityId: number,
+    id: number
+  ): Promise<void> {
+    const conn = await this.getConnection();
+    const tenancyId = await this.getTenancy();
+    const query = `UPDATE classrooms SET capacity = :capacity,  classroom_name = :name, speciality_id = :specialityId WHERE classroom_id = :id AND tenancy_id = :tenancyId`;
+    const bindVariables = [capacity, name, specialityId, id, tenancyId];
+    try {
+      await this.executeCommand(query, bindVariables, false, conn);
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
       throw error;
     } finally {
       await conn.close();

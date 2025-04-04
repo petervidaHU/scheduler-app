@@ -11,33 +11,43 @@ import {
   NumberInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { FormActionType } from "@/types/FormActionType";
+import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { Speciality } from "@/types/databaseTypes";
-import { createClassRoom } from "@/app/[locale]/(tenancy)/_actions/createClassRoom";
+import { ClassRoom, Speciality } from "@/types/databaseTypes";
+import { manageClassRoom } from "@/app/[locale]/(tenancy)/_actions/manageClassRoom";
+import { useFormResponse } from "@/lib/hooks/useFormResponse";
 
 const init: FormActionType = {
   error: null,
   data: null,
-  success: false
-  };
+  success: false,
+};
 
-interface props {
-  specialities: Speciality[],
+interface props extends ManageFormServerProps<ClassRoom> {
+  specialities: Speciality[];
 }
 
-export const CreateClassRoom: React.FC<props> = ({specialities}) => {
-  const [ isPending, startTransition ] = useTransition();
-  const [crState, crAction] = useActionState(createClassRoom, {
+export const CreateClassRoom: React.FC<props> = ({
+  specialities,
+  entity,
+  backBtnUrl,
+  backBtnText,
+  submitBtnText,
+  toastMessage,
+}) => {
+  const [isPending, startTransition] = useTransition();
+  const [crState, crAction] = useActionState(manageClassRoom, {
     ...init,
   });
 
   const classRoomForm = useForm({
     initialValues: {
-      name: "",
-      specialityId: null,
+      name: entity.CLASSROOM_NAME || "",
+      specialityId: entity.SPECIALITY_ID || null,
+      // TODO description ?
       description: "",
-      capacity: 0,
+      capacity: entity.CAPACITY || 0,
+      id: entity.CLASSROOM_ID || null,
     },
     validate: {
       capacity: (value) =>
@@ -45,6 +55,10 @@ export const CreateClassRoom: React.FC<props> = ({specialities}) => {
       specialityId: (value) => (!value ? "must select speciality" : null),
     },
   });
+
+  console.log("entit", entity, classRoomForm.values);
+  const { manageState } = useFormResponse(crState, classRoomForm, toastMessage);
+  manageState();
 
   const handleClassRoomSubmit = (values: typeof classRoomForm.values) => {
     startTransition(() => {
@@ -82,13 +96,16 @@ export const CreateClassRoom: React.FC<props> = ({specialities}) => {
               label: speciality.SPECIALTY_NAME,
             }))}
             {...classRoomForm.getInputProps("specialityId")}
+            value={classRoomForm.values.specialityId?.toString()}
           />
           <Group mt="md">
-            <Button disabled={isPending} type="submit">Create Classroom</Button>
+            <Button disabled={isPending} type="submit">
+              {submitBtnText}
+            </Button>
           </Group>
         </Stack>
       </form>
-      <Button onClick={() => redirect("/my-tenancy/admin")}>Cancel</Button>
+      <Button onClick={() => redirect(backBtnUrl)}>{backBtnText}</Button>
     </Container>
   );
 };

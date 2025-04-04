@@ -27,3 +27,11 @@ export interface LessonInput {
     subject: ID;
     classId: ID;
 }
+
+export interface ManageFormServerProps<T> {
+    entity: T,
+    backBtnUrl: string,
+    backBtnText: string,
+    submitBtnText: string,
+    toastMessage: string
+}

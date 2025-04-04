@@ -2,7 +2,6 @@
 
 import { Button } from "@mantine/core";
 import { redirect } from "next/navigation";
-import { ReactNode } from "react";
 
 const AdminClientComponent = () => {
   return (
