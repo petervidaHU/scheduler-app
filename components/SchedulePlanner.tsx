@@ -65,8 +65,8 @@ const SchedulePlanner: React.FC<props> = ({ basicTimeslots }) => {
           </div>
         </Grid.Col>
         {days.map((day) => (
-          <>
-            <Grid.Col key={day.id} span={2}>
+          <React.Fragment key={day.id}>
+            <Grid.Col span={2}>
               <Flex
                 wrap="wrap"
                 direction="column"
@@ -95,7 +95,7 @@ const SchedulePlanner: React.FC<props> = ({ basicTimeslots }) => {
                 {hourGrid(day.id)}
               </div>
             </Grid.Col>
-          </>
+          </ React.Fragment>
         ))}
       </Grid>
     </div>
