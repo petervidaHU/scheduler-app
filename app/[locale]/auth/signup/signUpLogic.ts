@@ -1,16 +1,16 @@
 'use server';
 
-import DatabaseService from '@/lib/database/db';
+import db from '@/lib/database/db-instance';
 import { hashPassword } from '@/lib/utils';
 import { redirect } from 'next/navigation';
 
-export async function signupLogic(formData) {
-  const email = formData.get('email');
-  const password = formData.get('password');
-  const firstname = formData.get('firstname');
-  const lastname = formData.get('lastname');
+export async function signupLogic(formData: FormData) {
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  const firstname = formData.get('firstname') as string;
+  const lastname = formData.get('lastname') as string;
 
-  const errors = {};
+  const errors: any = {};
 
   if (!email || !/\S+@\S+\.\S+/.test(email)) {
     errors.email = 'Invalid email address';
@@ -29,11 +29,8 @@ export async function signupLogic(formData) {
   }
 
   if (Object.keys(errors).length > 0) {
-    // Handle errors (we'll discuss how to pass these back to the client)
     throw new Error(JSON.stringify(errors));
   }
-
-  const databaseService = new DatabaseService();
 
   // Check if email already exists
 /*   const existingUser = await databaseService.getUserByEmail(email);
@@ -42,13 +39,9 @@ export async function signupLogic(formData) {
     throw new Error(JSON.stringify({ email: 'Email address already in use' }));
   } */
 
-  // Hash password
   const hashedPassword = await hashPassword(password);
+  await db.createUser(email, hashedPassword, firstname, lastname);
 
-  // Create new user
-  await databaseService.createUser(email, hashedPassword, firstname, lastname);
-
-  // Redirect to login page
   redirect('/auth/signin');
 }
 

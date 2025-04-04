@@ -1,6 +1,6 @@
 import DatabaseService from "./db";
 
 const db = new DatabaseService();
-db.getConnection();
+db.init();
 
 export default db;

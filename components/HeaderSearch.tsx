@@ -11,6 +11,7 @@ import { UserSession } from '@/types/UserTypes';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/lib/i18n/navigation';
 import LocaleSwitcher from './LocaleSwitcher';
+import { setTenancyInServer } from '@/lib/database/setTenancyInServer';
 
 const links = [
   { link: '/my-tenancy', label: 'my tenancy' },
@@ -64,6 +65,7 @@ export const HeaderSearch: FC<props> = ({session, tenancies}) => {
 
   const tenancyChangeHandler = async (value: any) => {
     const result = await update({ tenancyId: value});
+    setTenancyInServer(value)
     router.refresh();
     setSelectedTenancy(value);
   };

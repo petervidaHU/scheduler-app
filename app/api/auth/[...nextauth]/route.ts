@@ -25,6 +25,8 @@ export const authOptions = {
           tenancies.length > 0 &&
           (await verifyPassword(credentials.password, user.password_hash))
         ) {
+          // TODO get previous tenancy from localestorage or cookie?
+          db.setTenancy(tenancies[0].TENANCY_ID);
           return { ...user, tenancy: tenancies[0] };
         } else {
           return null;
