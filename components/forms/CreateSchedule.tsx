@@ -10,6 +10,7 @@ import {
   useState,
   useCallback,
   useMemo,
+  useEffect,
 } from "react";
 import {
   Classes,
@@ -72,7 +73,7 @@ const SchedulePage: React.FC<props> = ({
     updateClassRooms,
   ]);
 
-  useMemo(() => {
+  useEffect(() => {
     updateStore();
   }, [updateStore]);
 

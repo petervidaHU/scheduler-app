@@ -49,7 +49,6 @@ export default async function SchedulesPage() {
     label: teacher.TEACHER_NAME,
   }));
 
-  console.log("in server classrooms", classRooms.data);
   const classRoomWithOptions = classRooms.data.map((classRoom) => {
     const specialityName = specialities.data.find(
       (speciality) => speciality.SPECIALTY_ID === classRoom.SPECIALITY_ID
@@ -59,11 +58,11 @@ export default async function SchedulesPage() {
       value: classRoom.CLASSROOM_ID.toString(),
       label: classRoom.CLASSROOM_NAME,
       speciality: specialityName
-        ? {
-            value: classRoom.SPECIALITY_ID.toString(),
-            label: specialityName,
-          }
-        : null,
+      ? {
+        value: classRoom.SPECIALITY_ID.toString(),
+        label: specialityName,
+      }
+      : null,
     };
   });
 
