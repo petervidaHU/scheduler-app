@@ -1,7 +1,8 @@
 "use server";
 
-import db from "@/lib/database/db-instance";
+import { getDbInstance } from "@/lib/database/db-instance";
 import { FormActionType, LessonInput } from "@/types/FormActionType";
+import { get } from "http";
 
 export const createLesson = async (state: FormActionType, props: LessonInput): Promise<FormActionType>  => {
     const {
@@ -19,6 +20,7 @@ export const createLesson = async (state: FormActionType, props: LessonInput): P
 
         };
     }
+    const db = await getDbInstance();
     const result = db.createLesson(props)
 
     return {

@@ -1,6 +1,6 @@
 "use server";
 
-import db from "@/lib/database/db-instance";
+import { getDbInstance } from "@/lib/database/db-instance";
 import { ID } from "@/types/databaseTypes";
 import { FormActionType } from "@/types/FormActionType";
 
@@ -16,9 +16,9 @@ export const manageClassRoom = async (
   if (!classRoomName) {
     return { success: false, error: "name is required", data: null };
   }
+  const db = await getDbInstance();
   try {
     if (id) {
-      console.log('in update', classRoomName, capacity, specialityId, id);
       const result = await db.updateClassRoom(
         classRoomName,
         capacity,

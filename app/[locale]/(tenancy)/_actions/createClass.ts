@@ -1,6 +1,6 @@
 "use server";
 
-import db from "@/lib/database/db-instance";
+import { getDbInstance } from "@/lib/database/db-instance";
 import { ID } from "@/types/databaseTypes";
 import { FormActionType, SyllabusInputForm } from "@/types/FormActionType";
 export type NormalizedSyllabus = [ID, number, ID | null][];
@@ -37,6 +37,7 @@ export const createClass = async (
     };
   }
   try {
+    const db = await getDbInstance();
     const syllabusNormalized = normalizeSyllabus(syllabus);
     const result = await db.createClass(className, numberOfStudents, syllabusNormalized);
     return { success: true, data: result, error: null };

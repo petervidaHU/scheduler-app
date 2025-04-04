@@ -1,10 +1,11 @@
 'use server';
 
-import db from '@/lib/database/db-instance';
+import { getDbInstance } from '@/lib/database/db-instance';
 import { hashPassword } from '@/lib/utils';
 import { redirect } from 'next/navigation';
 
 export async function signupLogic(formData: FormData) {
+  const db = await getDbInstance();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const firstname = formData.get('firstname') as string;

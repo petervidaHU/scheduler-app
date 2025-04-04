@@ -1,9 +1,10 @@
 import SessionWrapper from "@/app/[locale]/SessionWrapper";
 import { HeaderSearch } from "./HeaderSearch";
 import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
-import db from "@/lib/database/db-instance";
+import { getDbInstance } from "@/lib/database/db-instance";
 
 export default async function HeaderWithSession() {
+  const db = await getDbInstance();
   const session = await getAuth();
   let userTenancies = [];
   if (session && session.email) {

@@ -1,6 +1,6 @@
 "use server";
 
-import db from "@/lib/database/db-instance";
+import { getDbInstance } from "@/lib/database/db-instance";
 import { ID } from "@/types/databaseTypes";
 import { FormActionType } from "@/types/FormActionType";
 
@@ -12,6 +12,7 @@ export const createSubject = async (
     return { success: false, error: "Email and name are required", data: null };
   }
   try {
+    const db = await getDbInstance();
     const result = await db.createSubject(name, description, specialityId);
     return { success: true, data: result, error: null };
   } catch (error) {

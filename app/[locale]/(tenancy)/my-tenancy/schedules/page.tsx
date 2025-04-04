@@ -1,4 +1,3 @@
-import db from "@/lib/database/db-instance";
 import {
   Speciality,
   ClassRoom,
@@ -11,8 +10,10 @@ import { dataFetcherAll } from "../dashboarDataFetcher";
 import CreateSchedule from "@/components/forms/CreateSchedule";
 import SchedulePlanner from "@/components/SchedulePlanner";
 import SyllabusTable from "@/components/forms/SyllabusTable";
+import { getDbInstance } from "@/lib/database/db-instance";
 
 export default async function SchedulesPage() {
+  const db = await getDbInstance();
   const [specialities, subjects, classRooms, classes, teachers, timeslots] =
     await Promise.all([
       dataFetcherAll<Speciality>(db.getAllSpeciality),

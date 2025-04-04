@@ -1,8 +1,10 @@
 'use server';
 
-import db from "./db-instance";
+import { getDbInstance } from "./db-instance";
+
 
 export const setTenancyInServer = async (value: string) => {
+    const db = await getDbInstance();
     try {
        db.setTenancy(value);
     } catch (e: any) {

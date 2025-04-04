@@ -1,6 +1,11 @@
-import DatabaseService from "./db";
+import { DatabaseService } from "./db";
 
-const db = new DatabaseService();
-db.init();
+let dbInstance: DatabaseService | null = null;
 
-export default db;
+export async function getDbInstance(): Promise<DatabaseService> {
+  if (dbInstance) {
+    return dbInstance;
+  }
+  dbInstance = await DatabaseService.getInstance();
+  return dbInstance;
+}

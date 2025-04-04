@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { verifyPassword } from "../../../../lib/utils";
-import db from "@/lib/database/db-instance";
+import { getDbInstance } from "@/lib/database/db-instance";
 
 export const authOptions = {
   debug: true,
@@ -14,6 +14,7 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials: any) => {
+        const db = await getDbInstance();
         try{
         const user = await db.getUserByEmail(credentials.email);
         const tenancies = await db.getTenanciesByUser(credentials.email);

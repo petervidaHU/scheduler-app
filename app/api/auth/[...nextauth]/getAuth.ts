@@ -4,7 +4,7 @@ import { getUserRole } from "@/lib/getUserRole";
 
 export const getAuth = async (): Promise<UserSession> => {
     const session = await auth();
-    if (!session || !session.user) {
+    if (!session || !session.user ) {
         return {
             email: null,
             name: null,
@@ -15,7 +15,7 @@ export const getAuth = async (): Promise<UserSession> => {
         };
     } else {
         const { user } = session as any;
-        const role = await getUserRole(user.userId, user.tenancyId);
+         const role = await getUserRole(user.userId, user.tenancyId);
         return  {
             email: user.email || null,
             name: user.name || null,

@@ -1,12 +1,12 @@
 import React from "react";
 import { NoRoleContent } from "./NoRoleContent";
 import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
-import db from "@/lib/database/db-instance";
 import { Classes, ClassRoom, Speciality, Subject, Teacher } from "@/types/databaseTypes";
 import TabsWithTable from "@/components/TabsWithTable";
 import { dataFetcherAll } from "./dashboarDataFetcher";
 import { TableData } from "@mantine/core";
 import { Entities } from "@/types/Entities";
+import { getDbInstance } from "@/lib/database/db-instance";
 
 const tableDataMapper = (data: any[]): TableData => {
   const head: string[] = Object.keys(data[0] || []);
@@ -18,6 +18,7 @@ const tableDataMapper = (data: any[]): TableData => {
 }
 
 export default async function MyTenancyPage() {
+  const db = await getDbInstance();
   const { tenancyId, userRole } = await getAuth();
 
   const [specialities, classRooms, classes, teachers, subjects] = await Promise.all([

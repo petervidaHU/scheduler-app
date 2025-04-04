@@ -5,13 +5,13 @@ import CreateSpeciality from "@/components/forms/CreateSpeciality";
 import AdminClientComponent from "@/components/AdminClientComponent";
 import CreateClassRoom from "@/components/forms/CreateClassRoom";
 import { ClassRoom, Speciality, Subject } from "@/types/databaseTypes";
-import db from "@/lib/database/db-instance";
 import CreateClass from "@/components/forms/CreateClass";
 import CreateSubject from "@/components/forms/CreateSubject";
 import { ManageFormServerProps, SelectOptions } from "@/types/FormActionType";
 import CreateTeacher from "@/components/forms/CreateTeacher";
 import { Entities } from "@/types/Entities";
 import { Satisfy } from "next/font/google";
+import { getDbInstance } from "@/lib/database/db-instance";
 
 interface AdminPageProps {
   searchParams: { entity?: string; id?: string };
@@ -19,6 +19,7 @@ interface AdminPageProps {
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   const auth = await getAuth();
+  const db = await getDbInstance();
 
   if (!auth || auth.userRole !== "admin") {
     redirect("/tenancy");

@@ -30,11 +30,24 @@ interface ExtendedExecuteOptions extends ExecuteOptions {
   }[];
 }
 
-class DatabaseService {
+export class DatabaseService {
+  private static instance: DatabaseService;
+  private static initialized = false;
   private pool: oracledb.Pool | undefined;
   private tenancyId: string | null = null;
+  
   constructor() {}
-
+  
+  public static async getInstance(): Promise<DatabaseService> {
+    if (!DatabaseService.instance) {
+      DatabaseService.instance = new DatabaseService();
+      if (!DatabaseService.initialized) {
+        await DatabaseService.instance.init();
+        DatabaseService.initialized = true;
+      }
+    }
+    return DatabaseService.instance;
+  }
   async getTenancyFromSession() {
     const session = await auth();
     if (session) {
@@ -47,7 +60,11 @@ class DatabaseService {
   }
 
   async init(): Promise<void> {
-    if (this.pool) return;
+    console.log("OCI Initializing Oracle database connection pool");
+    if (this.pool) {
+      console.log('OCI Number of available connections in pool:', this.pool.connectionsOpen);
+      return;
+    }
 
     process.env.TNS_ADMIN = path.join(__dirname, "wallet");
     const dbConfig = {
@@ -55,16 +72,16 @@ class DatabaseService {
       password: process.env.DB_PASSWORD,
       connectString: process.env.DB_CONNECTION_STRING,
     };
-    console.log("Connecting to Oracle database...");
+    console.log("OCI Connecting to Oracle database...");
     try {
       this.pool = await oracledb.createPool({
         ...dbConfig,
-        poolMin: 1,
-        poolMax: 6,
-        poolIncrement: 1,
+        poolMin: 2,
+        poolMax: 10,
+        poolIncrement: 2,
       });
     } catch (err) {
-      console.error("Error connecting to Oracle database:", err);
+      console.error("OCI Error connecting to Oracle database:", err);
       throw err;
     }
   }
@@ -85,7 +102,9 @@ class DatabaseService {
   ): Promise<unknown[]> {
     let result: oracledb.Result<unknown>;
 
-    const conn = await this.pool?.getConnection();
+    const conn = await oracledb.getConnection();
+  //  console.log("OCI ----conn ----:", conn);
+    // const conn = await this.pool?.getConnection();
     if (!conn) throw new Error("No connection available");
     try {
       result = await conn!.execute(query, bindVariables, params);
@@ -109,10 +128,7 @@ class DatabaseService {
     connectionParam: oracledb.Connection | null = null,
     params: ExtendedExecuteOptions = { outFormat: OUT_FORMAT_OBJECT }
   ): Promise<oracledb.Result<any>> {
-    console.log(
-      "!                                                EXECUTE COMMAND ! "
-    );
-    const conn = connectionParam || (await this.pool?.getConnection());
+    const conn = connectionParam || await oracledb.getConnection();
     let result: oracledb.Result<unknown>;
 
     try {
@@ -696,5 +712,3 @@ class DatabaseService {
     }
   }
 }
-
-export default DatabaseService;

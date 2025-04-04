@@ -1,6 +1,6 @@
 "use server";
 
-import db from "@/lib/database/db-instance";
+import { getDbInstance } from "@/lib/database/db-instance";
 import { ID } from "@/types/databaseTypes";
 import { FormActionType } from "@/types/FormActionType";
 
@@ -13,6 +13,7 @@ export const manageSpeciality = async (
   }
   try {
     let result: any;
+    const db = await getDbInstance();
     if(id) {
      result = await db.updateSpeciality(specialityName, description, +(id as number));
     } else {

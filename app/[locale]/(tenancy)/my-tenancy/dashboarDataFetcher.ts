@@ -1,8 +1,9 @@
-import db from "@/lib/database/db-instance";
+import { getDbInstance } from "@/lib/database/db-instance";
 
 export const dataFetcherAll = async <T>(
     fetcher: () => Promise<T[]>
 ): Promise<{data: T[], error: string | null}> => {
+    const db = await getDbInstance();
     const boundFetch = fetcher.bind(db); 
     try {
         const data = await boundFetch();

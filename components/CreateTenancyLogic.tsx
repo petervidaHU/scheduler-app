@@ -2,10 +2,13 @@ import { useState, useActionState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button, TextInput } from '@mantine/core';
-import { createTenancyAction } from '@/app/tenancy/createTenancyAction';
 import { FormActionType } from '@/types/FormActionType';
+import { createTenancyAction } from '@/app/[locale]/tenancy/createTenancyAction';
 
-const initState: FormActionType = { error: null, data: null };
+const initState: FormActionType = {
+    error: null, data: null,
+    success: false
+};
 
 export default function CreateTenancyLogic() {
     const [state, action, isPending] = useActionState(createTenancyAction, initState);
