@@ -48,21 +48,21 @@ export class DatabaseService {
     }
     return DatabaseService.instance;
   }
-  async getTenancyFromSession() {
+  async setTenancyFromSession() {
     const session = await auth();
     if (session) {
       const tenancyId = (session.user as UserSession).tenancyId;
       if (tenancyId !== null) {
-        return tenancyId;
+        this.tenancyId = tenancyId;
       }
     }
-    return null;
   }
 
   async init(): Promise<void> {
-    console.log("OCI Initializing Oracle database connection pool");
+    console.log("++++++++++ Initializing Oracle database connection pool & Tenancy Id +++++++++++++");
+    this.setTenancyFromSession();
     if (this.pool) {
-      console.log('OCI Number of available connections in pool:', this.pool.connectionsOpen);
+      console.log('Number of available connections in pool:', this.pool.connectionsOpen);
       return;
     }
 
@@ -103,8 +103,6 @@ export class DatabaseService {
     let result: oracledb.Result<unknown>;
 
     const conn = await oracledb.getConnection();
-  //  console.log("OCI ----conn ----:", conn);
-    // const conn = await this.pool?.getConnection();
     if (!conn) throw new Error("No connection available");
     try {
       result = await conn!.execute(query, bindVariables, params);
