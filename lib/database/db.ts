@@ -5,7 +5,6 @@ import oracledb, {
   BindParameters,
   ExecuteOptions,
   OUT_FORMAT_OBJECT,
-  Result,
 } from "oracledb";
 import path from "path";
 import { getRoleName } from "../utils";
@@ -14,7 +13,6 @@ import {
   ClassRoom,
   GlobalTimeslot,
   ID,
-  Lesson,
   Speciality,
   Subject,
   Syllabus,
@@ -33,9 +31,11 @@ interface ExtendedExecuteOptions extends ExecuteOptions {
 }
 
 class DatabaseService {
+  private pool: oracledb.Pool | undefined;
   constructor() {}
 
   async getTenancy() {
+  
     const session = await auth();
     if (session) {
       const tenancyId = (session.user as UserSession).tenancyId;
@@ -46,7 +46,13 @@ class DatabaseService {
     throw new Error("User or tenancy not authenticated");
   }
 
-  async getConnection(): Promise<oracledb.Connection> {
+  async getConnection(): Promise<void> {
+    if (this.pool) {
+      console.log(
+        ":::::::::::::::::::::::::::::::::::::::::::::::::::::::pool is already available"
+      );
+      return;
+    }
     process.env.TNS_ADMIN = path.join(__dirname, "wallet");
     const dbConfig = {
       user: process.env.DB_USER,
@@ -55,7 +61,13 @@ class DatabaseService {
     };
     console.log("Connecting to Oracle database...");
     try {
-      return await oracledb.getConnection(dbConfig);
+      // return await oracledb.getConnection(dbConfig);
+      this.pool = await oracledb.createPool({
+        ...dbConfig,
+        poolMin: 1,
+        poolMax: 6,
+        poolIncrement: 1,
+      });
     } catch (err) {
       console.error("Error connecting to Oracle database:", err);
       throw err;
@@ -65,27 +77,21 @@ class DatabaseService {
   async executeQuery(
     query: string,
     bindVariables: BindParameters,
-    connectionParam: oracledb.Connection | null = null,
     params: ExecuteOptions = { outFormat: OUT_FORMAT_OBJECT }
   ): Promise<unknown[]> {
     let result: oracledb.Result<unknown>;
-    let conn: oracledb.Connection;
+
+    const conn = await this.pool?.getConnection();
+    if (!conn) throw new Error("No connection available");
     try {
-      conn = connectionParam || (await this.getConnection());
-    } catch (error) {
-      console.error(`Error connecting to Oracle database: ${error}`);
-      throw error;
-    }
-    try {
-      result = await conn.execute(query, bindVariables, params);
+      result = await conn!.execute(query, bindVariables, params);
     } catch (error) {
       console.error(`Error executing ${query} query: ${error}`);
       throw error;
     } finally {
-      if (!connectionParam && conn) {
-        await conn.close();
-      }
+      conn.release();
     }
+
     if (!result || !result["rows"]) {
       throw new Error("The database query resulted no result");
     } else {
@@ -96,46 +102,40 @@ class DatabaseService {
   async executeCommand(
     query: string,
     bindVariables: BindParameters,
-    autocommit: boolean = true,
     connectionParam: oracledb.Connection | null = null,
     params: ExtendedExecuteOptions = { outFormat: OUT_FORMAT_OBJECT }
   ): Promise<oracledb.Result<any>> {
-    const conn = connectionParam || (await this.getConnection());
+    console.log(
+      "!                                                EXECUTE COMMAND ! "
+    );
+    const conn = connectionParam || (await this.pool?.getConnection());
     let result: oracledb.Result<unknown>;
 
     try {
-      result = await conn.execute(query, bindVariables, params);
-      if (autocommit) await conn.commit();
+      result = await conn!.execute(query, bindVariables, params);
+      if (!connectionParam) await conn?.commit();
     } catch (error) {
       throw error;
     } finally {
-      // closing self managed connection, but keep open if connection comes from scope
       if (!connectionParam) {
-        await conn.close();
+        await conn?.close();
       }
     }
 
     if (!result) {
       throw new Error(
-        "The database query resulted no result or error in database executeCommand"
+        "The database command resulted no result or error in database executeCommand"
       );
     }
     return result;
   }
 
   // --------------- USERS ---------------
-  async getUserByEmail(
-    email: string,
-    conn: oracledb.Connection | null = null
-  ): Promise<User> {
+  async getUserByEmail(email: string): Promise<User> {
     const query = `SELECT * FROM users WHERE email = :email`;
     const bindVariables = [email];
     try {
-      const result = (await this.executeQuery(
-        query,
-        bindVariables,
-        conn
-      )) as User[];
+      const result = (await this.executeQuery(query, bindVariables)) as User[];
       if (result.length === 0) {
         throw new Error("User not found");
       }
@@ -148,13 +148,13 @@ class DatabaseService {
 
   async getUserRoleInTenancy(
     userId: string,
-    tenancyId: string,
-    conn: oracledb.Connection | null = null
+    tenancyId: string
   ): Promise<Roles> {
     const query = `SELECT role_id FROM user_roles WHERE user_id = :userId AND tenancy_id = :tenancyId`;
     const bindVariables = [userId, tenancyId];
     try {
-      const result = (await this.executeQuery(query, bindVariables, conn)) as {
+      // TODO fishy result handling!
+      const result = (await this.executeQuery(query, bindVariables)) as {
         ROLE_ID: number;
       }[];
       if (result.length === 0) {
@@ -174,11 +174,11 @@ class DatabaseService {
     firstname: string,
     lastname: string
   ) {
-    const conn = await this.getConnection();
+    // ODO: batch multiple command to one job?
     const query = `INSERT INTO users (email, password_hash, first_name, last_name) VALUES (:email, :password, :firstname, :lastname)`;
     const bindVariables = [email, password, firstname, lastname];
-    const result = await this.executeCommand(query, bindVariables);
-    const tenancy = await this.createTenancy("self-tenancy", email);
+    await this.executeCommand(query, bindVariables);
+    await this.createTenancy("self-tenancy", email);
   }
 
   async updateUser(
@@ -224,9 +224,7 @@ class DatabaseService {
   async getAllUsers(): Promise<User[]> {
     try {
       const query = `SELECT * FROM users`;
-      // console.log(`Executing query: ${query}`);
       const result = (await this.executeQuery(query, [])) as User[];
-      // console.log(`Query result: ${JSON.stringify(result)}`);
       return result;
     } catch (error) {
       console.error(`Error getting all users: ${error}`);
@@ -234,10 +232,7 @@ class DatabaseService {
     }
   }
 
-  async getUserByEmailInTenancy(
-    email: string,
-    conn: oracledb.Connection | null = null
-  ): Promise<User> {
+  async getUserByEmailInTenancy(email: string): Promise<User> {
     try {
       const tenancyId = await this.getTenancy();
       const query = `
@@ -248,11 +243,7 @@ class DatabaseService {
           AND ur.tenancy_id = :tenancyId
       `;
       const bindVariables = { email, tenancyId };
-      const result = (await this.executeQuery(
-        query,
-        bindVariables,
-        conn
-      )) as User[];
+      const result = (await this.executeQuery(query, bindVariables)) as User[];
       if (result.length === 0) {
         throw new Error("User not found within the current tenancy.");
       }
@@ -292,28 +283,25 @@ class DatabaseService {
   ) {
     const query = `INSERT INTO user_roles (user_id, tenancy_id, role_id) VALUES (:userId, :tenancyId, :roleId)`;
     const bindVariables = [userId, tenancyId, roleId];
-    const result = await this.executeCommand(query, bindVariables, false, conn);
-    // console.log("insertUserRoles result", result);
+    const result = await this.executeCommand(query, bindVariables, conn);
     return result;
   }
 
   // ----------------- TENANCIES -------------------
 
-  async getTenancyByName(
-    name: string,
-    conn: oracledb.Connection | null = null
-  ) {
+  async getTenancyByName(name: string) {
     const query = `SELECT * FROM tenancies WHERE name = :name`;
     const bindVariables = [name];
-    const result = await this.executeQuery(query, bindVariables, conn);
+    const result = await this.executeQuery(query, bindVariables);
     return result;
   }
 
   async createTenancy(tenancyName: string, userEmail: string): Promise<number> {
-    const conn = await this.getConnection();
-    try {
-      const userResult = await this.getUserByEmail(userEmail, conn);
+    const conn = await this.pool?.getConnection();
+    if (!conn) throw new Error("No connection available");
 
+    try {
+      const userResult = await this.getUserByEmail(userEmail);
       const userId = userResult.USER_ID;
 
       const insertTenancyQuery = `
@@ -328,7 +316,6 @@ class DatabaseService {
       const tenancyResult = await this.executeCommand(
         insertTenancyQuery,
         bindVars,
-        false, // autocommit
         conn
       );
       const newTenancyId = tenancyResult.outBinds.newId[0];
@@ -346,8 +333,7 @@ class DatabaseService {
   }
 
   async getTenanciesByUser(userEmail: string): Promise<any[]> {
-    const conn = await this.getConnection();
-    const userResult = await this.getUserByEmail(userEmail, conn);
+    const userResult = await this.getUserByEmail(userEmail);
     const userId = userResult.USER_ID;
     const query = `
     SELECT t.*, ur.role_id, r.role_name
@@ -356,9 +342,8 @@ class DatabaseService {
     JOIN roles r ON ur.role_id = r.role_id
     WHERE ur.user_id = :userId
   `;
-    const bindVariables = [userId];
     try {
-      const result = await this.executeQuery(query, bindVariables, conn);
+      const result = await this.executeQuery(query, [userId]);
       return result;
     } catch (error) {
       console.error(`Error getting tenancies by user: ${error}`);
@@ -369,17 +354,14 @@ class DatabaseService {
   // ----------------- SPECIALITIES ----------------------
 
   async createSpeciality(name: string, desc: string): Promise<void> {
-    const conn = await this.getConnection();
     const tenancyId = await this.getTenancy();
     const query = `INSERT INTO specialties (specialty_name, description, tenancy_id) VALUES (:name, :description, :tenancyId)`;
     try {
       const bindVariables = [name, desc, tenancyId];
-      const res = await this.executeCommand(query, bindVariables, true, conn);
+      const res = await this.executeCommand(query, bindVariables);
     } catch (error) {
       console.error(`Error creating speciality: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
@@ -388,65 +370,51 @@ class DatabaseService {
     desc: string,
     id: number
   ): Promise<void> {
-    const conn = await this.getConnection();
     const tenancyId = await this.getTenancy();
     const query = `UPDATE specialties SET specialty_name = :name, description = :description WHERE specialty_id = :id AND (tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
     try {
       const bindVariables = [name, desc, id, tenancyId];
-      await this.executeCommand(query, bindVariables, true, conn);
+      await this.executeCommand(query, bindVariables);
     } catch (error) {
       console.error(`Error updating speciality: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   async getAllSpeciality(): Promise<Speciality[]> {
-    const conn = await this.getConnection();
     const tenancyId = await this.getTenancy();
     const query = `SELECT * FROM specialties WHERE(tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
     try {
-      const result = await this.executeQuery(query, [tenancyId], conn);
-      // console.log('spec res:::', result)
+      const result = await this.executeQuery(query, [tenancyId]);
       return result as Speciality[];
     } catch (error) {
-      console.error(`Error getting speciality: ${error}`);
+      console.error(`Error getting array of speciality: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   async getSpecialityById(id: number): Promise<Speciality> {
-    const conn = await this.getConnection();
     const tenancyId = await this.getTenancy();
     const query = `SELECT * FROM specialties WHERE specialty_id = :id AND (tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
     try {
-      const result = await this.executeQuery(query, [id, tenancyId], conn);
+      const result = await this.executeQuery(query, [id, tenancyId]);
       return (result as Speciality[])[0];
     } catch (error) {
       console.error(`Error getting speciality: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   // ----------------- SLOTS ----------------------
 
   async getBasicTimeSlots(global: GlobalTimeslot): Promise<Timeslots[]> {
-    const conn = await this.getConnection();
-    console.log("::::::::::::::::::::::::::::::", global);
     const query = `SELECT * FROM TIMESLOT_TEMPLATE WHERE GLOBAL_TEMPLATE = :global AND TENANCY_ID IS NULL`;
     try {
-      const result = await this.executeQuery(query, [global], conn);
+      const result = await this.executeQuery(query, [global]);
       return result as Timeslots[];
     } catch (error) {
       console.error(`Error getting timeslots: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
@@ -457,7 +425,6 @@ class DatabaseService {
     description: string,
     specialityId: ID | null
   ): Promise<void> {
-    const conn = await this.getConnection();
     const query = `INSERT INTO subjects (subject_name, specialty_id, tenancy_id, description) VALUES (:name, :specialityId, :tenancyId, :description)`;
     try {
       const tenancyId = await this.getTenancy();
@@ -467,12 +434,9 @@ class DatabaseService {
         tenancyId,
         description,
       ];
-      await this.executeCommand(query, bindVariables, true, conn);
+      await this.executeCommand(query, bindVariables);
     } catch (error) {
-      await conn.rollback();
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
@@ -481,63 +445,47 @@ class DatabaseService {
     email: string,
     description: string
   ): Promise<void> {
-    const conn = await this.getConnection();
     const query = `INSERT INTO teachers (teacher_name, teacher_email, description, tenancy_id) VALUES (:name, :email, :description, :tenancyId)`;
     try {
       const tenancyId = await this.getTenancy();
       const bindVariables = [name, email, description, tenancyId];
-      await this.executeCommand(query, bindVariables, false, conn);
-      await conn.commit();
+      await this.executeCommand(query, bindVariables);
     } catch (error) {
-      await conn.rollback();
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   async deleteTeacher(teacherId: number): Promise<void> {
-    const conn = await this.getConnection();
     const query = `DELETE FROM teachers WHERE teacher_id = :teacherId`;
     const bindVariables = [teacherId];
     try {
-      await this.executeCommand(query, bindVariables, false, conn);
-      await conn.commit();
+      await this.executeCommand(query, bindVariables);
     } catch (error) {
-      await conn.rollback();
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   async getAllTeachers(): Promise<Teacher[]> {
-    const conn = await this.getConnection();
     const tenancyId = await this.getTenancy();
     const query = `SELECT * FROM teachers WHERE tenancy_id = :tenancyId`;
     try {
-      const result = await this.executeQuery(query, [tenancyId], conn);
+      const result = await this.executeQuery(query, [tenancyId]);
       return result as Teacher[];
     } catch (error) {
       console.error(`Error getting teachers: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   async getAllSubjects(): Promise<Subject[]> {
-    const conn = await this.getConnection();
     const tenancyId = await this.getTenancy();
     const query = `SELECT * FROM subjects WHERE tenancy_id = :tenancyId`;
     try {
-      const result = await this.executeQuery(query, [tenancyId], conn);
+      const result = await this.executeQuery(query, [tenancyId]);
       return result as Subject[];
     } catch (error) {
       console.error(`Error getting subjects: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
@@ -549,7 +497,6 @@ class DatabaseService {
     tenancyIdProp: ID | null = null,
     commonConn?: oracledb.Connection
   ): Promise<void> {
-    const conn = commonConn || (await this.getConnection());
     const query = `INSERT INTO syllabus (class_id, subject_id, teacher_id, tenancy_id, occurrence) VALUES (:classId, :subjectId, :teacherId, :tenancyId, :occurrence)`;
     try {
       const tenancyId = tenancyIdProp || (await this.getTenancy());
@@ -560,37 +507,27 @@ class DatabaseService {
         tenancyId,
         occurrence,
       ];
-      await this.executeCommand(query, bindVariables, false, conn);
-      if (!commonConn) {
-        await conn.commit();
-      }
+      await this.executeCommand(query, bindVariables, commonConn);
     } catch (error) {
-      await conn.rollback();
       throw error;
-    } finally {
-      if (!commonConn) await conn.close();
     }
   }
 
   async getSyllabus(classId: ID): Promise<Syllabus[]> {
-    const conn = await this.getConnection();
     const tenancyId = await this.getTenancy();
     const query = `SELECT * FROM syllabus WHERE tenancy_id = :tenancyId AND class_id = :classId`;
     try {
-      const result = await this.executeQuery(query, [tenancyId, classId], conn);
+      const result = await this.executeQuery(query, [tenancyId, classId]);
       return result as Syllabus[];
     } catch (error) {
       console.error(`Error getting syllabus: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   // ----------------- LESSON -------------------
 
   async createLesson(lesson: LessonInput): Promise<void> {
-    const conn = await this.getConnection();
     const query = `INSERT INTO lessons (timeslot_id, teacher_id, classroom_id, subject_id, class_id, tenancy_id) VALUES (:timeslotId, :teacherId, :classroomId, :subjectId, :classId, :tenancyId)`;
     try {
       const tenancyId = await this.getTenancy();
@@ -602,12 +539,9 @@ class DatabaseService {
         lesson.classroom,
         tenancyId,
       ];
-      await this.executeCommand(query, bindVariables, false, conn);
+      await this.executeCommand(query, bindVariables);
     } catch (error) {
-      await conn.rollback();
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
@@ -617,7 +551,10 @@ class DatabaseService {
     numberOfStudents: string,
     syllabus: NormalizedSyllabus
   ): Promise<void> {
-    const conn = await this.getConnection();
+    const conn = await this.pool!.getConnection();
+    if (!conn) {
+      throw new Error("Failed to get connection");
+    }
     const query = `
       INSERT INTO classes (class_name, number_of_students, tenancy_id)
       VALUES (:name, :numberOfStudents, :tenancyId)
@@ -633,7 +570,6 @@ class DatabaseService {
       const result = await this.executeCommand(
         query,
         bindVariables,
-        false,
         conn
       );
       const classId = result.outBinds.classId[0];
@@ -664,26 +600,25 @@ class DatabaseService {
   }
 
   async getAllClasses(): Promise<Classes[]> {
-    const conn = await this.getConnection();
     const query = `SELECT * FROM classes WHERE tenancy_id = :tenancyId`;
     try {
       const tenancyId = await this.getTenancy();
-      const result = await this.executeQuery(query, [tenancyId], conn);
+      const result = await this.executeQuery(query, [tenancyId]);
       return result as Classes[];
     } catch (error) {
       console.error(`Error getting classes: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   async deleteClass(classId: number): Promise<void> {
-    const conn = await this.getConnection();
+    const conn = await this.pool!.getConnection();
+    // TODO tenancy based query
+    // TODO delete syllabuses as well
     const query = `DELETE FROM classes WHERE class_id = :classId`;
     const bindVariables = [classId];
     try {
-      await this.executeCommand(query, bindVariables, false, conn);
+      await this.executeCommand(query, bindVariables, conn);
       await conn.commit();
     } catch (error) {
       await conn.rollback();
@@ -700,63 +635,47 @@ class DatabaseService {
     capacity: number,
     specialityId: ID | null
   ): Promise<void> {
-    const conn = await this.getConnection();
     const query = `INSERT INTO classrooms (classroom_name, capacity, speciality_id, tenancy_id) VALUES (:name, :capacity, :specialityId, :tenancyId)`;
     try {
       const tenancyId = await this.getTenancy();
       const bindVariables = [name, capacity, specialityId, tenancyId];
-      await this.executeCommand(query, bindVariables, false, conn);
-      await conn.commit();
+      await this.executeCommand(query, bindVariables);
     } catch (error) {
-      await conn.rollback();
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   async getAllClassRooms(): Promise<ClassRoom[]> {
-    const conn = await this.getConnection();
     const query = `SELECT * FROM classrooms WHERE tenancy_id = :tenancyId`;
     try {
       const tenancyId = await this.getTenancy();
-      const result = await this.executeQuery(query, [tenancyId], conn);
+      const result = await this.executeQuery(query, [tenancyId]);
       return result as ClassRoom[];
     } catch (error) {
       console.error(`Error getting class rooms: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   async getClassRoomById(id: number): Promise<ClassRoom> {
-    const conn = await this.getConnection();
     const query = `SELECT * FROM classrooms WHERE classroom_id = :id AND tenancy_id = :tenancyId`;
     try {
       const tenancyId = await this.getTenancy();
-      const result = await this.executeQuery(query, [id, tenancyId], conn);
+      const result = await this.executeQuery(query, [id, tenancyId]);
       return (result as ClassRoom[])[0];
     } catch (error) {
       console.error(`Error getting class room: ${error}`);
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
   async deleteClassRoom(id: number): Promise<void> {
-    const conn = await this.getConnection();
     const query = `DELETE FROM classrooms WHERE classroom_id = :id`;
     const bindVariables = [id];
     try {
-      await this.executeCommand(query, bindVariables, false, conn);
-      await conn.commit();
+      await this.executeCommand(query, bindVariables);
     } catch (error) {
-      await conn.rollback();
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 
@@ -766,18 +685,13 @@ class DatabaseService {
     specialityId: number,
     id: number
   ): Promise<void> {
-    const conn = await this.getConnection();
     const tenancyId = await this.getTenancy();
     const query = `UPDATE classrooms SET capacity = :capacity,  classroom_name = :name, speciality_id = :specialityId WHERE classroom_id = :id AND tenancy_id = :tenancyId`;
     const bindVariables = [capacity, name, specialityId, id, tenancyId];
     try {
-      await this.executeCommand(query, bindVariables, false, conn);
-      await conn.commit();
+      await this.executeCommand(query, bindVariables);
     } catch (error) {
-      await conn.rollback();
       throw error;
-    } finally {
-      await conn.close();
     }
   }
 }

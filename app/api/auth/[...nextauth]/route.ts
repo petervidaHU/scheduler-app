@@ -64,7 +64,7 @@ export const authOptions = {
       return token;
     },
     async session({ session, token, user }: any) {
-      // console.log("in session callback:", token);
+      console.log("in session callback:");
       if (session.user) {
         session.user.userId = token.id;
         session.user.name = `${token.firstName} ${token.lastName}`;
