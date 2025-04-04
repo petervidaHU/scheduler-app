@@ -84,7 +84,7 @@ const CreateLessonModal: React.FC<props> = ({ slot }) => {
     onValuesChange: (values, previous) => {
       console.log("valuesOnChange", values.subject, previous.subject, values.subject !== previous.subject);
       if (!values.subject) setGroupedClassRooms(null);
-       if (values.subject /* &&values.subject !== previous.subject*/) {
+       if (values.subject && values.subject !== previous.subject) {
         const newSubject = syllabus.subjects.find(
           (subject) => subject.value === values.subject
         );
@@ -138,6 +138,7 @@ const CreateLessonModal: React.FC<props> = ({ slot }) => {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setPreferredTeacherCheckbox(e.target.checked);
+    console.log('preferredTeacherCheckbox', preferredTeacher?.value);
     form.setFieldValue("teacher", preferredTeacher?.value || "");
   };
   console.log("warnings", warnings);
