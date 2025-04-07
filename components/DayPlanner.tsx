@@ -23,8 +23,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
     return date.getHours() * 60 + date.getMinutes();
   };
   const handleOpenModal = (slot: Timeslots) => {
-    console.log("slot", slot);
-    openModal(<CreateLessonModal slot={slot} />);
+    openModal(<CreateLessonModal slot={slot} day={day.id}/>);
   };
 
   return (

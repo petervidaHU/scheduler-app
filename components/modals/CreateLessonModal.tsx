@@ -2,18 +2,19 @@
 
 import { createLesson } from "@/app/[locale]/(tenancy)/_actions/createLesson";
 import { useStore } from "@/store/store";
-import { Timeslots } from "@/types/databaseTypes";
+import { ID, Timeslots } from "@/types/databaseTypes";
 import {
   FormActionType,
   LessonInput,
   SelectOptions,
 } from "@/types/FormActionType";
-import { Checkbox, Select } from "@mantine/core";
+import { Button, Checkbox, Select } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useActionState, useTransition, useState, useMemo } from "react";
+import { useActionState, useTransition, useState } from "react";
 
 interface props {
   slot: Timeslots;
+  day: ID
 }
 
 type classRoomsGroupedOptions = [
@@ -42,7 +43,7 @@ const classRoomReduceInitialState: classRoomsGroupedOptions = [
   },
 ];
 
-const CreateLessonModal: React.FC<props> = ({ slot }) => {
+const CreateLessonModal: React.FC<props> = ({ slot, day }) => {
   const { syllabus, teacherOptions, classRooms } = useStore();
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
@@ -82,7 +83,7 @@ const CreateLessonModal: React.FC<props> = ({ slot }) => {
       },
     },
     onValuesChange: (values, previous) => {
-      console.log("valuesOnChange", values.subject, previous.subject, values.subject !== previous.subject);
+      // console.log("valuesOnChange", values.subject, previous.subject, values.subject !== previous.subject);
       if (!values.subject) setGroupedClassRooms(null);
        if (values.subject && values.subject !== previous.subject) {
         const newSubject = syllabus.subjects.find(
@@ -130,7 +131,14 @@ const CreateLessonModal: React.FC<props> = ({ slot }) => {
 
   const handleScheduleFormSubmit = (values: typeof form.values) => {
     startTransition(() => {
-      sAction(values);
+      console.log("values", values);
+      const extendedValues = {
+        ...values,
+        timeslot: slot.TEMPLATE_ID,
+        classId: syllabus.classId,
+        day: day,
+      }
+      sAction(extendedValues);
     });
   };
 
@@ -138,15 +146,12 @@ const CreateLessonModal: React.FC<props> = ({ slot }) => {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setPreferredTeacherCheckbox(e.target.checked);
-    console.log('preferredTeacherCheckbox', preferredTeacher?.value);
     form.setFieldValue("teacher", preferredTeacher?.value || "");
   };
-  console.log("warnings", warnings);
 
   return (
     <div>
       CreateLessonModal
-      {JSON.stringify(warnings)}
       <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
         <div>
           <label>subject</label>
@@ -180,7 +185,7 @@ const CreateLessonModal: React.FC<props> = ({ slot }) => {
             {...form.getInputProps("teacher")}
           />
         </div>
-        <button type="submit">create</button>
+        <Button type="submit">create</Button>
       </form>
     </div>
   );

@@ -9,6 +9,7 @@ export interface DayPlan {
 }
 
 export interface SyllabusForm {
+  classId: ID;
   subjects: Array<SelectOptions & {
     preferredTeacher: {value: string, label: string} | null;
     occurrence: number;

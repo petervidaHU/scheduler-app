@@ -23,7 +23,7 @@ export interface LessonInput {
     timeslot: ID;
     day: ID;
     teacher: ID;
-    classroom: ID | null;
+    classRoom: ID | null;
     subject: ID;
     classId: ID;
 }

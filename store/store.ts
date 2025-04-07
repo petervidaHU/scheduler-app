@@ -27,6 +27,7 @@ const createScheduleSlice = (set: any): ScheduleState => ({
   teacherOptions: [],
   classRooms: [],
   syllabus: {
+    classId: '',
     subjects: [],
   },
   addDay: (payload: DayPlan) =>

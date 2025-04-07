@@ -131,7 +131,7 @@ const SchedulePage: React.FC<props> = ({
             };
           });
 
-          return { subjects: subjectsMapped };
+          return { subjects: subjectsMapped, classId: Number(values.class) };
         };
 
         updateSyllabus(syllabusMapping(newSyllabus));
