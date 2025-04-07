@@ -1,20 +1,17 @@
-import Image from "next/image";
-import styles from "../page.module.css";
-import ToastContainer from "@/components/toast/Toast";
 
 export default function Home() {
 
   return (
 
-      <div className={styles.page}>
-        <main className={styles.main}>
+      <div >
+        <main >
           
 
-          <div className={styles.ctas}>
+          <div>
             main page. wow...
           </div>
         </main>
-        <footer className={styles.footer}>
+        <footer>
 
         </footer>
        

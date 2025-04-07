@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import LocaleSwitcher from "./LocaleSwitcher";
 import { setTenancyInServer } from "@/lib/database/setTenancyInServer";
+import { ColorModeSwitcher } from "./ColorModeSwitcher";
 
 const links = [
   { link: "/my-tenancy", label: "my tenancy" },
@@ -32,9 +33,6 @@ const languages = [
 
 export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const t = useTranslations("dashboard");
-  console.log("tenancies", tenancies);
-  console.log("tenanciessss", session);
-
   // console.log('i18n messages', t('message2'), 'locale in client side:', locale);
 
   const { update } = useSession();
@@ -75,6 +73,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   return (
     <header className={classes.header}>
       <div className={classes.inner}>
+        <ColorModeSwitcher />
         <Group>
           {status === "authenticated" ? (
             <Select
