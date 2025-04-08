@@ -547,7 +547,7 @@ export class DatabaseService {
   // ----------------- LESSON -------------------
 
   async createLesson(lesson: LessonInput): Promise<void> {
-    const query = `INSERT INTO lessons (timeslot_id, teacher_id, classroom_id, subject_id, class_id, tenancy_id) VALUES (:timeslotId, :teacherId, :classroomId, :subjectId, :classId, :tenancyId)`;
+    const query = `INSERT INTO lessons (template_id, teacher_id, classroom_id, subject_id, class_id, tenancy_id) VALUES (:timeslotId, :teacherId, :classroomId, :subjectId, :classId, :tenancyId)`;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = [
@@ -555,7 +555,7 @@ export class DatabaseService {
         lesson.teacher,
         lesson.classId,
         lesson.day,
-        lesson.classroom,
+        lesson.classRoom,
         tenancyId,
       ];
       await this.executeCommand(query, bindVariables);

@@ -1,9 +1,10 @@
 import { devtools, persist, createJSONStorage } from "zustand/middleware";
 import { create } from "zustand";
-import { DayPlan, SyllabusForm } from "@/types/ScheduleTypes";
+import { DayPlan, Schedule, SyllabusForm, SStatus } from "@/types/ScheduleTypes";
 import { Syllabus } from "@/types/databaseTypes";
-import { SelectOptions } from "@/types/FormActionType";
+import { LessonInput, SelectOptions } from "@/types/FormActionType";
 import { Toast } from "@/types/toastTypes";
+import { SpanStatus } from "next/dist/trace";
 
 interface ScheduleState {
   days: DayPlan[];
@@ -19,10 +20,24 @@ interface ScheduleState {
   classRooms: any[];
   updateTeacherOptions: (payload: any) => void;
   updateClassRooms: (payload: any) => void;
+  scheduleState: Schedule;
+  updateLesson : (payload: Array<LessonInput>) => void;
+  createOneLesson: (payload: LessonInput) => void;
+  updateSchedule: (payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>) => void;
 }
 
 const createScheduleSlice = (set: any): ScheduleState => ({
   days: [],
+  scheduleState: {
+    id: '',
+    status: null,
+    name: null,
+    class: null,
+    description: null,
+    owner: null,
+    period: null,
+    lessons: [],
+  },
   subjectOptions: [],
   teacherOptions: [],
   classRooms: [],
@@ -30,6 +45,30 @@ const createScheduleSlice = (set: any): ScheduleState => ({
     classId: '',
     subjects: [],
   },
+  updateLesson: (payload: Array<LessonInput>) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      scheduleState: {
+        ...state.scheduleState,
+        lessons: payload,
+      },
+  })),
+  createOneLesson: (payload: LessonInput) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      scheduleState: {
+        ...state.scheduleState,
+        lessons: [...state.scheduleState.lessons, payload],
+      },
+  })),
+  updateSchedule: (payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      scheduleState: {
+        ...state.scheduleState,
+        ...payload,
+      },
+  })),
   addDay: (payload: DayPlan) =>
     set((state: ScheduleState) => ({
       ...state,

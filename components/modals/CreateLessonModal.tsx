@@ -14,7 +14,7 @@ import { useActionState, useTransition, useState } from "react";
 
 interface props {
   slot: Timeslots;
-  day: ID
+  day: ID;
 }
 
 type classRoomsGroupedOptions = [
@@ -32,19 +32,9 @@ const init: FormActionType = {
   data: null,
   success: false,
 };
-const classRoomReduceInitialState: classRoomsGroupedOptions = [
-  {
-    group: "preferred by speciality",
-    items: [],
-  },
-  {
-    group: "other",
-    items: [],
-  },
-];
 
 const CreateLessonModal: React.FC<props> = ({ slot, day }) => {
-  const { syllabus, teacherOptions, classRooms } = useStore();
+  const { syllabus, teacherOptions, classRooms, createOneLesson } = useStore();
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
   const [preferredTeacherCheckbox, setPreferredTeacherCheckbox] =
@@ -85,7 +75,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day }) => {
     onValuesChange: (values, previous) => {
       // console.log("valuesOnChange", values.subject, previous.subject, values.subject !== previous.subject);
       if (!values.subject) setGroupedClassRooms(null);
-       if (values.subject && values.subject !== previous.subject) {
+      if (values.subject && values.subject !== previous.subject) {
         const newSubject = syllabus.subjects.find(
           (subject) => subject.value === values.subject
         );
@@ -129,6 +119,19 @@ const CreateLessonModal: React.FC<props> = ({ slot, day }) => {
     },
   });
 
+  const handleLessonCreate = () => {
+    const newLesson: LessonInput = {
+      classId: syllabus.classId,
+      subject: form.values.subject,
+      classRoom: form.values.classRoom,
+      teacher: form.values.teacher,
+      day: day,
+      timeslot: slot.TEMPLATE_ID,
+    };
+    console.log("newLesson", newLesson);
+    createOneLesson(newLesson);
+  };
+
   const handleScheduleFormSubmit = (values: typeof form.values) => {
     startTransition(() => {
       console.log("values", values);
@@ -137,7 +140,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day }) => {
         timeslot: slot.TEMPLATE_ID,
         classId: syllabus.classId,
         day: day,
-      }
+      };
       sAction(extendedValues);
     });
   };
@@ -152,7 +155,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day }) => {
   return (
     <div>
       CreateLessonModal
-      <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
+      <form onSubmit={form.onSubmit(handleLessonCreate)}>
         <div>
           <label>subject</label>
           <Select

@@ -1,17 +1,17 @@
 "use client";
 
 import { useForm } from "@mantine/form";
-import { NumberInput, Select, Textarea, Button, Checkbox } from "@mantine/core";
+import {
+  NumberInput,
+  Select,
+  Textarea,
+  Button,
+  Checkbox,
+  TextInput,
+} from "@mantine/core";
 import { createSchedule } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
 import { FormActionType, SelectOptions } from "@/types/FormActionType";
-import {
-  useActionState,
-  useTransition,
-  useState,
-  useCallback,
-  useMemo,
-  useEffect,
-} from "react";
+import { useActionState, useTransition, useCallback, useEffect } from "react";
 import {
   Classes,
   ClassRoom,
@@ -23,7 +23,9 @@ import {
 import { useStore } from "@/store/store";
 import { nanoid } from "nanoid";
 import { getSyllabusAction } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getSyllabusAction";
-import { SyllabusForm } from "@/types/ScheduleTypes";
+import { FormFields, SyllabusForm } from "@/types/ScheduleTypes";
+
+const formFields = Object.values(FormFields);
 
 const init: FormActionType = {
   error: null,
@@ -56,6 +58,7 @@ const SchedulePage: React.FC<props> = ({
     addDay,
     updateSyllabus,
     updateClassRooms,
+    updateSchedule,
     updateTeacherOptions,
   } = useStore();
   const [isPending, startTransition] = useTransition();
@@ -63,15 +66,21 @@ const SchedulePage: React.FC<props> = ({
     ...init,
   });
 
+  const updateScheduleState = (
+    values: Record<FormFields, any>,
+    previous: Record<FormFields, any>
+  ) => {
+    formFields.forEach((element) => {
+      if (values[element] !== previous[element]) {
+        updateSchedule({[element]: values[element]});
+      }
+    });
+  };
+
   const updateStore = useCallback(() => {
     updateTeacherOptions(teacherOptions);
     updateClassRooms(classRooms);
-  }, [
-    teacherOptions,
-    updateTeacherOptions,
-    classRooms,
-    updateClassRooms,
-  ]);
+  }, [teacherOptions, updateTeacherOptions, classRooms, updateClassRooms]);
 
   useEffect(() => {
     updateStore();
@@ -84,21 +93,25 @@ const SchedulePage: React.FC<props> = ({
 
   const form = useForm({
     initialValues: {
-      class: "",
-      description: "",
-      owner: null,
+      [FormFields.name]: "",
+      [FormFields.class]: "",
+      [FormFields.description]: "",
+      [FormFields.owner]: null,
+      [FormFields.status]: null,
     },
     validate: {
       owner: (value) => (!value ? "Owner is required" : null),
+      name: (value) => (!value ? "Owner is required" : null),
     },
-    onValuesChange: async (values) => {
+    onValuesChange: async (values, previous) => {
+      updateScheduleState(values, previous);
       if (values.class !== form.values.class && values.class !== "") {
         const newSyllabus = await getSyllabusAction(values.class);
 
         if (!newSyllabus) {
           return;
         }
-// TODO migrate it to backend
+        // TODO migrate it to backend
         const syllabusMapping = (syllabus: Syllabus[]): SyllabusForm => {
           const subjectsMapped = syllabus.map((item) => {
             const subjectLabel = subjects.find(
@@ -108,8 +121,7 @@ const SchedulePage: React.FC<props> = ({
               (teacher) => teacher.TEACHER_ID === item.TEACHER_ID
             )?.TEACHER_NAME;
             const subjectSpecialityId =
-              subjects
-                .find((subject) => subject.SUBJECT_ID === item.SUBJECT_ID)
+              subjects.find((subject) => subject.SUBJECT_ID === item.SUBJECT_ID)
                 ?.SPECIALTY_ID || null;
             const subjectSpeciality = subjectSpecialityId
               ? specialities.find(
@@ -121,12 +133,16 @@ const SchedulePage: React.FC<props> = ({
             return {
               value: item.SUBJECT_ID.toString(),
               label: subjectLabel || "",
-              preferredTeacher: teacherLabel && item.TEACHER_ID
-                ? { label: teacherLabel, value: item.TEACHER_ID?.toString() }
-                : null,
+              preferredTeacher:
+                teacherLabel && item.TEACHER_ID
+                  ? { label: teacherLabel, value: item.TEACHER_ID?.toString() }
+                  : null,
               occurrence: item.OCCURRENCE,
               speciality: subjectSpeciality
-                ? { label: subjectSpeciality, value: subjectSpecialityId?.toString() || ''}
+                ? {
+                    label: subjectSpeciality,
+                    value: subjectSpecialityId?.toString() || "",
+                  }
                 : null,
             };
           });
@@ -174,9 +190,14 @@ const SchedulePage: React.FC<props> = ({
 
         <Select
           label="Class"
-          name="class"
+          name={FormFields.class}
           data={classOptions}
-          {...form.getInputProps("class")}
+          {...form.getInputProps(FormFields.class)}
+        />
+        <TextInput
+          label="Name"
+          name={FormFields.name}
+          {...form.getInputProps(FormFields.name)}
         />
         <NumberInput
           label="Variations"
@@ -185,8 +206,8 @@ const SchedulePage: React.FC<props> = ({
         />
         <Textarea
           label="Description"
-          name="description"
-          {...form.getInputProps("description")}
+          name={FormFields.description}
+          {...form.getInputProps(FormFields.description)}
         />
         <Button type="submit">Create Schedule</Button>
       </form>
