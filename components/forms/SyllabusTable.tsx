@@ -12,7 +12,7 @@ const SyllabusTable = () => {
   );
   
   const subjectOccurrences = scheduleState.lessons.reduce((acc, lesson) => {
-    const subjectId = lesson.subject;
+    const subjectId = lesson.subject.id;
     acc[subjectId] = (acc[subjectId] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
