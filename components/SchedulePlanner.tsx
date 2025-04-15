@@ -11,6 +11,7 @@ interface props {
 }
 
 const SchedulePlanner: React.FC<props> = ({ basicTimeslots }) => {
+  const [openForNewSlot, setOpenForNewSlot] = React.useState(false);  
   const { days, windowHeight } = useStore();
 
   const hourGrid = (id: string | null = null) => {
@@ -40,6 +41,7 @@ const SchedulePlanner: React.FC<props> = ({ basicTimeslots }) => {
 
   return (
     <div>
+      <input type="checkbox" id="newSlot" onChange={() => setOpenForNewSlot(!openForNewSlot)}/>
       <h3>schedule planner</h3>
       <Grid>
         <Grid.Col span={1}>
@@ -92,7 +94,7 @@ const SchedulePlanner: React.FC<props> = ({ basicTimeslots }) => {
                 }}
               >
                 <DayPlanner day={day} slotTemplates={basicTimeslots} />
-                {hourGrid(day.id)}
+                 {openForNewSlot && hourGrid()}
               </div>
             </Grid.Col>
           </ React.Fragment>

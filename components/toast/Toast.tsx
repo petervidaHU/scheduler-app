@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/store/store";
-import { Toast } from "@/types/toastTypes";
+import { Toast } from "@/types/UIFeedbackTypes";
 import { Notification } from "@mantine/core";
 import { IconX, IconCheck } from "@tabler/icons-react";
 import React from "react";

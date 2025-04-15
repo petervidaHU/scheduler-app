@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { DayPlan, Schedule, SyllabusForm, SStatus } from "@/types/ScheduleTypes";
 import { Syllabus } from "@/types/databaseTypes";
 import { LessonInput, SelectOptions } from "@/types/FormActionType";
-import { Toast } from "@/types/toastTypes";
+import { Toast } from "@/types/UIFeedbackTypes";
 import { SpanStatus } from "next/dist/trace";
 
 interface ScheduleState {
@@ -23,6 +23,7 @@ interface ScheduleState {
   scheduleState: Schedule;
   updateLesson : (payload: Array<LessonInput>) => void;
   createOneLesson: (payload: LessonInput) => void;
+  deleteOneLesson: (payload: string) => void;
   updateSchedule: (payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>) => void;
 }
 
@@ -59,6 +60,14 @@ const createScheduleSlice = (set: any): ScheduleState => ({
       scheduleState: {
         ...state.scheduleState,
         lessons: [...state.scheduleState.lessons, payload],
+      },
+  })),
+  deleteOneLesson: (payload: string) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      scheduleState: {
+        ...state.scheduleState,
+        lessons: state.scheduleState.lessons.filter((lesson) => lesson.tempId !== payload),
       },
   })),
   updateSchedule: (payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>) =>

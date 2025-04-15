@@ -15,6 +15,7 @@ import { useActionState, useTransition, useState } from "react";
 interface props {
   slot: Timeslots;
   day: ID;
+  closeModal: () => void;
 }
 
 type classRoomsGroupedOptions = [
@@ -33,7 +34,16 @@ const init: FormActionType = {
   success: false,
 };
 
-const CreateLessonModal: React.FC<props> = ({ slot, day }) => {
+const getNameAndId = (obj: Array<any>, id: string) => {
+  const found = obj.find((item) => item.value === id);
+  return {
+    label: found.label || found.name,
+    id: id,
+  };
+  
+}
+
+const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
   const { syllabus, teacherOptions, classRooms, createOneLesson } = useStore();
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
@@ -122,17 +132,19 @@ const CreateLessonModal: React.FC<props> = ({ slot, day }) => {
   const handleLessonCreate = () => {
     const newLesson: LessonInput = {
       classId: syllabus.classId,
-      subject: form.values.subject,
-      classRoom: form.values.classRoom,
-      teacher: form.values.teacher,
+      subject: getNameAndId(syllabus.subjects, form.values.subject),
+      classRoom: getNameAndId(classRooms, form.values.classRoom),
+      teacher: getNameAndId(teacherOptions, form.values.teacher),
       day: day,
-      timeslot: slot.TEMPLATE_ID,
+      timeslot: slot,
+      tempId: Date.now().toString(),
     };
-    console.log("newLesson", newLesson);
+    // console.log("newLesson", newLesson);
     createOneLesson(newLesson);
+    closeModal();
   };
 
-  const handleScheduleFormSubmit = (values: typeof form.values) => {
+/*   const handleScheduleFormSubmit = (values: typeof form.values) => {
     startTransition(() => {
       console.log("values", values);
       const extendedValues = {
@@ -143,7 +155,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day }) => {
       };
       sAction(extendedValues);
     });
-  };
+  }; */
 
   const handlepreferredTeacherCheck = (
     e: React.ChangeEvent<HTMLInputElement>

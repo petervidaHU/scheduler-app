@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { Text } from "@mantine/core";
+import { Group, Text } from "@mantine/core";
 import { DayPlan } from "@/types/ScheduleTypes";
 import { Timeslots } from "@/types/databaseTypes";
 import { useStore } from "@/store/store";
 import { useModal } from "./ModalProvider";
 import CreateLessonModal from "./modals/CreateLessonModal";
+import ActionIconX from "./UI-elements/ActionIcons/X";
 
 interface DayPlannerProps {
   day: DayPlan;
@@ -14,17 +15,26 @@ interface DayPlannerProps {
 }
 
 const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
-  const { openModal } = useModal();
-  const { windowHeight } = useStore();
-  // console.log("slotTemplates", slotTemplates);
+  const { openModal, closeModal } = useModal();
+  const { windowHeight, scheduleState, deleteOneLesson } = useStore();
+  // console.log("slotTemplates", scheduleState.lessons);
 
   const minutes = (d: string) => {
     const date = new Date(d);
     return date.getHours() * 60 + date.getMinutes();
   };
   const handleOpenModal = (slot: Timeslots) => {
-    openModal(<CreateLessonModal slot={slot} day={day.id}/>);
+    openModal(
+      <CreateLessonModal slot={slot} day={day.id} closeModal={closeModal} />
+    );
   };
+
+  const handleDeleteLesson = (event: any, id: string) => {
+    event.stopPropagation();
+    deleteOneLesson(id);
+
+
+  }
 
   return (
     <>
@@ -34,6 +44,11 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
         const top = (startMinutes / windowHeight) * windowHeight;
         const height =
           ((endMinutes - startMinutes) / windowHeight) * windowHeight;
+        const isFilled = scheduleState.lessons.find(
+          (lesson) =>
+            lesson?.timeslot?.TEMPLATE_ID === slot.TEMPLATE_ID &&
+            lesson.day === day.id
+        );
         return (
           <div
             onClick={() => handleOpenModal(slot)}
@@ -44,7 +59,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
               height: `${height}px`,
               left: "5%",
               width: "90%",
-              background: "rgba(255, 208, 235, .5)",
+              background: `${isFilled ? "rgba(122, 13, 136, 0.5)" : "rgba(255, 208, 235, .5)"}`,
               border: "1px solid #8cbce6",
               borderRadius: "4px",
               padding: "2px 4px",
@@ -52,7 +67,16 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
               zIndex: 100,
             }}
           >
-            <Text size="xs">{slot.NAME}</Text>
+            {isFilled ? (
+              <Group>
+                <Text size="s">{isFilled.subject.label}</Text>
+                <Text size="xs">{isFilled.teacher.label}</Text>
+                <Text size="xs">{isFilled.classRoom?.label}</Text> 
+                <ActionIconX label="delete" onClickCallback={(e) => handleDeleteLesson(e, isFilled.tempId)} />
+              </Group>
+            ) : (
+              <Text size="xs">{slot.NAME}</Text>
+            )}
           </div>
         );
       })}

@@ -1,4 +1,4 @@
-import { ID } from "./databaseTypes";
+import { ID, Timeslots } from "./databaseTypes";
 
 export interface FormActionType {
     error: any,
@@ -20,12 +20,13 @@ export interface SyllabusInputForm {
 }
 
 export interface LessonInput {
-    timeslot: ID;
+    timeslot: Timeslots;
     day: ID;
-    teacher: ID;
-    classRoom: ID | null;
-    subject: ID;
+    teacher: {label: string, id: ID};
+    classRoom: {label: string, id: ID} | null;
+    subject: {label: string, id: ID};
     classId: ID;
+    tempId: string;
 }
 
 export interface ManageFormServerProps<T> {

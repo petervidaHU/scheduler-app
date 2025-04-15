@@ -1,9 +1,9 @@
-export type ToastType = 'success' | 'error' | 'warning';
+export type UIFeedbackType = 'success' | 'error' | 'warning';
 
 export interface Toast {
     title: string;
     message: string;
-    type: ToastType;
+    type: UIFeedbackType;
     autoClose: boolean;
     id: string;
 }

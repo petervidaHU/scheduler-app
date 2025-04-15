@@ -13,7 +13,7 @@ export const createLesson = async (state: FormActionType, props: LessonInput): P
         classId,
         day, 
     } = props;
-    if (!timeslot || !teacher || !classRoom || !subject || !classId || !day) {
+    if (!timeslot || !classId || !day) {
         return {
             ...state,
             error: "All fields are required",
