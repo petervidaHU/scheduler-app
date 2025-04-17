@@ -6,13 +6,9 @@ import { useStore } from "@/store/store";
 import { ActionIcon, Flex, Grid } from "@mantine/core";
 import { Timeslots } from "@/types/databaseTypes";
 
-interface props {
-  basicTimeslots: Timeslots[];
-}
-
-const SchedulePlanner: React.FC<props> = ({ basicTimeslots }) => {
+const SchedulePlanner = () => {
   const [openForNewSlot, setOpenForNewSlot] = React.useState(false);  
-  const { days, windowHeight } = useStore();
+  const { days, windowHeight, basicTimeslots } = useStore();
 
   const hourGrid = (id: string | null = null) => {
     return Array.from(new Array(24), (_, hour) => {

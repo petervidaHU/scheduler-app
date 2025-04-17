@@ -10,16 +10,9 @@ import {
   TextInput,
 } from "@mantine/core";
 import { createSchedule } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
-import { FormActionType, SelectOptions } from "@/types/FormActionType";
-import { useActionState, useTransition, useCallback, useEffect } from "react";
-import {
-  Classes,
-  ClassRoom,
-  Speciality,
-  Subject,
-  Syllabus,
-  Teacher,
-} from "@/types/databaseTypes";
+import { FormActionType } from "@/types/FormActionType";
+import { useActionState, useTransition } from "react";
+import { Syllabus } from "@/types/databaseTypes";
 import { useStore } from "@/store/store";
 import { nanoid } from "nanoid";
 import { getSyllabusAction } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getSyllabusAction";
@@ -33,33 +26,16 @@ const init: FormActionType = {
   success: false,
 };
 
-interface props {
-  data: {
-    classRooms: ClassRoom[];
-    teachers: Teacher[];
-    classes: Classes[];
-    subjects: Subject[];
-    specialities: Speciality[];
-    teacherOptions: SelectOptions[];
-  };
-}
-
-const SchedulePage: React.FC<props> = ({
-  data: {
-    classRooms,
+const SchedulePage = () => {
+  const {
     teachers,
     classes,
+    classRooms,
     subjects,
-    specialities,
-    teacherOptions,
-  },
-}) => {
-  const {
+    syllabus,
     addDay,
     updateSyllabus,
-    updateClassRooms,
     updateSchedule,
-    updateTeacherOptions,
   } = useStore();
   const [isPending, startTransition] = useTransition();
   const [sState, sAction] = useActionState(createSchedule, {
@@ -72,23 +48,14 @@ const SchedulePage: React.FC<props> = ({
   ) => {
     formFields.forEach((element) => {
       if (values[element] !== previous[element]) {
-        updateSchedule({[element]: values[element]});
+        updateSchedule({ [element]: values[element] });
       }
     });
   };
 
-  const updateStore = useCallback(() => {
-    updateTeacherOptions(teacherOptions);
-    updateClassRooms(classRooms);
-  }, [teacherOptions, updateTeacherOptions, classRooms, updateClassRooms]);
-
-  useEffect(() => {
-    updateStore();
-  }, [updateStore]);
-
-  const classOptions = classes.map((c) => ({
-    value: c.CLASS_ID.toString(),
-    label: `${c.CLASS_NAME} (${c.NUMBER_OF_STUDENTS} students)`,
+  const classOptions = Object.entries(classes).map(([id, classObj]) => ({
+    value: id,
+    label: `${classObj.CLASS_NAME} / (${classObj.NUMBER_OF_STUDENTS} students)`,
   }));
 
   const form = useForm({
@@ -111,46 +78,13 @@ const SchedulePage: React.FC<props> = ({
         if (!newSyllabus) {
           return;
         }
-        // TODO migrate it to backend
-        const syllabusMapping = (syllabus: Syllabus[]): SyllabusForm => {
-          const subjectsMapped = syllabus.map((item) => {
-            const subjectLabel = subjects.find(
-              (subject) => subject.SUBJECT_ID === item.SUBJECT_ID
-            )?.SUBJECT_NAME;
-            const teacherLabel = teachers.find(
-              (teacher) => teacher.TEACHER_ID === item.TEACHER_ID
-            )?.TEACHER_NAME;
-            const subjectSpecialityId =
-              subjects.find((subject) => subject.SUBJECT_ID === item.SUBJECT_ID)
-                ?.SPECIALTY_ID || null;
-            const subjectSpeciality = subjectSpecialityId
-              ? specialities.find(
-                  (speciality) =>
-                    speciality.SPECIALTY_ID === subjectSpecialityId
-                )?.SPECIALTY_NAME
-              : null;
+        console.log("newSyllabus", newSyllabus);
 
-            return {
-              value: item.SUBJECT_ID.toString(),
-              label: subjectLabel || "",
-              preferredTeacher:
-                teacherLabel && item.TEACHER_ID
-                  ? { label: teacherLabel, value: item.TEACHER_ID?.toString() }
-                  : null,
-              occurrence: item.OCCURRENCE,
-              speciality: subjectSpeciality
-                ? {
-                    label: subjectSpeciality,
-                    value: subjectSpecialityId?.toString() || "",
-                  }
-                : null,
-            };
-          });
-
-          return { subjects: subjectsMapped, classId: Number(values.class) };
-        };
-
-        updateSyllabus(syllabusMapping(newSyllabus));
+        // updateSyllabus(syllabusMapping(newSyllabus));
+        updateSyllabus({
+          classId: Number(values.class),
+          subjects: newSyllabus,
+        });
       }
     },
   });

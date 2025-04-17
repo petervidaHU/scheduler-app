@@ -1,26 +1,30 @@
 import { devtools, persist, createJSONStorage } from "zustand/middleware";
 import { create } from "zustand";
-import { DayPlan, Schedule, SyllabusForm, SStatus } from "@/types/ScheduleTypes";
-import { Syllabus } from "@/types/databaseTypes";
+import { DayPlan, Schedule, SyllabusForm, SStatus, TenancyBasedData, DataWithOptions } from "@/types/ScheduleTypes";
+import { Classes, ClassRoom, Subject, Syllabus, Teacher, Timeslots } from "@/types/databaseTypes";
 import { LessonInput, SelectOptions } from "@/types/FormActionType";
 import { Toast } from "@/types/UIFeedbackTypes";
-import { SpanStatus } from "next/dist/trace";
+
+
 
 interface ScheduleState {
   days: DayPlan[];
+  subjects: DataWithOptions<Subject>;
+  syllabus: SyllabusForm;
+  teachers: DataWithOptions<Teacher>;
+  classes: DataWithOptions<Classes>;
+  classRooms: DataWithOptions<ClassRoom>;
+  scheduleState: Schedule;
+  basicTimeslots: Timeslots[];
+
+  fillTenancyBasedData: (payload: TenancyBasedData) => void;
   addDay: (payload: any) => void;
   deleteLastDay: () => void;
   deleteDay: (payload: any) => void;
   updateDay: (payload: any) => void;
-  syllabus: SyllabusForm;
   updateSyllabus: (payload: any) => void;
-  subjectOptions: SelectOptions[];
-  teacherOptions: SelectOptions[];
-  // TODO any type
-  classRooms: any[];
-  updateTeacherOptions: (payload: any) => void;
+  updateTeachers: (payload: any) => void;
   updateClassRooms: (payload: any) => void;
-  scheduleState: Schedule;
   updateLesson : (payload: Array<LessonInput>) => void;
   createOneLesson: (payload: LessonInput) => void;
   deleteOneLesson: (payload: string) => void;
@@ -39,13 +43,24 @@ const createScheduleSlice = (set: any): ScheduleState => ({
     period: null,
     lessons: [],
   },
-  subjectOptions: [],
-  teacherOptions: [],
-  classRooms: [],
+  subjects: {},
+  teachers: {},
+  classRooms: {},
+  classes: {},
+  basicTimeslots: [],
   syllabus: {
     classId: '',
-    subjects: [],
+    subjects: {},
   },
+  fillTenancyBasedData: (payload: TenancyBasedData) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      subjects: payload.subjects,
+      teachers: payload.teachers,
+      classRooms: payload.classRooms,
+      classes: payload.classes,
+      basicTimeslots: payload.timeslots,
+  })),
   updateLesson: (payload: Array<LessonInput>) =>
     set((state: ScheduleState) => ({
       ...state,
@@ -103,7 +118,7 @@ const createScheduleSlice = (set: any): ScheduleState => ({
       ...state,
       syllabus: payload,
     })),
-  updateTeacherOptions: (payload: any) =>
+  updateTeachers: (payload: any) =>
     set((state: ScheduleState) => ({
       ...state,
       teacherOptions: payload,

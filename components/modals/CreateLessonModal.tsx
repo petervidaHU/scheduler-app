@@ -8,7 +8,7 @@ import {
   LessonInput,
   SelectOptions,
 } from "@/types/FormActionType";
-import { Button, Checkbox, Select } from "@mantine/core";
+import { Button, Checkbox, keys, Select, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useActionState, useTransition, useState } from "react";
 
@@ -34,17 +34,9 @@ const init: FormActionType = {
   success: false,
 };
 
-const getNameAndId = (obj: Array<any>, id: string) => {
-  const found = obj.find((item) => item.value === id);
-  return {
-    label: found.label || found.name,
-    id: id,
-  };
-  
-}
-
 const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
-  const { syllabus, teacherOptions, classRooms, createOneLesson } = useStore();
+  const { syllabus, teachers, classRooms, createOneLesson, subjects } =
+    useStore();
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
   const [preferredTeacherCheckbox, setPreferredTeacherCheckbox] =
@@ -58,6 +50,16 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
     useState<classRoomsGroupedOptions | null>(null);
   const [sState, sAction] = useActionState(createLesson, { ...init });
 
+  const subjectOptions = Object.values(syllabus.subjects).map((subject) => ({
+    value: subject.SUBJECT_ID.toString(),
+    label: subjects[subject.SUBJECT_ID].SUBJECT_NAME,
+  }));
+
+  const teacherOptions = Object.values(teachers).map((teacher) => ({
+    value: teacher.TEACHER_ID.toString(),
+    label: teacher.TEACHER_NAME,
+  }));
+
   const form = useForm({
     initialValues: {
       subject: "",
@@ -68,61 +70,64 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
     validate: {
       subject: (value) => (!value ? "subject is required" : null),
       classRoom: (value, values) => {
+        if (!value) {
+          setWarnings((prev) => ({ ...prev, classRoom: "" }));
+          return null;
+        }
         const isSpecialityFit =
-          classRooms.find((classRoom) => classRoom.CLASSROOM_ID == value)
-            ?.SPECIALITY_ID == subjectSpecialityId;
+          classRooms[value].SPECIALITY_ID ==
+          subjects[values.subject].SPECIALTY_ID;
         if (!isSpecialityFit && value) {
           setWarnings((prev) => ({
             ...prev,
             classRoom: "Speciality does not fit",
           }));
-        } else {
-          setWarnings((prev) => ({ ...prev, classRoom: "" }));
+          return null;
         }
+        setWarnings((prev) => ({ ...prev, classRoom: "" }));
         return null;
       },
     },
-    onValuesChange: (values, previous) => {
-      // console.log("valuesOnChange", values.subject, previous.subject, values.subject !== previous.subject);
-      if (!values.subject) setGroupedClassRooms(null);
-      if (values.subject && values.subject !== previous.subject) {
-        const newSubject = syllabus.subjects.find(
-          (subject) => subject.value === values.subject
-        );
 
-        if (newSubject?.preferredTeacher) {
-          form.setFieldValue(
-            "teacher",
-            newSubject?.preferredTeacher.value || ""
-          );
-          setPreferredTeacher(newSubject?.preferredTeacher);
+    onValuesChange: (values, previous) => {
+      if (!values.subject) setGroupedClassRooms(null);
+
+      if (values.subject && values.subject !== previous.subject) {
+        const newSubject = syllabus.subjects[values.subject];
+
+        if (newSubject?.TEACHER_ID) {
+          form.setFieldValue("teacher", newSubject?.TEACHER_ID.toString());
+          setPreferredTeacher({
+            value: newSubject?.TEACHER_ID.toString(),
+            label: teachers[newSubject?.TEACHER_ID].TEACHER_NAME,
+          });
         }
 
-        if (newSubject?.speciality?.value) {
-          const groupedBySubjectClassRooms =
-            classRooms.reduce<classRoomsGroupedOptions>(
-              (acc, classRoomItem) => {
-                if (
-                  classRoomItem.SPECIALITY_ID == newSubject?.speciality?.value
-                ) {
-                  acc[0].items.push(classRoomItem);
-                } else {
-                  acc[1].items.push(classRoomItem);
-                }
-                return acc;
+        const specialty = subjects[newSubject.SUBJECT_ID].SPECIALTY_ID || null;
+        if (specialty) {
+          const groupedBySubjectClassRooms = Object.values(
+            classRooms
+          ).reduce<classRoomsGroupedOptions>(
+            (acc, classRoomItem) => {
+              if (classRoomItem.SPECIALITY_ID === specialty) {
+                acc[0].items.push(classRoomItem);
+              } else {
+                acc[1].items.push(classRoomItem);
+              }
+              return acc;
+            },
+            [
+              {
+                group: "preferred by speciality",
+                items: [],
               },
-              [
-                {
-                  group: "preferred by speciality",
-                  items: [],
-                },
-                {
-                  group: "other",
-                  items: [],
-                },
-              ]
-            );
-          setSubjectSpecialityId(newSubject?.speciality?.value || null);
+              {
+                group: "other",
+                items: [],
+              },
+            ]
+          );
+          setSubjectSpecialityId(specialty.toString());
           setGroupedClassRooms(groupedBySubjectClassRooms);
         }
       }
@@ -132,19 +137,18 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
   const handleLessonCreate = () => {
     const newLesson: LessonInput = {
       classId: syllabus.classId,
-      subject: getNameAndId(syllabus.subjects, form.values.subject),
-      classRoom: getNameAndId(classRooms, form.values.classRoom),
-      teacher: getNameAndId(teacherOptions, form.values.teacher),
+      subject: form.values.subject,
+      classRoom: form.values.classRoom,
+      teacher: form.values.teacher,
       day: day,
       timeslot: slot,
       tempId: Date.now().toString(),
     };
-    // console.log("newLesson", newLesson);
     createOneLesson(newLesson);
     closeModal();
   };
 
-/*   const handleScheduleFormSubmit = (values: typeof form.values) => {
+  /*   const handleScheduleFormSubmit = (values: typeof form.values) => {
     startTransition(() => {
       console.log("values", values);
       const extendedValues = {
@@ -172,7 +176,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
           <label>subject</label>
           <Select
             searchable
-            data={syllabus.subjects}
+            data={subjectOptions}
             {...form.getInputProps("subject")}
           />
         </div>
@@ -181,7 +185,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
           <Select
             searchable
             clearable
-            data={groupedClassRooms || classRooms}
+            data={groupedClassRooms || Object.values(classRooms)}
             {...form.getInputProps("classRoom")}
           />
         </div>
@@ -200,6 +204,13 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
             {...form.getInputProps("teacher")}
           />
         </div>
+        <Stack>
+          {Object.entries(warnings).map(([key, value]) => (
+            <p key={key}>
+              {key}: {value}
+            </p>
+          ))}
+        </Stack>
         <Button type="submit">create</Button>
       </form>
     </div>

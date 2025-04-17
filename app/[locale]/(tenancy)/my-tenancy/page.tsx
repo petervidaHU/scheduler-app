@@ -20,7 +20,7 @@ const tableDataMapper = (data: any[]): TableData => {
 export default async function MyTenancyPage() {
   const db = await getDbInstance();
   const { tenancyId, userRole } = await getAuth();
-
+// TODO: implement stale while revalidate data fetching
   const [specialities, classRooms, classes, teachers, subjects] = await Promise.all([
     dataFetcherAll<Speciality>(db.getAllSpeciality),
     dataFetcherAll<ClassRoom>(db.getAllClassRooms),

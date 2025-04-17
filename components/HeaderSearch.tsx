@@ -12,6 +12,8 @@ import { Link, useRouter } from "@/lib/i18n/navigation";
 import LocaleSwitcher from "./LocaleSwitcher";
 import { setTenancyInServer } from "@/lib/database/setTenancyInServer";
 import { ColorModeSwitcher } from "./ColorModeSwitcher";
+import { getTenancyBasedData } from "@/lib/getTenancyBasedData";
+import { useStore } from "@/store/store";
 
 const links = [
   { link: "/my-tenancy", label: "my tenancy" },
@@ -34,9 +36,11 @@ const languages = [
 export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const t = useTranslations("dashboard");
   // console.log('i18n messages', t('message2'), 'locale in client side:', locale);
-
+  const { fillTenancyBasedData } = useStore();
   const { update } = useSession();
-  const [selectedTenancy, setSelectedTenancy] = useState<string>(session.tenancyId || "");
+  const [selectedTenancy, setSelectedTenancy] = useState<string>(
+    session.tenancyId || ""
+  );
   const { name, status } = session;
   const router = useRouter();
   const [opened, { toggle }] = useDisclosure(false);
@@ -64,10 +68,17 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const tenancyOptions = getTenancies();
 
   const tenancyChangeHandler = async (value: any) => {
-    const result = await update({ tenancyId: value });
-    setTenancyInServer(value);
-    router.refresh();
-    setSelectedTenancy(value);
+    try {
+      await update({ tenancyId: value });
+      console.log('tenancy value:', value);
+      setTenancyInServer(value);
+      setSelectedTenancy(value);
+      const data = await getTenancyBasedData();
+      fillTenancyBasedData(data);
+      router.refresh();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
