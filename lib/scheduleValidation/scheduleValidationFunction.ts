@@ -1,11 +1,11 @@
-import { BadgeContexts } from "@/components/UI-elements/NotificationBadges";
+import { NotificationContexts } from "@/components/UI-elements/NotificationBadges";
 import { UIFeedbackType } from "@/types/UIFeedbackTypes";
 
 export interface ErrorObject {
   key?: string;
   message: string;
   type: UIFeedbackType;
-  context: BadgeContexts;
+  context: NotificationContexts;
   num: number;
 }
 

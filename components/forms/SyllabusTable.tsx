@@ -4,7 +4,7 @@ import { useStore } from "@/store/store";
 import { Paper, Text, SimpleGrid, Divider, Group } from "@mantine/core";
 import React, { useCallback, useMemo } from "react";
 import NotificationCard, {
-  BadgeContexts,
+  NotificationContexts,
 } from "../UI-elements/NotificationBadges";
 import { UIFeedbackType } from "@/types/UIFeedbackTypes";
 import { ScheduleValidation } from "@/lib/scheduleValidation/scheduleValidationFunction";

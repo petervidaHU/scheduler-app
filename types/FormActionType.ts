@@ -22,9 +22,9 @@ export interface SyllabusInputForm {
 export interface LessonInput {
     timeslot: Timeslots;
     day: ID;
-    teacher: {label: string, id: ID};
-    classRoom: {label: string, id: ID} | null;
-    subject: {label: string, id: ID};
+    teacher: ID | null;
+    classRoom: ID | null;
+    subject: ID;
     classId: ID;
     tempId: string;
 }

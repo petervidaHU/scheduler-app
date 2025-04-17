@@ -16,9 +16,9 @@ const notificationType: Record<UIFeedbackType, Record<any, any>> = {
   },
 };
 
-export type BadgeContexts = "classroom" | "teacher" | "default";
+export type NotificationContexts = "classroom" | "teacher" | "default";
 
-const notificationIconContext: Record<BadgeContexts, React.ReactNode> = {
+const notificationIconContext: Record<NotificationContexts, React.ReactNode> = {
   classroom: <IconHome2 />,
   teacher: <IconSchool />,
   // TODO icon for default
@@ -28,7 +28,7 @@ const notificationIconContext: Record<BadgeContexts, React.ReactNode> = {
 interface Props {
   message: string;
   type: UIFeedbackType;
-  context: BadgeContexts;
+  context: NotificationContexts;
 }
 
 const NotificationCard: React.FC<Props> = ({ message, type, context }) => {

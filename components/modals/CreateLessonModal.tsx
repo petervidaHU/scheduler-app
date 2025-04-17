@@ -11,6 +11,9 @@ import {
 import { Button, Checkbox, keys, Select, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useActionState, useTransition, useState } from "react";
+import NotificationCard, {
+  NotificationContexts,
+} from "../UI-elements/NotificationBadges";
 
 interface props {
   slot: Timeslots;
@@ -37,7 +40,9 @@ const init: FormActionType = {
 const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
   const { syllabus, teachers, classRooms, createOneLesson, subjects } =
     useStore();
-  const [warnings, setWarnings] = useState<Record<string, string>>({});
+  const [warnings, setWarnings] = useState<
+    Partial<Record<NotificationContexts, string>>
+  >({});
   const [isPending, startTransition] = useTransition();
   const [preferredTeacherCheckbox, setPreferredTeacherCheckbox] =
     useState(false);
@@ -170,19 +175,20 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
 
   return (
     <div>
-      CreateLessonModal
+      Create a Lesson
       <form onSubmit={form.onSubmit(handleLessonCreate)}>
         <div>
-          <label>subject</label>
           <Select
+            label="Subject"
+            required
             searchable
             data={subjectOptions}
             {...form.getInputProps("subject")}
           />
         </div>
         <div>
-          <label>classRoom</label>
           <Select
+            label="Classroom"
             searchable
             clearable
             data={groupedClassRooms || Object.values(classRooms)}
@@ -190,26 +196,30 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
           />
         </div>
         <div>
-          <label>teacher</label>
-          <Checkbox
-            label="preferred teacher"
-            checked={preferredTeacherCheckbox}
-            onChange={handlepreferredTeacherCheck}
-          />
           <Select
+            label="teacher"
             searchable
             clearable
             disabled={preferredTeacherCheckbox}
             data={teacherOptions}
             {...form.getInputProps("teacher")}
           />
+          <Checkbox
+            label="preferred teacher"
+            checked={preferredTeacherCheckbox}
+            onChange={handlepreferredTeacherCheck}
+          />
         </div>
         <Stack>
-          {Object.entries(warnings).map(([key, value]) => (
-            <p key={key}>
-              {key}: {value}
-            </p>
-          ))}
+          {Object.entries(warnings).map(([key, value]) => {
+            return key && value ? (
+              <NotificationCard
+                message={value}
+                type={"error"}
+                context={key as NotificationContexts}
+              />
+            ) : null;
+          })}
         </Stack>
         <Button type="submit">create</Button>
       </form>
