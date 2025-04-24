@@ -41,10 +41,12 @@ export interface Schedule {
   days: DayPlan[];
 }
 
+export type SyllabusSubjectWithOptions = Syllabus & SelectOptions;
+
 export type SyllabusForm = {
   classId: ID;
   subjects: {
-    [key: string]: Syllabus & SelectOptions;
+    [key: string]: SyllabusSubjectWithOptions;
   };
 };
 

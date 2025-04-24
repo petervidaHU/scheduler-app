@@ -36,7 +36,11 @@ interface ScheduleState {
   updateTeachers: (payload: any) => void;
   updateClassRooms: (payload: any) => void;
   updateLesson: (payload: LessonInput) => void;
-  createOneLesson: (payload: { dayId: string; newLesson: LessonInput, timeslotId: string }) => void;
+  createOneLesson: (payload: {
+    dayId: string;
+    newLesson: LessonInput;
+    timeslotId: string;
+  }) => void;
   deleteOneLesson: (payload: string) => void;
   updateSchedule: (
     payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>
@@ -83,6 +87,7 @@ const createScheduleSlice = (set: any): ScheduleState => ({
       const oldDays =
         state.scheduleState.days.find((day) => day.id === payload.dayId)
           ?.timeSlots || [];
+      const timeSlots = state.scheduleState.timeslots;
       oldDays.push({ timeslotId: payload.timeslotId });
       return {
         ...state,
@@ -121,27 +126,31 @@ const createScheduleSlice = (set: any): ScheduleState => ({
   }) =>
     set((state: ScheduleState) => {
       const days = state.scheduleState.days;
-      const newdayIndex = state.scheduleState.days.findIndex((day) => day.id === payload.dayId);
+      const newdayIndex = state.scheduleState.days.findIndex(
+        (day) => day.id === payload.dayId
+      );
       const timeSlotIndex = days[newdayIndex].timeSlots?.findIndex(
-        (timeSlot) => timeSlot.timeslotId === payload.timeslotId  
-      )
-      if (newdayIndex < 0 ||timeSlotIndex < 0) {
-        console.log('store error', newdayIndex, timeSlotIndex)
+        (timeSlot) => timeSlot.timeslotId === payload.timeslotId
+      );
+      if (newdayIndex < 0 || timeSlotIndex < 0) {
+        console.log("store error", newdayIndex, timeSlotIndex);
         return state;
       }
-      days[newdayIndex].timeSlots[timeSlotIndex].lessonId = payload.newLesson.tempId;
-      console.log('days in store:', days)
+      days[newdayIndex].timeSlots[timeSlotIndex].lessonId =
+        payload.newLesson.tempId;
+      console.log("days in store:", days);
       return {
-      ...state,
-      scheduleState: {
-        ...state.scheduleState,
-        lessons: {
-          ...state.scheduleState.lessons,
-          [payload.newLesson.tempId]: { ...payload.newLesson },
+        ...state,
+        scheduleState: {
+          ...state.scheduleState,
+          lessons: {
+            ...state.scheduleState.lessons,
+            [payload.newLesson.tempId]: { ...payload.newLesson },
+          },
+          days: days,
         },
-        days: days,
-      },
-    }}),
+      };
+    }),
   // TODO update days lesson array as well!
   deleteOneLesson: (payload: string) =>
     set((state: ScheduleState) => {

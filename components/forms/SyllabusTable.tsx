@@ -1,17 +1,21 @@
 "use client";
 
+import { ScheduleValidationResult } from "@/lib/hooks/scheduleValidationTypes";
+import { useSubjectValidation } from "@/lib/hooks/useValidation";
 import { useStore } from "@/store/store";
 import { Paper, Text, SimpleGrid, Divider, Group } from "@mantine/core";
-import React, { useCallback, useMemo } from "react";
-import NotificationCard, {
-  NotificationContexts,
-} from "../UI-elements/NotificationBadges";
-import { UIFeedbackType } from "@/types/UIFeedbackTypes";
-import { ScheduleValidation } from "@/lib/scheduleValidation/scheduleValidationFunction";
-
+import React, { useMemo } from "react";
+import NotificationCard from "../UI-elements/NotificationBadges";
 
 const SyllabusTable = () => {
-  const { syllabus, days, scheduleState, classRooms, subjects, teachers } = useStore();
+  const { syllabus, days, scheduleState, classRooms, subjects, teachers } =
+    useStore();
+  const validatorFn = useSubjectValidation(
+    scheduleState.lessons,
+    subjects,
+    classRooms,
+    {}
+  );
 
   const subjectOccurrences = Object.values(scheduleState.lessons).reduce(
     (acc, lesson) => {
@@ -21,32 +25,19 @@ const SyllabusTable = () => {
     },
     {} as Record<string, number>
   );
-/*
-  const validationErrors: ScheduleValidation = useMemo(() => {
-        scheduleState.lessons.forEach((lesson) => {
-      // TODO: do something with ID string or number
-      const classRoomInLesson = classRooms.find(
-        (classRoom) => classRoom.CLASSROOM_ID == lesson.classRoom?.id
-      );
-      const subjectInLesson = syllabus.subjects.find(
-        (subject) => subject.value == lesson.subject.id
-      );
-      if (
-        classRoomInLesson &&
-        classRoomInLesson.SPECIALITY_ID != subjectInLesson?.speciality?.value
-      ) {
-         validationErrors.push({
-          key: new Date().toString(),
-          message: "Speciality does not fit",
-          type: "warning",
-          context: "classroom",
-        }); 
-      }
-    });
-    return 'validationErrors';
-  }, [[scheduleState.lessons, classRooms, syllabus.subjects]]);*/
 
-  console.log("subjectOccurrences", syllabus.subjects);
+  const validationErrors = useMemo(() => {
+    const allSubjectsValidationResult: Record<
+      string,
+      ScheduleValidationResult
+    > = {};
+    Object.entries(syllabus.subjects).forEach(([key, subject]) => {
+      const res = validatorFn(subject);
+      allSubjectsValidationResult[key] = res;
+    });
+    return allSubjectsValidationResult;
+  }, [[scheduleState.lessons, classRooms, syllabus.subjects]]);
+
   return (
     <>
       <h3>SyllabusTable </h3>
@@ -77,14 +68,18 @@ const SyllabusTable = () => {
               {subject.OCCURRENCE}
             </Text>
             <Group mt="md">
-              {/*validationErrors.map((e) => (
-                <NotificationCard
-                  key={e.key}
-                  message={e.message}
-                  type={e.type}
-                  context={e.context}
-                />
-              ))*/}
+              {Object.values(validationErrors[key]).map((e) => (
+                <>
+                  {e && (
+                    <NotificationCard
+                      key={e.key}
+                      message={`${e.message} (${e.num} times)`}
+                      type={e.type}
+                      context={e.context}
+                    />
+                  )}
+                </>
+              ))}
             </Group>
           </Paper>
         ))}

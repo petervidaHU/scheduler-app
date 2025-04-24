@@ -50,15 +50,24 @@ const SchedulePlanner = () => {
     );
 
     slots.forEach((slot: Timeslots) => {
+      let timeslotId: string;
+
       if (!timeslotsInSchedule.includes(slot.TEMPLATE_ID)) {
-        const timeslotId = nanoid();
+        timeslotId = nanoid();
         addTimeslotToSchedule({ [timeslotId]: slot });
-        addTimeslotToDay({ dayId, timeslotId: timeslotId });
       } else {
         const id = Object.keys(timeslots).find(
           (t) => timeslots[t].TEMPLATE_ID === slot.TEMPLATE_ID
         );
-        if (id) addTimeslotToDay({ dayId, timeslotId: id });
+        if (!id) {
+          throw new Error("error happened during adding timeslots to day!");
+        }
+        timeslotId = id;
+      }
+
+      const timeslotsInDay = day.timeSlots.map((t) => t.timeslotId);
+      if (!timeslotsInDay.includes(timeslotId)) {
+        addTimeslotToDay({ dayId, timeslotId });
       }
     });
   };
