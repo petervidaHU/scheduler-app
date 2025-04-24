@@ -16,7 +16,7 @@ import NotificationCard, {
 } from "../UI-elements/NotificationBadges";
 
 interface props {
-  slot: Timeslots;
+  slotId: string;
   day: ID;
   closeModal: () => void;
 }
@@ -37,8 +37,9 @@ const init: FormActionType = {
   success: false,
 };
 
-const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
-  const { syllabus, teachers, classRooms, createOneLesson, subjects } =
+const CreateLessonModal: React.FC<props> = ({ slotId, day, closeModal }) => {
+  console.log('slot ID in modal:', slotId);
+  const { syllabus, teachers, classRooms, createOneLesson, subjects, scheduleState: { timeslots } } =
     useStore();
   const [warnings, setWarnings] = useState<
     Partial<Record<NotificationContexts, string>>
@@ -145,11 +146,14 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
       subject: form.values.subject,
       classRoom: form.values.classRoom,
       teacher: form.values.teacher,
-      day: day,
-      timeslot: slot,
+      timeslot: timeslots[slotId],
       tempId: Date.now().toString(),
     };
-    createOneLesson(newLesson);
+    createOneLesson({
+      dayId: day.toString(),
+      newLesson,
+      timeslotId: slotId,
+    });
     closeModal();
   };
 

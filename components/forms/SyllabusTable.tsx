@@ -13,15 +13,15 @@ import { ScheduleValidation } from "@/lib/scheduleValidation/scheduleValidationF
 const SyllabusTable = () => {
   const { syllabus, days, scheduleState, classRooms, subjects, teachers } = useStore();
 
-  const subjectOccurrences = scheduleState.lessons.reduce(
+  const subjectOccurrences = Object.values(scheduleState.lessons).reduce(
     (acc, lesson) => {
-      const subjectId = lesson.subject.id;
+      const subjectId = lesson.subject;
       acc[subjectId] = (acc[subjectId] || 0) + 1;
       return acc;
     },
     {} as Record<string, number>
   );
-
+/*
   const validationErrors: ScheduleValidation = useMemo(() => {
         scheduleState.lessons.forEach((lesson) => {
       // TODO: do something with ID string or number
@@ -35,16 +35,16 @@ const SyllabusTable = () => {
         classRoomInLesson &&
         classRoomInLesson.SPECIALITY_ID != subjectInLesson?.speciality?.value
       ) {
-/*         validationErrors.push({
+         validationErrors.push({
           key: new Date().toString(),
           message: "Speciality does not fit",
           type: "warning",
           context: "classroom",
-        }); */
+        }); 
       }
     });
     return 'validationErrors';
-  }, [[scheduleState.lessons, classRooms, syllabus.subjects]]);
+  }, [[scheduleState.lessons, classRooms, syllabus.subjects]]);*/
 
   console.log("subjectOccurrences", syllabus.subjects);
   return (

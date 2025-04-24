@@ -24,7 +24,8 @@ export interface DayPlan {
   id: string;
   order: string;
   identifier: string;
-  timeSlots: Timeslots[];
+  timeSlots: Array<{timeslotId: string, lessonId?: string}>;
+  lessons: Array<string>;
 }
 
 export interface Schedule {
@@ -35,7 +36,9 @@ export interface Schedule {
   [FormFields.description]: string | null;
   [FormFields.owner]: ID | null;
   period: number | null;
-  lessons: LessonInput[];
+  lessons: Record<string, LessonInput>;
+  timeslots: Record<string, Timeslots>;
+  days: DayPlan[];
 }
 
 export type SyllabusForm = {

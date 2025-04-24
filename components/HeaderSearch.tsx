@@ -70,10 +70,10 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const tenancyChangeHandler = async (value: any) => {
     try {
       await update({ tenancyId: value });
-      console.log('tenancy value:', value);
       setTenancyInServer(value);
       setSelectedTenancy(value);
       const data = await getTenancyBasedData();
+      // console.log('tenancy value:', data);
       fillTenancyBasedData(data);
       router.refresh();
     } catch (error) {

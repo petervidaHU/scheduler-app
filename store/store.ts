@@ -1,14 +1,25 @@
 import { devtools, persist, createJSONStorage } from "zustand/middleware";
 import { create } from "zustand";
-import { DayPlan, Schedule, SyllabusForm, SStatus, TenancyBasedData, DataWithOptions } from "@/types/ScheduleTypes";
-import { Classes, ClassRoom, Subject, Syllabus, Teacher, Timeslots } from "@/types/databaseTypes";
+import {
+  DayPlan,
+  Schedule,
+  SyllabusForm,
+  SStatus,
+  TenancyBasedData,
+  DataWithOptions,
+} from "@/types/ScheduleTypes";
+import {
+  Classes,
+  ClassRoom,
+  Subject,
+  Syllabus,
+  Teacher,
+  Timeslots,
+} from "@/types/databaseTypes";
 import { LessonInput, SelectOptions } from "@/types/FormActionType";
 import { Toast } from "@/types/UIFeedbackTypes";
 
-
-
 interface ScheduleState {
-  days: DayPlan[];
   subjects: DataWithOptions<Subject>;
   syllabus: SyllabusForm;
   teachers: DataWithOptions<Teacher>;
@@ -19,29 +30,33 @@ interface ScheduleState {
 
   fillTenancyBasedData: (payload: TenancyBasedData) => void;
   addDay: (payload: any) => void;
-  deleteLastDay: () => void;
   deleteDay: (payload: any) => void;
-  updateDay: (payload: any) => void;
+  // updateDay: (payload: any) => void;
   updateSyllabus: (payload: any) => void;
   updateTeachers: (payload: any) => void;
   updateClassRooms: (payload: any) => void;
-  updateLesson : (payload: Array<LessonInput>) => void;
-  createOneLesson: (payload: LessonInput) => void;
+  updateLesson: (payload: LessonInput) => void;
+  createOneLesson: (payload: { dayId: string; newLesson: LessonInput, timeslotId: string }) => void;
   deleteOneLesson: (payload: string) => void;
-  updateSchedule: (payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>) => void;
+  updateSchedule: (
+    payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>
+  ) => void;
+  addTimeslotToSchedule: (payload: Record<string, Timeslots>) => void;
+  addTimeslotToDay: (payload: { dayId: string; timeslotId: string }) => void;
 }
 
 const createScheduleSlice = (set: any): ScheduleState => ({
-  days: [],
   scheduleState: {
-    id: '',
+    id: "",
     status: null,
     name: null,
     class: null,
     description: null,
     owner: null,
     period: null,
-    lessons: [],
+    lessons: {},
+    timeslots: {},
+    days: [],
   },
   subjects: {},
   teachers: {},
@@ -49,9 +64,36 @@ const createScheduleSlice = (set: any): ScheduleState => ({
   classes: {},
   basicTimeslots: [],
   syllabus: {
-    classId: '',
+    classId: "",
     subjects: {},
   },
+  addTimeslotToSchedule: (payload: Record<string, Timeslots>) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      scheduleState: {
+        ...state.scheduleState,
+        timeslots: {
+          ...state.scheduleState.timeslots,
+          ...payload,
+        },
+      },
+    })),
+  addTimeslotToDay: (payload: { dayId: string; timeslotId: string }) =>
+    set((state: ScheduleState) => {
+      const oldDays =
+        state.scheduleState.days.find((day) => day.id === payload.dayId)
+          ?.timeSlots || [];
+      oldDays.push({ timeslotId: payload.timeslotId });
+      return {
+        ...state,
+        scheduleState: {
+          ...state.scheduleState,
+          days: state.scheduleState.days.map((day) =>
+            day.id === payload.dayId ? { ...day, timeSlots: oldDays } : day
+          ),
+        },
+      };
+    }),
   fillTenancyBasedData: (payload: TenancyBasedData) =>
     set((state: ScheduleState) => ({
       ...state,
@@ -60,59 +102,94 @@ const createScheduleSlice = (set: any): ScheduleState => ({
       classRooms: payload.classRooms,
       classes: payload.classes,
       basicTimeslots: payload.timeslots,
-  })),
-  updateLesson: (payload: Array<LessonInput>) =>
+    })),
+  updateLesson: (payload: LessonInput) =>
     set((state: ScheduleState) => ({
       ...state,
       scheduleState: {
         ...state.scheduleState,
-        lessons: payload,
+        lessons: {
+          ...state.scheduleState.lessons,
+          [payload.tempId]: { ...payload },
+        },
       },
-  })),
-  createOneLesson: (payload: LessonInput) =>
-    set((state: ScheduleState) => ({
+    })),
+  createOneLesson: (payload: {
+    dayId: string;
+    newLesson: LessonInput;
+    timeslotId: string;
+  }) =>
+    set((state: ScheduleState) => {
+      const days = state.scheduleState.days;
+      const newdayIndex = state.scheduleState.days.findIndex((day) => day.id === payload.dayId);
+      const timeSlotIndex = days[newdayIndex].timeSlots?.findIndex(
+        (timeSlot) => timeSlot.timeslotId === payload.timeslotId  
+      )
+      if (newdayIndex < 0 ||timeSlotIndex < 0) {
+        console.log('store error', newdayIndex, timeSlotIndex)
+        return state;
+      }
+      days[newdayIndex].timeSlots[timeSlotIndex].lessonId = payload.newLesson.tempId;
+      console.log('days in store:', days)
+      return {
       ...state,
       scheduleState: {
         ...state.scheduleState,
-        lessons: [...state.scheduleState.lessons, payload],
+        lessons: {
+          ...state.scheduleState.lessons,
+          [payload.newLesson.tempId]: { ...payload.newLesson },
+        },
+        days: days,
       },
-  })),
+    }}),
+  // TODO update days lesson array as well!
   deleteOneLesson: (payload: string) =>
-    set((state: ScheduleState) => ({
-      ...state,
-      scheduleState: {
-        ...state.scheduleState,
-        lessons: state.scheduleState.lessons.filter((lesson) => lesson.tempId !== payload),
-      },
-  })),
-  updateSchedule: (payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>) =>
+    set((state: ScheduleState) => {
+      const newLessons = state.scheduleState.lessons;
+      delete newLessons[payload];
+
+      return {
+        ...state,
+        scheduleState: {
+          ...state.scheduleState,
+          lessons: newLessons,
+        },
+      };
+    }),
+  updateSchedule: (
+    payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>
+  ) =>
     set((state: ScheduleState) => ({
       ...state,
       scheduleState: {
         ...state.scheduleState,
         ...payload,
       },
-  })),
+    })),
   addDay: (payload: DayPlan) =>
     set((state: ScheduleState) => ({
       ...state,
-      days: [...state.days, payload],
-    })),
-  deleteLastDay: () =>
-    set((state: ScheduleState) => ({
-      ...state,
-      days: state.days.slice(0, state.days.length - 1),
+      scheduleState: {
+        ...state.scheduleState,
+        days: [...state.scheduleState.days, payload],
+      },
     })),
   deleteDay: (payload: string) =>
     set((state: ScheduleState) => ({
       ...state,
-      days: state.days.filter((day) => day.id !== payload),
+      scheduleState: {
+        ...state.scheduleState,
+        days: state.scheduleState.days.filter((day) => day.id !== payload),
+      },
     })),
-  updateDay: (payload: DayPlan) =>
+  /*  updateDay: (payload: DayPlan) =>
     set((state: ScheduleState) => ({
       ...state,
-      days: [...state.days, payload],
-    })),
+      scheduleState: {
+        ...state.scheduleState,
+        days: state.scheduleState.days.filter((day) => day.id !== payload),
+      },
+    })), */
   updateSyllabus: (payload: any) =>
     set((state: ScheduleState) => ({
       ...state,
@@ -143,7 +220,7 @@ const scheduleGeneralSlice = (set: any): scheduleGeneralState => ({
 interface ToastState {
   toast: Toast[];
   addToast: (payload: Toast) => void;
-  removeToast: (payload: string) => void;  
+  removeToast: (payload: string) => void;
 }
 
 const toastSlice = (set: any): ToastState => ({
@@ -158,7 +235,7 @@ const toastSlice = (set: any): ToastState => ({
       ...state,
       toast: state.toast.filter((toast) => toast.id !== payload),
     })),
-})
+});
 
 type AppState = ScheduleState & scheduleGeneralState & ToastState;
 

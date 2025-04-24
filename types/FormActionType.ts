@@ -21,7 +21,6 @@ export interface SyllabusInputForm {
 
 export interface LessonInput {
     timeslot: Timeslots;
-    day: ID;
     teacher: ID | null;
     classRoom: ID | null;
     subject: ID;

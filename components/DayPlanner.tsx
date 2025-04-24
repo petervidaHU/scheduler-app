@@ -8,51 +8,55 @@ import { useStore } from "@/store/store";
 import { useModal } from "./ModalProvider";
 import CreateLessonModal from "./modals/CreateLessonModal";
 import ActionIconX from "./UI-elements/ActionIcons/X";
+import { Days_One } from "next/font/google";
 
 interface DayPlannerProps {
   day: DayPlan;
-  slotTemplates: Timeslots[];
 }
 
-const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
+const DayPlanner: React.FC<DayPlannerProps> = ({ day }) => {
+  const { timeSlots } = day;
   const { openModal, closeModal } = useModal();
-  const { windowHeight, scheduleState, deleteOneLesson } = useStore();
+  const {
+    windowHeight,
+    scheduleState: { timeslots, lessons },
+    deleteOneLesson,
+    subjects,
+    classRooms,
+    teachers,
+  } = useStore();
   // console.log("slotTemplates", scheduleState.lessons);
 
   const minutes = (d: string) => {
     const date = new Date(d);
     return date.getHours() * 60 + date.getMinutes();
   };
-  const handleOpenModal = (slot: Timeslots) => {
+  const handleOpenModal = (slot: string) => {
+    console.log('handle open:', slot)
     openModal(
-      <CreateLessonModal slot={slot} day={day.id} closeModal={closeModal} />
+      <CreateLessonModal slotId={slot} day={day.id} closeModal={closeModal} />
     );
   };
 
   const handleDeleteLesson = (event: any, id: string) => {
     event.stopPropagation();
     deleteOneLesson(id);
-
-
-  }
+  };
 
   return (
     <>
-      {slotTemplates.map((slot) => {
-        const startMinutes = minutes(slot.PERIOD_START);
-        const endMinutes = minutes(slot.PERIOD_END);
+      {timeSlots.map((slot) => {
+        const startMinutes = minutes(timeslots[slot.timeslotId].PERIOD_START);
+        const endMinutes = minutes(timeslots[slot.timeslotId].PERIOD_END);
         const top = (startMinutes / windowHeight) * windowHeight;
         const height =
           ((endMinutes - startMinutes) / windowHeight) * windowHeight;
-        const isFilled = scheduleState.lessons.find(
-          (lesson) =>
-            lesson?.timeslot?.TEMPLATE_ID === slot.TEMPLATE_ID &&
-            lesson.day === day.id
-        );
+        const isFilled = slot["lessonId"] ? lessons[slot["lessonId"]] : null;
+        // console.log('isFilled', isFilled)
         return (
           <div
-            onClick={() => handleOpenModal(slot)}
-            key={slot.TEMPLATE_ID}
+            onClick={() => handleOpenModal(slot.timeslotId)}
+            key={slot.timeslotId}
             style={{
               position: "absolute",
               top: `${top}px`,
@@ -69,13 +73,18 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, slotTemplates }) => {
           >
             {isFilled ? (
               <Group>
-                <Text size="s">{isFilled.subject.label}</Text>
-                <Text size="xs">{isFilled.teacher.label}</Text>
-                <Text size="xs">{isFilled.classRoom?.label}</Text> 
-                <ActionIconX label="delete" onClickCallback={(e) => handleDeleteLesson(e, isFilled.tempId)} />
+                <Text size="s">{subjects[isFilled.subject].SUBJECT_NAME}</Text>
+                <Text size="xs">{isFilled.teacher && teachers[isFilled.teacher].TEACHER_NAME}</Text>
+                <Text size="xs">{isFilled.classRoom && classRooms[isFilled.classRoom].CLASSROOM_NAME}</Text>
+                <ActionIconX
+                  label="delete"
+                  onClickCallback={(e) =>
+                    handleDeleteLesson(e, isFilled.tempId)
+                  }
+                />
               </Group>
             ) : (
-              <Text size="xs">{slot.NAME}</Text>
+              <Text size="xs">{timeslots[slot.timeslotId].NAME}</Text>
             )}
           </div>
         );

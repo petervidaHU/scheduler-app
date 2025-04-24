@@ -3,41 +3,73 @@
 import React from "react";
 import DayPlanner from "./DayPlanner";
 import { useStore } from "@/store/store";
-import { ActionIcon, Flex, Grid } from "@mantine/core";
+import { ActionIcon, Button, Flex, Grid } from "@mantine/core";
 import { Timeslots } from "@/types/databaseTypes";
+import { nanoid } from "nanoid";
 
 const SchedulePlanner = () => {
-  const [openForNewSlot, setOpenForNewSlot] = React.useState(false);  
-  const { days, windowHeight, basicTimeslots } = useStore();
+  const [openForNewSlot, setOpenForNewSlot] = React.useState(false);
+  const {
+    scheduleState: { days, timeslots, lessons },
+    windowHeight,
+    basicTimeslots,
+    addTimeslotToSchedule,
+    addTimeslotToDay,
+  } = useStore();
 
   const hourGrid = (id: string | null = null) => {
     return Array.from(new Array(24), (_, hour) => {
       const slotTop = (windowHeight / 24) * hour;
       return (
-        <>
-          <div
-            key={hour}
-            style={{
-              position: "absolute",
-              top: `${slotTop}px`,
-              height: `${windowHeight / 24}px`,
-              left: "5%",
-              width: "90%",
-              background: "rgba(85, 199, 81, 0.2)",
-              padding: "2px 4px",
-              boxSizing: "border-box",
-            }}
-          >
-            {hour}:00
-          </div>
-        </>
+        <div
+          key={hour}
+          style={{
+            position: "absolute",
+            top: `${slotTop}px`,
+            height: `${windowHeight / 24}px`,
+            left: "5%",
+            width: "90%",
+            background: "rgba(85, 199, 81, 0.2)",
+            padding: "2px 4px",
+            boxSizing: "border-box",
+          }}
+        >
+          {hour}:00
+        </div>
       );
+    });
+  };
+  console.log;
+
+  const handleAddTimeslots = (dayId: string, slots: Array<Timeslots>) => {
+    const day = days.find((d) => d.id === dayId);
+    if (!day) return;
+
+    const timeslotsInSchedule = Object.values(timeslots).map(
+      (t) => t.TEMPLATE_ID
+    );
+
+    slots.forEach((slot: Timeslots) => {
+      if (!timeslotsInSchedule.includes(slot.TEMPLATE_ID)) {
+        const timeslotId = nanoid();
+        addTimeslotToSchedule({ [timeslotId]: slot });
+        addTimeslotToDay({ dayId, timeslotId: timeslotId });
+      } else {
+        const id = Object.keys(timeslots).find(
+          (t) => timeslots[t].TEMPLATE_ID === slot.TEMPLATE_ID
+        );
+        if (id) addTimeslotToDay({ dayId, timeslotId: id });
+      }
     });
   };
 
   return (
     <div>
-      <input type="checkbox" id="newSlot" onChange={() => setOpenForNewSlot(!openForNewSlot)}/>
+      <input
+        type="checkbox"
+        id="newSlot"
+        onChange={() => setOpenForNewSlot(!openForNewSlot)}
+      />
       <h3>schedule planner</h3>
       <Grid>
         <Grid.Col span={1}>
@@ -74,7 +106,11 @@ const SchedulePlanner = () => {
                   overflow: "hidden",
                 }}
               >
-                <ActionIcon>use regular plan</ActionIcon>
+                <Button
+                  onClick={() => handleAddTimeslots(day.id, basicTimeslots)}
+                >
+                  use regular plan
+                </Button>
                 <ActionIcon
                   onClick={() => useStore.getState().deleteDay(day.id)}
                 >
@@ -89,11 +125,11 @@ const SchedulePlanner = () => {
                   overflow: "hidden",
                 }}
               >
-                <DayPlanner day={day} slotTemplates={basicTimeslots} />
-                 {openForNewSlot && hourGrid()}
+                <DayPlanner day={day} />
+                {openForNewSlot && hourGrid()}
               </div>
             </Grid.Col>
-          </ React.Fragment>
+          </React.Fragment>
         ))}
       </Grid>
     </div>
