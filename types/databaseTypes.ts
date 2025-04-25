@@ -1,4 +1,4 @@
-export type ID = number | string;
+export type ID = number;
 
 export interface QueryResult {
     rows: any[];
@@ -8,6 +8,13 @@ export interface QueryResult {
 export interface Tenancy {
     SCHOOL_ID: ID;
     SCHOOL_NAME: string;
+}
+
+export interface GetTenancyByUserResult {
+    TENANCY_ID: number,
+    TENANCY_NAME: string,
+    ROLE_ID: number,
+    ROLE_NAME: string,
 }
 
 export interface Teacher {

@@ -11,6 +11,7 @@ import { getRoleName } from "../utils";
 import {
   Classes,
   ClassRoom,
+  GetTenancyByUserResult,
   GlobalTimeslot,
   ID,
   Speciality,
@@ -34,7 +35,7 @@ export class DatabaseService {
   private static instance: DatabaseService;
   private static initialized = false;
   private pool: oracledb.Pool | undefined;
-  private tenancyId: string | null = null;
+  private tenancyId: ID | null = null;
   
   constructor() {}
   
@@ -53,7 +54,7 @@ export class DatabaseService {
     if (session) {
       const tenancyId = (session.user as UserSession).tenancyId;
       if (tenancyId !== null) {
-        this.tenancyId = tenancyId;
+        this.tenancyId = tenancyId as unknown as number;
       }
     }
   }
@@ -86,11 +87,11 @@ export class DatabaseService {
     }
   }
 
-  setTenancy(value: string) {
+  setTenancy(value: number) {
     this.tenancyId = value;
   }
 
-  getTenancy(): string {
+  getTenancy(): number {
     if (!this.tenancyId) throw new Error("Tenancy not set");
     return this.tenancyId;
   }
@@ -351,7 +352,7 @@ export class DatabaseService {
     }
   }
 
-  async getTenanciesByUser(userEmail: string): Promise<any[]> {
+  async getTenanciesByUser(userEmail: string): Promise<Array<GetTenancyByUserResult>> {
     const userResult = await this.getUserByEmail(userEmail);
     const userId = userResult.USER_ID;
     const query = `
@@ -363,7 +364,8 @@ export class DatabaseService {
   `;
     try {
       const result = await this.executeQuery(query, [userId]);
-      return result;
+      console.log('*---------------------------------gettenanciesbyuser', result);
+      return result as GetTenancyByUserResult[];
     } catch (error) {
       console.error(`Error getting tenancies by user: ${error}`);
       throw error;
@@ -549,17 +551,17 @@ export class DatabaseService {
   // ----------------- LESSON -------------------
 
   async createLesson(lesson: LessonInput): Promise<void> {
-    const query = `INSERT INTO lessons (template_id, teacher_id, classroom_id, subject_id, class_id, tenancy_id) VALUES (:timeslotId, :teacherId, :classroomId, :subjectId, :classId, :tenancyId)`;
+    const query = `INSERT INTO lessons (template_id, teacher_id, classroom_id, subject_id, class_id, tenancy_id) VALUES (:templateId, :teacherId, :classroomId, :subjectId, :classId, :tenancyId)`;
     try {
       const tenancyId = this.getTenancy();
-      const bindVariables = [
-        lesson.timeslot,
-        lesson.teacher,
-        lesson.classId,
-        lesson.day,
-        lesson.classRoom,
+      const bindVariables = {
+        templateId: lesson.timeslot,
+        teacherId: lesson.teacher,
+        classroomId: lesson.classRoom,
+        subjectId: lesson.subject,
+        classId: lesson.classId,
         tenancyId,
-      ];
+      };
       await this.executeCommand(query, bindVariables);
     } catch (error) {
       throw error;

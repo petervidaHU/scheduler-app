@@ -28,7 +28,7 @@ export const authOptions = {
         ) {
           // TODO get previous tenancy from localestorage or cookie?
           db.setTenancy(tenancies[0].TENANCY_ID);
-          return { ...user, tenancy: tenancies[0] };
+          return { ...user, tenancyId: tenancies[0].TENANCY_ID || null };
         } else {
           return null;
         }
@@ -52,27 +52,30 @@ export const authOptions = {
   callbacks: {
     async jwt({ token, user, session, trigger }: any) {
       //  console.log("in jwt callback:", user);
-      if (trigger === "update" && session) {
+      if (trigger === "update" && session && session.tenancyId) {
         token.tenancyId = session.tenancyId;
       }
       if (token && user) {
         // TODO mapping authorize object
-        const { FIRST_NAME, LAST_NAME, USER_ID, EMAIL, tenancy } = user as any;
+        const { FIRST_NAME, LAST_NAME, USER_ID, EMAIL, tenancyId } = user;
         token.id = USER_ID;
         token.firstName = FIRST_NAME;
         token.lastName = LAST_NAME;
         token.email = EMAIL;
-        token.tenancyId = tenancy.TENANCY_ID;
+        token.tenancyId = tenancyId || null;
       }
       return token;
     },
-    session({ session, token, user }: any) {
+    session: async ({ session, token, user }: any) => {
       if (!!session.user) {
-        session.user.userId = token.id;
-        session.user.name = `${token.firstName} ${token.lastName}`;
-        session.user.email = token.email;
-        session.user.tenancyId = token.tenancyId;
-      }
+        session.user = {
+          ...session.user,
+          userId: token.id,
+          name: `${token.firstName} ${token.lastName}`,
+          email: token.email as string,
+          tenancyId: token.tenancyId as number,
+        };
+           }
       return session;
     },
   },

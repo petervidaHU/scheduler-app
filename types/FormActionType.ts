@@ -20,7 +20,7 @@ export interface SyllabusInputForm {
 }
 
 export interface LessonInput {
-    timeslot: Timeslots;
+    timeslot: ID;
     teacher: ID | null;
     classRoom: ID | null;
     subject: ID;
