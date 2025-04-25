@@ -10,6 +10,7 @@ interface props {
   occurence: number;
   validationErrors: ScheduleValidationResult;
   plannedOccurence: number;
+  helperColor?: string,
 }
 
 const SyllabusCard: FC<props> = ({
@@ -19,6 +20,7 @@ const SyllabusCard: FC<props> = ({
   occurence,
   validationErrors,
   plannedOccurence,
+  helperColor = null,
 }) => {
   const isAllSetted =
     occurence === plannedOccurence
@@ -34,6 +36,7 @@ const SyllabusCard: FC<props> = ({
         p="xl"
         styles={{ root: { backgroundColor: isAllSetted } }}
       >
+        <span style={{ display: "block", height: "2rem", backgroundColor: helperColor || 'white' }}></span>
         <Text fw={700} size="lg">
           {subjectLabel}
         </Text>
