@@ -426,6 +426,16 @@ export class DatabaseService {
     }
   }
 
+  async deleteSpeciality(id: number): Promise<void> {
+    const query = `DELETE FROM specialties WHERE specialty_id = :id`;
+    const bindVariables = [id];
+    try {
+      await this.executeCommand(query, bindVariables);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // ----------------- SLOTS ----------------------
 
   async getBasicTimeSlots(global: GlobalTimeslot): Promise<Timeslots[]> {

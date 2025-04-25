@@ -9,7 +9,7 @@ export const useFormResponse = (
   const { addToast } = useStore();
   const manageState = () => useEffect(() => {
     if (state.success === true) {
-      form.reset();
+      if (form ) form.reset();
       state.success = false;
 
       addToast({
