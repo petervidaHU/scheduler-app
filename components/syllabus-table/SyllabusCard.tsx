@@ -4,17 +4,15 @@ import NotificationCard from "../UI-elements/NotificationBadges";
 import { ScheduleValidationResult } from "@/lib/hooks/scheduleValidationTypes";
 
 interface props {
-  toKey: string;
   subjectLabel: string;
   teacherLabel: string;
   occurence: number;
   validationErrors: ScheduleValidationResult;
   plannedOccurence: number;
-  helperColor?: string,
+  helperColor?: string;
 }
 
 const SyllabusCard: FC<props> = ({
-  toKey,
   subjectLabel,
   teacherLabel,
   occurence,
@@ -29,14 +27,19 @@ const SyllabusCard: FC<props> = ({
         ? "red"
         : "yellow";
   return (
-    <React.Fragment key={toKey}>
       <Paper
         shadow="sm"
         withBorder
         p="xl"
         styles={{ root: { backgroundColor: isAllSetted } }}
       >
-        <span style={{ display: "block", height: "2rem", backgroundColor: helperColor || 'white' }}></span>
+        <span
+          style={{
+            display: "block",
+            height: "2rem",
+            backgroundColor: helperColor || "white",
+          }}
+        ></span>
         <Text fw={700} size="lg">
           {subjectLabel}
         </Text>
@@ -61,20 +64,19 @@ const SyllabusCard: FC<props> = ({
           {plannedOccurence}
         </Text>
         <Group mt="md">
-          {Object.values(validationErrors)
-            .filter((e) => e !== null)
-            .map((e) => (
-              <React.Fragment key={e.key}>
-                <NotificationCard
-                  message={`${e.message} (${e.num} times)`}
-                  type={e.type}
-                  context={e.context}
-                />
-              </React.Fragment>
-            ))}
+          {Object.entries(validationErrors).map(([k, e]) => {
+            if (!e) return;
+            return (
+              <NotificationCard
+                key={k}
+                message={`${e.message} (${e.num} times)`}
+                type={e.type}
+                context={e.context}
+              />
+            );
+          })}
         </Group>
       </Paper>
-    </React.Fragment>
   );
 };
 

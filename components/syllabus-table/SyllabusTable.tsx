@@ -51,14 +51,15 @@ const SyllabusTable = () => {
           const occurence = subjectOccurrences[subject.SUBJECT_ID] || 0;
           const plannedOccurence = subject.OCCURRENCE;
           return (
-            <SyllabusCard
-              toKey={key}
-              subjectLabel={subjectLabel}
-              teacherLabel={teacherLabel}
-              occurence={occurence}
-              plannedOccurence={plannedOccurence}
-              validationErrors={validationErrors[key]}
-            />
+            <React.Fragment key={key}>
+              <SyllabusCard
+                subjectLabel={subjectLabel}
+                teacherLabel={teacherLabel}
+                occurence={occurence}
+                plannedOccurence={plannedOccurence}
+                validationErrors={validationErrors[key]}
+              />
+            </React.Fragment>
           );
         })}
       </SimpleGrid>
