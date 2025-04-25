@@ -442,9 +442,10 @@ export class DatabaseService {
   async createSubject(
     name: string,
     description: string,
-    specialityId: ID | null
+    specialityId: ID | null,
+    helperColor: string | null,
   ): Promise<void> {
-    const query = `INSERT INTO subjects (subject_name, specialty_id, tenancy_id, description) VALUES (:name, :specialityId, :tenancyId, :description)`;
+    const query = `INSERT INTO subjects (subject_name, specialty_id, tenancy_id, description, helper_color) VALUES (:name, :specialityId, :tenancyId, :description, :helperColor)`;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = [
@@ -452,6 +453,7 @@ export class DatabaseService {
         specialityId || null,
         tenancyId,
         description,
+        helperColor,
       ];
       await this.executeCommand(query, bindVariables);
     } catch (error) {

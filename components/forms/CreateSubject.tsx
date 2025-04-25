@@ -9,6 +9,7 @@ import {
   Stack,
   Select,
   NumberInput,
+  ColorPicker,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType } from "@/types/FormActionType";
@@ -19,15 +20,15 @@ import { createSubject } from "@/app/[locale]/(tenancy)/_actions/createSubject";
 const init: FormActionType = {
   error: null,
   data: null,
-  success: false
-  };
+  success: false,
+};
 
 interface props {
-  specialities: Speciality[],
+  specialities: Speciality[];
 }
 
-export const CreateSubject: React.FC<props> = ({specialities}) => {
-  const [ isPending, startTransition ] = useTransition();
+export const CreateSubject: React.FC<props> = ({ specialities }) => {
+  const [isPending, startTransition] = useTransition();
   const [subjectState, subjectAction] = useActionState(createSubject, {
     ...init,
   });
@@ -37,10 +38,10 @@ export const CreateSubject: React.FC<props> = ({specialities}) => {
       name: "",
       specialityId: null,
       description: "",
+      helperColor: null,
     },
     validate: {
-      name: (value) =>
-        value === '' ? "Subject name must be valid" : null,
+      name: (value) => (value === "" ? "Subject name must be valid" : null),
     },
   });
 
@@ -49,6 +50,7 @@ export const CreateSubject: React.FC<props> = ({specialities}) => {
       subjectAction(values);
     });
   };
+  console.log(subjectForm.getValues());
 
   return (
     <Container size="md" my="xl">
@@ -74,8 +76,14 @@ export const CreateSubject: React.FC<props> = ({specialities}) => {
             }))}
             {...subjectForm.getInputProps("specialityId")}
           />
+          <ColorPicker
+            {...subjectForm.getInputProps("helperColor")}
+            format="hsl"
+          />
           <Group mt="md">
-            <Button disabled={isPending} type="submit">Create Subject</Button>
+            <Button disabled={isPending} type="submit">
+              Create Subject
+            </Button>
           </Group>
         </Stack>
       </form>
