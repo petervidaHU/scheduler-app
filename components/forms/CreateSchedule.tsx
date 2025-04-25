@@ -12,11 +12,10 @@ import {
 import { createSchedule } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
 import { FormActionType } from "@/types/FormActionType";
 import { useActionState, useTransition } from "react";
-import { Syllabus } from "@/types/databaseTypes";
 import { useStore } from "@/store/store";
 import { nanoid } from "nanoid";
 import { getSyllabusAction } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getSyllabusAction";
-import { FormFields, SyllabusForm } from "@/types/ScheduleTypes";
+import { FormFields } from "@/types/ScheduleTypes";
 
 const formFields = Object.values(FormFields);
 
@@ -28,11 +27,7 @@ const init: FormActionType = {
 
 const SchedulePage = () => {
   const {
-    teachers,
-    classes,
-    classRooms,
-    subjects,
-    syllabus,
+    tenancyBasedData: { teachers, classes, classRooms, subjects },
     addDay,
     updateSyllabus,
     updateSchedule,

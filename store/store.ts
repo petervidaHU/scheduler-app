@@ -11,6 +11,7 @@ import {
 import {
   Classes,
   ClassRoom,
+  Speciality,
   Subject,
   Syllabus,
   Teacher,
@@ -19,16 +20,32 @@ import {
 import { LessonInput, SelectOptions } from "@/types/FormActionType";
 import { Toast } from "@/types/UIFeedbackTypes";
 
-interface ScheduleState {
-  subjects: DataWithOptions<Subject>;
-  syllabus: SyllabusForm;
-  teachers: DataWithOptions<Teacher>;
-  classes: DataWithOptions<Classes>;
-  classRooms: DataWithOptions<ClassRoom>;
-  scheduleState: Schedule;
-  basicTimeslots: Timeslots[];
+type TenancyBasedProperties =
+  | "subjects"
+  | "teachers"
+  | "classRooms"
+  | "classes"
+  | "timeslots"
+  | "specialities";
 
+interface ScheduleState {
+  //Tenancy based data
+  tenancyBasedData: {
+    specialities: DataWithOptions<Speciality>;
+    subjects: DataWithOptions<Subject>;
+    teachers: DataWithOptions<Teacher>;
+    classes: DataWithOptions<Classes>;
+    classRooms: DataWithOptions<ClassRoom>;
+    basicTimeslots: Timeslots[];
+  };
+
+  //Schedule
+  scheduleState: Schedule;
+  syllabus: SyllabusForm;
+
+  //Reducers
   fillTenancyBasedData: (payload: TenancyBasedData) => void;
+  updateTenancyBasedData: (payload: Partial<TenancyBasedData>) => void;
   addDay: (payload: any) => void;
   deleteDay: (payload: any) => void;
   // updateDay: (payload: any) => void;
@@ -50,6 +67,14 @@ interface ScheduleState {
 }
 
 const createScheduleSlice = (set: any): ScheduleState => ({
+  tenancyBasedData: {
+    specialities: {},
+    subjects: {},
+    teachers: {},
+    classRooms: {},
+    classes: {},
+    basicTimeslots: [],
+  },
   scheduleState: {
     id: "",
     status: null,
@@ -62,15 +87,12 @@ const createScheduleSlice = (set: any): ScheduleState => ({
     timeslots: {},
     days: [],
   },
-  subjects: {},
-  teachers: {},
-  classRooms: {},
-  classes: {},
-  basicTimeslots: [],
+
   syllabus: {
-    classId: "",
+    classId: 0,
     subjects: {},
   },
+
   addTimeslotToSchedule: (payload: Record<string, Timeslots>) =>
     set((state: ScheduleState) => ({
       ...state,
@@ -102,11 +124,22 @@ const createScheduleSlice = (set: any): ScheduleState => ({
   fillTenancyBasedData: (payload: TenancyBasedData) =>
     set((state: ScheduleState) => ({
       ...state,
-      subjects: payload.subjects,
-      teachers: payload.teachers,
-      classRooms: payload.classRooms,
-      classes: payload.classes,
-      basicTimeslots: payload.timeslots,
+      tenancyBasedData: {
+        subjects: payload.subjects,
+        teachers: payload.teachers,
+        classRooms: payload.classRooms,
+        classes: payload.classes,
+        specialities: payload.specialities,
+        basicTimeslots: payload.timeslots,
+      },
+    })),
+  updateTenancyBasedData: (payload: Partial<TenancyBasedData>) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      tenancyBasedData: {
+        ...state.tenancyBasedData,
+        ...payload,
+      },
     })),
   updateLesson: (payload: LessonInput) =>
     set((state: ScheduleState) => ({

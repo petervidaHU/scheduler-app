@@ -53,7 +53,7 @@ export type SyllabusForm = {
 export interface DataWithOptions<T> {
   [key: string]: T & SelectOptions;
 }
-
+ 
 export interface TenancyBasedData {
   teachers: DataWithOptions<Teacher>;
   classRooms: DataWithOptions<ClassRoom>;

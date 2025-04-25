@@ -35,7 +35,6 @@ const languages = [
 
 export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const t = useTranslations("dashboard");
-  // console.log('i18n messages', t('message2'), 'locale in client side:', locale);
   const { fillTenancyBasedData } = useStore();
   const { update } = useSession();
   const [selectedTenancy, setSelectedTenancy] = useState<string>(
@@ -73,7 +72,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
       setTenancyInServer(value);
       setSelectedTenancy(value);
       const data = await getTenancyBasedData();
-      // console.log('tenancy value:', data);
+      console.log('fetched data in header:', data)
       fillTenancyBasedData(data);
       router.refresh();
     } catch (error) {

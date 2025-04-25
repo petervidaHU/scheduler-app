@@ -42,7 +42,6 @@ const TabsWithTable: React.FC<Props> = ({ tabs }) => {
     });
   };
 
-  console.log('dashboard state:', state);
   
   // TODO restrict actions for admins only
   const actionButtons = (id: string, label: Entities) => {
@@ -61,8 +60,8 @@ const TabsWithTable: React.FC<Props> = ({ tabs }) => {
         </ActionIcon>
         <ActionIcon
           onClick={() => {
-            console.log("delete", id);
-            handleDelete(+id);
+            console.log("delete", id, label);
+          //  handleDelete(+id);
           }}
           variant="filled"
           aria-label="Settings"

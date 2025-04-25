@@ -3,13 +3,12 @@
 import { ScheduleValidationResult } from "@/lib/hooks/scheduleValidationTypes";
 import { useSubjectValidation } from "@/lib/hooks/useValidation";
 import { useStore } from "@/store/store";
-import { Paper, Text, SimpleGrid, Divider, Group } from "@mantine/core";
+import { SimpleGrid } from "@mantine/core";
 import React, { useMemo } from "react";
-import NotificationCard from "../UI-elements/NotificationBadges";
 import SyllabusCard from "./SyllabusCard";
 
 const SyllabusTable = () => {
-  const { syllabus, scheduleState, classRooms, subjects, teachers } =
+  const { syllabus, scheduleState, tenancyBasedData: { classRooms, subjects, teachers }} =
     useStore();
   const validatorFn = useSubjectValidation(
     scheduleState.lessons,
