@@ -406,6 +406,7 @@ export class DatabaseService {
     const query = `SELECT * FROM specialties WHERE(tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
     try {
       const tenancyId = this.getTenancy();
+      console.log('in db.getallspeciality', tenancyId);
       const result = await this.executeQuery(query, [tenancyId]);
       return result as Speciality[];
     } catch (error) {

@@ -1,4 +1,4 @@
-'use server'    
+"use server";
 import { dataFetcherAll } from "@/app/[locale]/(tenancy)/my-tenancy/dashboarDataFetcher";
 import { getDbInstance } from "./database/db-instance";
 import {
@@ -10,8 +10,9 @@ import {
   Timeslots,
 } from "@/types/databaseTypes";
 import { DataWithOptions } from "@/types/ScheduleTypes";
+import { FormActionType } from "@/types/FormActionType";
 
-export const getTenancyBasedData = async () => {
+export const getTenancyBasedData = async (state: FormActionType) => {
   const db = await getDbInstance();
   const [specialities, subjects, classRooms, classes, teachers, timeslots] =
     await Promise.all([
@@ -31,7 +32,11 @@ export const getTenancyBasedData = async () => {
     teachers.error ||
     timeslots.error
   ) {
-    throw new Error("Error fetching data");
+    return {
+      success: false,
+      data: null,
+      error: "Error getting tenancy based data",
+    };
   }
 
   const teachersObject = teachers.data.reduce((acc, teacher) => {
@@ -79,12 +84,16 @@ export const getTenancyBasedData = async () => {
     return acc;
   }, {} as DataWithOptions<Classes>);
 
-   return {
-    specialities: specialitiesObject,
-    subjects: subjectsObject,
-    teachers: teachersObject,
-    classRooms: classRoomsObject,
-    classes: classesObject,
-    timeslots: timeslots.data,
+  return {
+    data: {
+      specialities: specialitiesObject,
+      subjects: subjectsObject,
+      teachers: teachersObject,
+      classRooms: classRoomsObject,
+      classes: classesObject,
+      timeslots: timeslots.data,
+    },
+    success: true,
+    error: null,
   };
 };
