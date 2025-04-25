@@ -3,7 +3,7 @@ import { ROLES } from "@/constants/constants"
 export interface UserSession {
     name: string | null,
     email: string | null,
-    tenancyId: string | null,
+    tenancyId: number | null,
     userId: string | null,
     userRole: Roles | null,
     status: 'authenticated' | 'unauthenticated'

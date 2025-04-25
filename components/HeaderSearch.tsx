@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  FC,
-  use,
-  useActionState,
-  useEffect,
-  useState,
-  useTransition,
-} from "react";
+import { FC, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { Burger, Group } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -21,7 +14,6 @@ import { setTenancyInServer } from "@/lib/database/setTenancyInServer";
 import { ColorModeSwitcher } from "./ColorModeSwitcher";
 import { getTenancyBasedData } from "@/lib/getTenancyBasedData";
 import { useStore } from "@/store/store";
-import { FormActionType } from "@/types/FormActionType";
 
 const links = [
   { link: "/my-tenancy", label: "my tenancy" },
@@ -35,33 +27,13 @@ interface props {
   tenancies: any[];
 }
 
-const languages = [
-  { code: "en", name: "English" },
-  { code: "fr", name: "Français" },
-  { code: "es", name: "Español" },
-];
-
-const init: FormActionType = {
-  error: null,
-  data: {
-    specialities: [],
-    subjects: [],
-    teachers: [],
-    classRooms: [],
-    classes: [],
-    timeslots: [],
-  },
-  success: false,
-};
-
 export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const t = useTranslations("dashboard");
-  const [isPending, startTransition] = useTransition();
-  const [state, action] = useActionState(getTenancyBasedData, init);
+  const [loading, setLoading] = useState(false);
   const { fillTenancyBasedData, addToast } = useStore();
   const { update } = useSession();
-  const [selectedTenancy, setSelectedTenancy] = useState<string>(
-    session.tenancyId || ""
+  const [selectedTenancy, setSelectedTenancy] = useState<number | null>(
+    session.tenancyId || null
   );
   const { name, status } = session;
   const router = useRouter();
@@ -90,13 +62,16 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const tenancyOptions = getTenancies();
 
   const tenancyChangeHandler = async (value: any) => {
+    setLoading(true);
     try {
       await update({ tenancyId: value });
       await setTenancyInServer(value);
       setSelectedTenancy(value);
-      startTransition(  () => {
-         action();
-      });
+      const res = await getTenancyBasedData();
+      if (res.success && res.data) {
+        fillTenancyBasedData(res.data);
+      }
+
       router.refresh();
     } catch (error) {
       addToast({
@@ -106,18 +81,11 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
         autoClose: true,
         id: Date.now().toString(),
       });
+    } finally {
+      setLoading(false);
     }
   };
-  useEffect(() => {
-    if (state.success && state.data) {
-      console.log("there is some data");
-      fillTenancyBasedData(state.data);
-      state.data = init.data;
-      state.error = null;
-      state.success = false;
-    }
-  }, [state]);
-
+console.log('selectedTenancy', selectedTenancy)
   return (
     <header className={classes.header}>
       <div className={classes.inner}>
@@ -126,12 +94,12 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
           {status === "authenticated" ? (
             <>
               <Select
-                value={selectedTenancy}
+                value={selectedTenancy ? selectedTenancy.toString() : '0'}
                 onChange={tenancyChangeHandler}
                 data={tenancyOptions}
                 placeholder="Select a tenancy"
               />
-              {isPending && <span>Loading...</span>}
+              {loading && <span>Loading...</span>}
             </>
           ) : null}
           <Button

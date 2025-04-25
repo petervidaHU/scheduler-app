@@ -12,7 +12,7 @@ import {
 import { DataWithOptions } from "@/types/ScheduleTypes";
 import { FormActionType } from "@/types/FormActionType";
 
-export const getTenancyBasedData = async (state: FormActionType) => {
+export const getTenancyBasedData = async (): Promise<FormActionType> => {
   const db = await getDbInstance();
   const [specialities, subjects, classRooms, classes, teachers, timeslots] =
     await Promise.all([
