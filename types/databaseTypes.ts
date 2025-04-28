@@ -29,6 +29,7 @@ export interface Subject {
     SUBJECT_NAME: string;
     DESCRIPTION: string;
     SPECIALTY_ID: ID;
+    HELPER_COLOR?: string;
 }
 
 export interface Speciality {
