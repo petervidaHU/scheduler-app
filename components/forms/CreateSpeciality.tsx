@@ -14,7 +14,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
-import { Speciality } from "@/types/databaseTypes";
+import { Specialty } from "@/types/databaseTypes";
 import { redirect } from "next/navigation";
 import { manageSpeciality } from "@/app/[locale]/(tenancy)/_actions/manageSpeciality";
 import { useStore } from "@/store/store";
@@ -26,7 +26,7 @@ const init: FormActionType = {
   success: false,
 };
 
-export const CreateSpeciality: React.FC<ManageFormServerProps<Speciality>> = ({
+export const CreateSpeciality: React.FC<ManageFormServerProps<Specialty>> = ({
    entity, 
    backBtnUrl,
    backBtnText,

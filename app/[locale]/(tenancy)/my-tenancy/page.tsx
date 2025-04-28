@@ -1,7 +1,7 @@
 import React from "react";
 import { NoRoleContent } from "./NoRoleContent";
 import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
-import { Classes, ClassRoom, Speciality, Subject, Teacher } from "@/types/databaseTypes";
+import { Classes, ClassRoom, Specialty, Subject, Teacher } from "@/types/databaseTypes";
 import TabsWithTable from "@/components/TabsWithTable";
 import { dataFetcherAll } from "./dashboarDataFetcher";
 import { getDbInstance } from "@/lib/database/db-instance";

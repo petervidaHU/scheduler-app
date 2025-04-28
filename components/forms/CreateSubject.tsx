@@ -14,7 +14,7 @@ import {
 import { useForm } from "@mantine/form";
 import { FormActionType } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { Speciality } from "@/types/databaseTypes";
+import { Specialty } from "@/types/databaseTypes";
 import { createSubject } from "@/app/[locale]/(tenancy)/_actions/createSubject";
 
 const init: FormActionType = {
@@ -24,7 +24,7 @@ const init: FormActionType = {
 };
 
 interface props {
-  specialities: Speciality[];
+  specialities: Specialty[];
 }
 
 export const CreateSubject: React.FC<props> = ({ specialities }) => {

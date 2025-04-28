@@ -14,7 +14,7 @@ import {
   GetTenancyByUserResult,
   GlobalTimeslot,
   ID,
-  Speciality,
+  Specialty,
   Subject,
   Syllabus,
   Teacher,
@@ -328,7 +328,7 @@ export class DatabaseService {
       const insertTenancyQuery = `
         INSERT INTO tenancies (tenancy_name)
         VALUES (:name)
-        RETURNING tenancy_id INTO :newId
+        RETURNING id INTO :newId
       `;
       const bindVars = {
         name: tenancyName,
@@ -403,25 +403,25 @@ export class DatabaseService {
     }
   }
 
-  async getAllSpeciality(): Promise<Speciality[]> {
+  async getAllSpeciality(): Promise<Specialty[]> {
     const query = `SELECT * FROM specialties WHERE(tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
     try {
       const tenancyId = this.getTenancy();
       console.log('in db.getallspeciality', tenancyId);
       const result = await this.executeQuery(query, [tenancyId]);
-      return result as Speciality[];
+      return result as Specialty[];
     } catch (error) {
       console.error(`Error getting array of speciality: ${error}`);
       throw error;
     }
   }
 
-  async getSpecialityById(id: number): Promise<Speciality> {
+  async getSpecialityById(id: number): Promise<Specialty> {
     const query = `SELECT * FROM specialties WHERE specialty_id = :id AND (tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
     try {
       const tenancyId = this.getTenancy();
       const result = await this.executeQuery(query, [id, tenancyId]);
-      return (result as Speciality[])[0];
+      return (result as Specialty[])[0];
     } catch (error) {
       console.error(`Error getting speciality: ${error}`);
       throw error;

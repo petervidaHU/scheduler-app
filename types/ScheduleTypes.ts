@@ -2,7 +2,7 @@ import {
   Classes,
   ClassRoom,
   ID,
-  Speciality,
+  Specialty,
   Subject,
   Syllabus,
   Teacher,
@@ -58,7 +58,7 @@ export interface TenancyBasedData {
   teachers: PreloadDataObject<DataWithOptions<Teacher>>;
   classRooms: PreloadDataObject<DataWithOptions<ClassRoom>>;
   subjects: PreloadDataObject<DataWithOptions<Subject>>;
-  specialities: PreloadDataObject<DataWithOptions<Speciality>>;
+  specialities: PreloadDataObject<DataWithOptions<Specialty>>;
   classes: PreloadDataObject<DataWithOptions<Classes>>;
   timeslots: Timeslots[];
 }

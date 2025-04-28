@@ -11,7 +11,7 @@ import {
 import {
   Classes,
   ClassRoom,
-  Speciality,
+  Specialty,
   Subject,
   Syllabus,
   Teacher,
@@ -36,7 +36,7 @@ type TenancyBasedProperties =
 interface ScheduleState {
   //Tenancy based data
   tenancyBasedData: {
-    specialities: PreloadDataObject<DataWithOptions<Speciality>>;
+    specialities: PreloadDataObject<DataWithOptions<Specialty>>;
     subjects: PreloadDataObject<DataWithOptions<Subject>>;
     teachers: PreloadDataObject<DataWithOptions<Teacher>>;
     classes: PreloadDataObject<DataWithOptions<Classes>>;

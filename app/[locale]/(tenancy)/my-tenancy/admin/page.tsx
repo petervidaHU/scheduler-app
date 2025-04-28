@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import CreateSpeciality from "@/components/forms/CreateSpeciality";
 import AdminClientComponent from "@/components/AdminClientComponent";
 import CreateClassRoom from "@/components/forms/CreateClassRoom";
-import { ClassRoom, Speciality, Subject } from "@/types/databaseTypes";
+import { ClassRoom, Specialty, Subject } from "@/types/databaseTypes";
 import CreateClass from "@/components/forms/CreateClass";
 import CreateSubject from "@/components/forms/CreateSubject";
 import { ManageFormServerProps, SelectOptions } from "@/types/FormActionType";
@@ -32,7 +32,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     const contents = {
       [Entities.classroom]: async (id: string) => {
         let serverProps: ManageFormServerProps<ClassRoom> = {} as any;
-        let specialities: Speciality[] = [];
+        let specialities: Specialty[] = [];
         try {
           const specials = await db.getAllSpeciality();
           if (specials.length > 0) {
@@ -105,7 +105,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         );
       },
       [Entities.speciality]: async (id: string) => {
-        let serverProps: ManageFormServerProps<Speciality> = {} as any;
+        let serverProps: ManageFormServerProps<Specialty> = {} as any;
         const title = id ? "Update Speciality" : "Create Speciality";
 
         if (id) {
@@ -130,7 +130,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         );
       },
       [Entities.subject]: async (id: string) => {
-        let specialities: Speciality[] = [];
+        let specialities: Specialty[] = [];
         try {
           const specials = await db.getAllSpeciality();
           if (specials.length > 0) {

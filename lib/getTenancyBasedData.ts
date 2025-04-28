@@ -2,7 +2,7 @@
 import { dataFetcherAll } from "@/app/[locale]/(tenancy)/my-tenancy/dashboarDataFetcher";
 import { getDbInstance } from "./database/db-instance";
 import {
-  Speciality,
+  Specialty,
   Subject,
   ClassRoom,
   Classes,
@@ -11,18 +11,11 @@ import {
 } from "@/types/databaseTypes";
 import { DataWithOptions, TenancyBasedData } from "@/types/ScheduleTypes";
 
-const convertToDataWithOptions = <T>(data: T[]): DataWithOptions<T> => {
-  return data.reduce((acc, item) => {
-    acc[item.ID] = item;
-    return acc;
-  }, {} as DataWithOptions<T>);
-};
-
 export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
   const db = await getDbInstance();
   const [specialities, subjects, classRooms, classes, teachers, timeslots] =
     await Promise.all([
-      dataFetcherAll<Speciality>(db.getAllSpeciality),
+      dataFetcherAll<Specialty>(db.getAllSpeciality),
       dataFetcherAll<Subject>(db.getAllSubjects),
       dataFetcherAll<ClassRoom>(db.getAllClassRooms),
       dataFetcherAll<Classes>(db.getAllClasses),
@@ -51,45 +44,45 @@ export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
   }
 
   const teachersObject = teachers.data.reduce((acc, teacher) => {
-    acc[teacher.TEACHER_ID] = {
-      value: teacher.TEACHER_ID.toString(),
-      label: teacher.TEACHER_NAME,
+    acc[teacher.ID] = {
+      value: teacher.ID.toString(),
+      label: teacher.NAME,
       ...teacher,
     };
     return acc;
   }, {} as DataWithOptions<Teacher>);
 
   const classRoomsObject = classRooms.data.reduce((acc, classRoom) => {
-    acc[classRoom.CLASSROOM_ID] = {
-      value: classRoom.CLASSROOM_ID.toString(),
-      label: classRoom.CLASSROOM_NAME,
+    acc[classRoom.ID] = {
+      value: classRoom.ID.toString(),
+      label: classRoom.NAME,
       ...classRoom,
     };
     return acc;
   }, {} as DataWithOptions<ClassRoom>);
 
   const subjectsObject = subjects.data.reduce((acc, subject) => {
-    acc[subject.SUBJECT_ID] = {
-      value: subject.SUBJECT_ID.toString(),
-      label: subject.SUBJECT_NAME,
+    acc[subject.ID] = {
+      value: subject.ID.toString(),
+      label: subject.NAME,
       ...subject,
     };
     return acc;
   }, {} as DataWithOptions<Subject>);
 
   const specialitiesObject = specialities.data.reduce((acc, speciality) => {
-    acc[speciality.SPECIALTY_ID] = {
-      value: speciality.SPECIALTY_ID.toString(),
-      label: speciality.SPECIALTY_NAME,
+    acc[speciality.ID] = {
+      value: speciality.ID.toString(),
+      label: speciality.NAME,
       ...speciality,
     };
     return acc;
-  }, {} as DataWithOptions<Speciality>);
+  }, {} as DataWithOptions<Specialty>);
 
   const classesObject = classes.data.reduce((acc, classItem) => {
-    acc[classItem.CLASS_ID] = {
-      value: classItem.CLASS_ID.toString(),
-      label: classItem.CLASS_NAME,
+    acc[classItem.ID] = {
+      value: classItem.ID.toString(),
+      label: classItem.NAME,
       ...classItem,
     };
     return acc;

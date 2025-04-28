@@ -13,7 +13,7 @@ import {
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { ClassRoom, Speciality } from "@/types/databaseTypes";
+import { ClassRoom, Specialty } from "@/types/databaseTypes";
 import { manageClassRoom } from "@/app/[locale]/(tenancy)/_actions/manageClassRoom";
 import { useFormResponse } from "@/lib/hooks/useFormResponse";
 
@@ -24,7 +24,7 @@ const init: FormActionType = {
 };
 
 interface props extends ManageFormServerProps<ClassRoom> {
-  specialities: Speciality[];
+  specialities: Specialty[];
 }
 
 export const CreateClassRoom: React.FC<props> = ({
