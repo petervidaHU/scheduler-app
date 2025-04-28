@@ -22,6 +22,7 @@ import {
 } from "@/types/databaseTypes";
 import { NormalizedSyllabus } from "@/app/[locale]/(tenancy)/_actions/createClass";
 import { LessonInput } from "@/types/FormActionType";
+import { Entities } from "@/types/Entities";
 
 interface ExtendedExecuteOptions extends ExecuteOptions {
   bindDefs?: {
@@ -427,8 +428,16 @@ export class DatabaseService {
     }
   }
 
-  async deleteSpeciality(id: number): Promise<void> {
-    const query = `DELETE FROM specialties WHERE specialty_id = :id`;
+  async deleteTenancyBasedData(id: number, label: Entities): Promise<void> {
+    const tableNameMapping: Record<Entities, string> = {
+      specialty: 'specialties',
+      classroom: 'classrooms',
+      subject: 'subjects',
+      teacher: 'teachers',
+      class: 'classes',
+    } as Record<Entities, string>;
+
+    const query = `DELETE FROM ${tableNameMapping[label]} WHERE ${label}_id = :id`;
     const bindVariables = [id];
     try {
       await this.executeCommand(query, bindVariables);

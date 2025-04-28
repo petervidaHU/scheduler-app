@@ -1,7 +1,7 @@
 export enum Entities {
     classroom = "classroom",
     class = "class",
-    speciality = "speciality",
+    specialty = "specialty",
     subject = "subject",
     teacher = "teacher",
     student = "student",

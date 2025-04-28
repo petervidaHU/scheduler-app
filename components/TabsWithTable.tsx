@@ -1,7 +1,6 @@
 "use client";
 
-import { deleteSpeciality } from "@/app/[locale]/(tenancy)/_actions/deleteSpeciality";
-import { useFormResponse } from "@/lib/hooks/useFormResponse";
+import { deleteTenancyBasedData } from "@/app/[locale]/(tenancy)/_actions/deleteSpeciality";
 import { useRouter } from "@/lib/i18n/navigation";
 import { useStore } from "@/store/store";
 import { Entities } from "@/types/Entities";
@@ -10,6 +9,7 @@ import { ActionIcon, Table, TableData, Tabs } from "@mantine/core";
 import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { ReactNode, useActionState, useMemo, useTransition } from "react";
 import ColorFeedback from "./UI-elements/ColorFeedback";
+import { refetchTenancyBasedData } from "@/lib/UpdateTenancyBasedData";
 
 // TODO entities as label thightly coupled? and hardcoded action url as well?
 interface TabData {
@@ -25,21 +25,32 @@ const init: FormActionType = {
   success: false,
 };
 
+  const labelMapper: Partial<Record<Entities, any>> = {
+    [Entities.specialty]: "specialties",
+    [Entities.subject]: "subjects",
+    [Entities.teacher]: "teachers",
+    [Entities.classroom]: "classRooms",
+    [Entities.class]: "classes",
+  };
+
+  const loadingIndicator: Partial<Record<Entities, any>> = {
+    [Entities.specialty]: { specialties: { isLoading: true } },
+    [Entities.subject]: { subjects: { isLoading: true } },
+    [Entities.teacher]: { teachers: { isLoading: true } },
+    [Entities.classroom]: { classRoom: { isLoading: true } },
+    [Entities.class]: { classes: { isLoading: true } },
+  };
+
 const TabsWithTable = () => {
   const {
     tenancyBasedData: { specialities, classRooms, classes, teachers, subjects },
+    updateTenancyBasedData,
   } = useStore();
-  const [isPending, startTransition] = useTransition();
-  const [state, action] = useActionState(deleteSpeciality, {
-    ...init,
-  });
   const router = useRouter();
-  const { manageState } = useFormResponse(state, null, "");
-  manageState();
 
   const tabsData = [
     {
-      label: Entities.speciality,
+      label: Entities.specialty,
       error: !!specialities.error,
       isLoading: !!specialities.isLoading,
       data: {
@@ -141,11 +152,12 @@ const TabsWithTable = () => {
     },
   ];
 
-  const handleDelete = (id: number) => {
-    console.log("delete");
-    startTransition(() => {
-      action(id);
-    });
+  const handleDelete = async (id: number, label: Entities) => {
+    const res = await refetchTenancyBasedData(label);
+    if (res.success ) {
+      console.log('res success:', res)
+      updateTenancyBasedData({ [labelMapper[label]]: res.data});
+    }
   };
 
   // TODO restrict actions for admins only
@@ -155,7 +167,6 @@ const TabsWithTable = () => {
       <>
         <ActionIcon
           onClick={() => {
-            console.log("edit", id);
             router.push(`/my-tenancy/admin?entity=${label}&id=${id}`);
           }}
           variant="filled"
@@ -166,7 +177,7 @@ const TabsWithTable = () => {
         <ActionIcon
           onClick={() => {
             console.log("delete", id, label);
-            //  handleDelete(+id);
+            handleDelete(+id, label);
           }}
           variant="filled"
           aria-label="Settings"
@@ -193,7 +204,6 @@ const TabsWithTable = () => {
 
   const getTabPanels = useMemo(
     () => (tab: TabData) => {
-      console.log("gettabpanels:", tab);
       const headers = tab.data.head?.map((header) => (
         <Table.Th key={JSON.stringify(header)}>{header}</Table.Th>
       ));

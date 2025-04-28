@@ -10,7 +10,13 @@ import {
   Timeslots,
 } from "@/types/databaseTypes";
 import { DataWithOptions, TenancyBasedData } from "@/types/ScheduleTypes";
-import { FormActionType } from "@/types/FormActionType";
+
+const convertToDataWithOptions = <T>(data: T[]): DataWithOptions<T> => {
+  return data.reduce((acc, item) => {
+    acc[item.ID] = item;
+    return acc;
+  }, {} as DataWithOptions<T>);
+};
 
 export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
   const db = await getDbInstance();
