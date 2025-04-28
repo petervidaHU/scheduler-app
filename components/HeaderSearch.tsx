@@ -63,15 +63,20 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
 
   const tenancyChangeHandler = async (value: any) => {
     setLoading(true);
+    fillTenancyBasedData({
+      specialities: { isLoading: true },
+      subjects: { isLoading: true },
+      teachers: { isLoading: true },
+      classRooms: { isLoading: true },
+      classes: { isLoading: true },
+      timeslots: [],
+    });
     try {
       await update({ tenancyId: value });
       await setTenancyInServer(value);
       setSelectedTenancy(value);
       const res = await getTenancyBasedData();
-      if (res.success && res.data) {
-        fillTenancyBasedData(res.data);
-      }
-
+      fillTenancyBasedData(res);
       router.refresh();
     } catch (error) {
       addToast({
@@ -81,11 +86,19 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
         autoClose: true,
         id: Date.now().toString(),
       });
+      fillTenancyBasedData({
+        specialities: { error: true, isLoading: false },
+        subjects: { error: true, isLoading: false },
+        teachers: { error: true, isLoading: false },
+        classRooms: { error: true, isLoading: false },
+        classes: { error: true, isLoading: false },
+        timeslots: [],
+      });
     } finally {
       setLoading(false);
     }
   };
-console.log('selectedTenancy', selectedTenancy)
+  console.log("selectedTenancy", selectedTenancy);
   return (
     <header className={classes.header}>
       <div className={classes.inner}>
@@ -94,7 +107,7 @@ console.log('selectedTenancy', selectedTenancy)
           {status === "authenticated" ? (
             <>
               <Select
-                value={selectedTenancy ? selectedTenancy.toString() : '0'}
+                value={selectedTenancy ? selectedTenancy.toString() : "0"}
                 onChange={tenancyChangeHandler}
                 data={tenancyOptions}
                 placeholder="Select a tenancy"

@@ -8,7 +8,7 @@ import {
   Teacher,
   Timeslots,
 } from "./databaseTypes";
-import { LessonInput, SelectOptions } from "./FormActionType";
+import { LessonInput, PreloadDataObject, SelectOptions } from "./FormActionType";
 
 export type SStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
 
@@ -55,10 +55,10 @@ export interface DataWithOptions<T> {
 }
  
 export interface TenancyBasedData {
-  teachers: DataWithOptions<Teacher>;
-  classRooms: DataWithOptions<ClassRoom>;
-  subjects: DataWithOptions<Subject>;
-  specialities: DataWithOptions<Speciality>;
-  classes: DataWithOptions<Classes>;
+  teachers: PreloadDataObject<DataWithOptions<Teacher>>;
+  classRooms: PreloadDataObject<DataWithOptions<ClassRoom>>;
+  subjects: PreloadDataObject<DataWithOptions<Subject>>;
+  specialities: PreloadDataObject<DataWithOptions<Speciality>>;
+  classes: PreloadDataObject<DataWithOptions<Classes>>;
   timeslots: Timeslots[];
 }

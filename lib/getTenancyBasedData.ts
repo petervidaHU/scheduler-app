@@ -9,10 +9,10 @@ import {
   Teacher,
   Timeslots,
 } from "@/types/databaseTypes";
-import { DataWithOptions } from "@/types/ScheduleTypes";
+import { DataWithOptions, TenancyBasedData } from "@/types/ScheduleTypes";
 import { FormActionType } from "@/types/FormActionType";
 
-export const getTenancyBasedData = async (): Promise<FormActionType> => {
+export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
   const db = await getDbInstance();
   const [specialities, subjects, classRooms, classes, teachers, timeslots] =
     await Promise.all([
@@ -32,11 +32,16 @@ export const getTenancyBasedData = async (): Promise<FormActionType> => {
     teachers.error ||
     timeslots.error
   ) {
-    return {
-      success: false,
-      data: null,
-      error: "Error getting tenancy based data",
-    };
+    throw new Error(
+      `Error getting tenancy based data:,  ${
+        (specialities.error,
+        subjects.error,
+        classRooms.error,
+        classes.error,
+        teachers.error,
+        timeslots.error)
+      }`
+    );
   }
 
   const teachersObject = teachers.data.reduce((acc, teacher) => {
@@ -85,15 +90,11 @@ export const getTenancyBasedData = async (): Promise<FormActionType> => {
   }, {} as DataWithOptions<Classes>);
 
   return {
-    data: {
-      specialities: specialitiesObject,
-      subjects: subjectsObject,
-      teachers: teachersObject,
-      classRooms: classRoomsObject,
-      classes: classesObject,
-      timeslots: timeslots.data,
-    },
-    success: true,
-    error: null,
+    specialities: {data: specialitiesObject},
+    subjects: {data: subjectsObject},
+    teachers: {data: teachersObject},
+    classRooms: {data: classRoomsObject},
+    classes: {data: classesObject},
+    timeslots: timeslots.data,
   };
 };

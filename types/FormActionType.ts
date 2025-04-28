@@ -1,5 +1,11 @@
 import { ID, Timeslots } from "./databaseTypes";
 
+export interface PreloadDataObject<D> {
+    error?: boolean,
+    isLoading?: boolean,
+    data?: D,
+}
+
 export interface FormActionType {
     error: any,
     data: null | any,

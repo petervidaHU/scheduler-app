@@ -17,8 +17,13 @@ import {
   Teacher,
   Timeslots,
 } from "@/types/databaseTypes";
-import { LessonInput, SelectOptions } from "@/types/FormActionType";
+import {
+  LessonInput,
+  PreloadDataObject,
+  SelectOptions,
+} from "@/types/FormActionType";
 import { Toast } from "@/types/UIFeedbackTypes";
+import { error } from "console";
 
 type TenancyBasedProperties =
   | "subjects"
@@ -31,11 +36,11 @@ type TenancyBasedProperties =
 interface ScheduleState {
   //Tenancy based data
   tenancyBasedData: {
-    specialities: DataWithOptions<Speciality>;
-    subjects: DataWithOptions<Subject>;
-    teachers: DataWithOptions<Teacher>;
-    classes: DataWithOptions<Classes>;
-    classRooms: DataWithOptions<ClassRoom>;
+    specialities: PreloadDataObject<DataWithOptions<Speciality>>;
+    subjects: PreloadDataObject<DataWithOptions<Subject>>;
+    teachers: PreloadDataObject<DataWithOptions<Teacher>>;
+    classes: PreloadDataObject<DataWithOptions<Classes>>;
+    classRooms: PreloadDataObject<DataWithOptions<ClassRoom>>;
     basicTimeslots: Timeslots[];
   };
 
@@ -125,12 +130,12 @@ const createScheduleSlice = (set: any): ScheduleState => ({
     set((state: ScheduleState) => ({
       ...state,
       tenancyBasedData: {
-        subjects: payload.subjects,
-        teachers: payload.teachers,
-        classRooms: payload.classRooms,
-        classes: payload.classes,
-        specialities: payload.specialities,
-        basicTimeslots: payload.timeslots,
+        subjects: {...payload.subjects},
+        teachers: {...payload.teachers},
+        classRooms: {...payload.classRooms},
+        classes: {...payload.classes},
+        specialities: {...payload.specialities},
+        basicTimeslots: {...payload.timeslots},
       },
     })),
   updateTenancyBasedData: (payload: Partial<TenancyBasedData>) =>
