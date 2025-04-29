@@ -2,22 +2,25 @@
 
 import { Entities } from "@/types/Entities";
 import { getDbInstance } from "./database/db-instance";
+import { dataObjectCreator } from "./dataObjectCreator";
+import { Classes, ClassRoom, Specialty, Subject, Teacher } from "@/types/databaseTypes";
 
 export const refetchTenancyBasedData = async (label: Entities) => {
   try {
     const db = await getDbInstance();
-    const labelMapping: Partial<Record<Entities, any>> = {
-      specialty: db.getAllSpeciality.bind(db),
-      classroom: db.getAllClassRooms.bind(db),
-      subject: db.getAllSubjects.bind(db),
-      teacher: db.getAllTeachers.bind(db),
-      class: db.getAllClasses.bind(db),
+    const labelTypeMapping: Partial<Record<Entities, any>> = {
+      specialty: (db.getAllEntity<Specialty>).bind(db),
+      classroom: (db.getAllEntity<ClassRoom>).bind(db),
+      subject: (db.getAllEntity<Subject>).bind(db),
+      teacher: (db.getAllEntity<Teacher>).bind(db),
+      class: (db.getAllEntity<Classes>).bind(db),
     };
-    const result = await labelMapping[label]();
-    
-    return { success: true, data: result };
+    const result = await labelTypeMapping[label](label);
+    const mapped = dataObjectCreator(result)
+
+    return { success: true, data: mapped };
   } catch (error) {
-    console.error(`Error updating tenancy based data: ${error}`);
+    console.error(`Error updating tenancy based data for ${label}: ${error}`);
     return { success: false, error: error };
   }
 };

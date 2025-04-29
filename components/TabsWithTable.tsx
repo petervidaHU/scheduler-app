@@ -1,15 +1,16 @@
 "use client";
 
-import { deleteTenancyBasedData } from "@/app/[locale]/(tenancy)/_actions/deleteSpeciality";
 import { useRouter } from "@/lib/i18n/navigation";
 import { useStore } from "@/store/store";
 import { Entities } from "@/types/Entities";
 import { FormActionType } from "@/types/FormActionType";
 import { ActionIcon, Table, TableData, Tabs } from "@mantine/core";
 import { IconPencil, IconTrash } from "@tabler/icons-react";
-import { ReactNode, useActionState, useMemo, useTransition } from "react";
+import { ReactNode, useMemo } from "react";
 import ColorFeedback from "./UI-elements/ColorFeedback";
 import { refetchTenancyBasedData } from "@/lib/UpdateTenancyBasedData";
+import { deleteTenancyBasedData } from "@/app/[locale]/(tenancy)/_actions/deleteTenancyBasedData";
+import { labelMapper } from "@/lib/hooks/labelMapperForTenancyBasedData";
 
 // TODO entities as label thightly coupled? and hardcoded action url as well?
 interface TabData {
@@ -25,41 +26,34 @@ const init: FormActionType = {
   success: false,
 };
 
-  const labelMapper: Partial<Record<Entities, any>> = {
-    [Entities.specialty]: "specialties",
-    [Entities.subject]: "subjects",
-    [Entities.teacher]: "teachers",
-    [Entities.classroom]: "classRooms",
-    [Entities.class]: "classes",
-  };
-
-  const loadingIndicator: Partial<Record<Entities, any>> = {
-    [Entities.specialty]: { specialties: { isLoading: true } },
-    [Entities.subject]: { subjects: { isLoading: true } },
-    [Entities.teacher]: { teachers: { isLoading: true } },
-    [Entities.classroom]: { classRoom: { isLoading: true } },
-    [Entities.class]: { classes: { isLoading: true } },
-  };
+const loadingIndicator: Partial<Record<Entities, any>> = {
+  [Entities.specialty]: { specialties: { isLoading: true } },
+  [Entities.subject]: { subjects: { isLoading: true } },
+  [Entities.teacher]: { teachers: { isLoading: true } },
+  [Entities.classroom]: { classRoom: { isLoading: true } },
+  [Entities.class]: { classes: { isLoading: true } },
+};
 
 const TabsWithTable = () => {
   const {
-    tenancyBasedData: { specialities, classRooms, classes, teachers, subjects },
+    tenancyBasedData: { specialties, classRooms, classes, teachers, subjects },
     updateTenancyBasedData,
+    addToast,
   } = useStore();
   const router = useRouter();
 
   const tabsData = [
     {
       label: Entities.specialty,
-      error: !!specialities.error,
-      isLoading: !!specialities.isLoading,
+      error: !!specialties.error,
+      isLoading: !!specialties.isLoading,
       data: {
         head: ["id", "name", "description"],
         body: (() => {
-          if (specialities.data) {
-            return Object.values(specialities.data).map((s) => [
-              s.SPECIALTY_ID,
-              s.SPECIALTY_NAME,
+          if (specialties.data) {
+            return Object.values(specialties.data).map((s) => [
+              s.ID,
+              s.NAME,
               s.DESCRIPTION,
             ]);
           }
@@ -74,13 +68,13 @@ const TabsWithTable = () => {
       data: {
         head: ["id", "name", "capacity", "speciality"],
         body: (() => {
-          if (classRooms.data && specialities.data) {
+          if (classRooms.data && specialties.data) {
             return Object.values(classRooms.data).map((c) => [
-              c.CLASSROOM_ID,
-              c.CLASSROOM_NAME,
+              c.ID,
+              c.NAME,
               c.CAPACITY,
-              specialities.data?.[c.SPECIALITY_ID]
-                ? specialities.data[c.SPECIALITY_ID].SPECIALTY_NAME
+              specialties.data?.[c.SPECIALITY_ID]
+                ? specialties.data[c.SPECIALITY_ID].NAME
                 : "??",
             ]);
           }
@@ -97,8 +91,8 @@ const TabsWithTable = () => {
         body: (() => {
           if (classes.data) {
             return Object.values(classes.data).map((c) => [
-              c.CLASS_ID,
-              c.CLASS_NAME,
+              c.ID,
+              c.NAME,
               c.NUMBER_OF_STUDENTS,
             ]);
           }
@@ -115,9 +109,9 @@ const TabsWithTable = () => {
         body: (() => {
           if (teachers.data) {
             return Object.values(teachers.data).map((t) => [
-              t.TEACHER_ID,
-              t.TEACHER_NAME,
-              t.TEACHER_EMAIL,
+              t.ID,
+              t.NAME,
+              t.EMAIL,
             ]);
           }
           return [];
@@ -131,16 +125,16 @@ const TabsWithTable = () => {
       data: {
         head: ["id", "name", "description", "helper color", "speciality"],
         body: (() => {
-          if (subjects.data && specialities.data) {
+          if (subjects.data && specialties.data) {
             return Object.values(subjects.data).map((s) => {
               return [
-                s.SUBJECT_ID,
-                s.SUBJECT_NAME,
+                s.ID,
+                s.NAME,
                 s.DESCRIPTION,
                 s.HELPER_COLOR ? <ColorFeedback color={s.HELPER_COLOR} /> : "-",
                 s.SPECIALTY_ID
-                  ? specialities?.data?.[s.SPECIALTY_ID]
-                    ? specialities.data[s.SPECIALTY_ID].SPECIALTY_NAME
+                  ? specialties?.data?.[s.SPECIALTY_ID]
+                    ? specialties.data[s.SPECIALTY_ID].NAME
                     : "??"
                   : "-",
               ];
@@ -153,10 +147,35 @@ const TabsWithTable = () => {
   ];
 
   const handleDelete = async (id: number, label: Entities) => {
-    const res = await refetchTenancyBasedData(label);
-    if (res.success ) {
-      console.log('res success:', res)
-      updateTenancyBasedData({ [labelMapper[label]]: res.data});
+    try {
+      const resultOfDeleting = await deleteTenancyBasedData(id, label);
+    } catch (error) {
+      console.error(`Error deleting ${label}: ${error}`);
+      addToast({
+        title: "Error",
+        message: "Error deleting data",
+        type: "error",
+        autoClose: false,
+        id: Date.now().toString(),
+      });
+    }
+    let resultOfRefetch;
+    try {
+      resultOfRefetch = await refetchTenancyBasedData(label);
+
+    } catch (error) {
+      console.error(`Error refetch data after deleting: ${error}`);
+      addToast({
+        title: "Error",
+        message: "Error refetch data",
+        type: "error",
+        autoClose: false,
+        id: Date.now().toString(),
+      });
+    }
+    if (resultOfRefetch?.success) {
+      console.log("res success:", resultOfRefetch);
+      updateTenancyBasedData({ [labelMapper[label]]: { data: resultOfRefetch?.data } });
     }
   };
 

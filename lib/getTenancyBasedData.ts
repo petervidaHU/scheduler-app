@@ -9,22 +9,24 @@ import {
   Teacher,
   Timeslots,
 } from "@/types/databaseTypes";
-import { DataWithOptions, TenancyBasedData } from "@/types/ScheduleTypes";
+import { TenancyBasedData } from "@/types/ScheduleTypes";
+import { dataObjectCreator } from "./dataObjectCreator";
+import { Entities } from "@/types/Entities";
 
 export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
   const db = await getDbInstance();
-  const [specialities, subjects, classRooms, classes, teachers, timeslots] =
+  const [specialties, subjects, classRooms, classes, teachers, timeslots] =
     await Promise.all([
-      dataFetcherAll<Specialty>(db.getAllSpeciality),
-      dataFetcherAll<Subject>(db.getAllSubjects),
-      dataFetcherAll<ClassRoom>(db.getAllClassRooms),
-      dataFetcherAll<Classes>(db.getAllClasses),
-      dataFetcherAll<Teacher>(db.getAllTeachers),
+      dataFetcherAll<Specialty>(db.getAllEntity, Entities.specialty),
+      dataFetcherAll<Subject>(db.getAllEntity, Entities.subject),
+      dataFetcherAll<ClassRoom>(db.getAllEntity, Entities.classroom),
+      dataFetcherAll<Classes>(db.getAllEntity, Entities.class),
+      dataFetcherAll<Teacher>(db.getAllEntity, Entities.teacher),
       dataFetcherAll<Timeslots>(() => db.getBasicTimeSlots("HUN1")),
     ]);
 
   if (
-    specialities.error ||
+    specialties.error ||
     subjects.error ||
     classRooms.error ||
     classes.error ||
@@ -33,7 +35,7 @@ export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
   ) {
     throw new Error(
       `Error getting tenancy based data:,  ${
-        (specialities.error,
+        (specialties.error,
         subjects.error,
         classRooms.error,
         classes.error,
@@ -43,53 +45,14 @@ export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
     );
   }
 
-  const teachersObject = teachers.data.reduce((acc, teacher) => {
-    acc[teacher.ID] = {
-      value: teacher.ID.toString(),
-      label: teacher.NAME,
-      ...teacher,
-    };
-    return acc;
-  }, {} as DataWithOptions<Teacher>);
-
-  const classRoomsObject = classRooms.data.reduce((acc, classRoom) => {
-    acc[classRoom.ID] = {
-      value: classRoom.ID.toString(),
-      label: classRoom.NAME,
-      ...classRoom,
-    };
-    return acc;
-  }, {} as DataWithOptions<ClassRoom>);
-
-  const subjectsObject = subjects.data.reduce((acc, subject) => {
-    acc[subject.ID] = {
-      value: subject.ID.toString(),
-      label: subject.NAME,
-      ...subject,
-    };
-    return acc;
-  }, {} as DataWithOptions<Subject>);
-
-  const specialitiesObject = specialities.data.reduce((acc, speciality) => {
-    acc[speciality.ID] = {
-      value: speciality.ID.toString(),
-      label: speciality.NAME,
-      ...speciality,
-    };
-    return acc;
-  }, {} as DataWithOptions<Specialty>);
-
-  const classesObject = classes.data.reduce((acc, classItem) => {
-    acc[classItem.ID] = {
-      value: classItem.ID.toString(),
-      label: classItem.NAME,
-      ...classItem,
-    };
-    return acc;
-  }, {} as DataWithOptions<Classes>);
+  const teachersObject = dataObjectCreator(teachers.data);
+  const classRoomsObject = dataObjectCreator(classRooms.data);
+  const subjectsObject = dataObjectCreator(subjects.data);
+  const specialitiesObject = dataObjectCreator(specialties.data);
+  const classesObject = dataObjectCreator(classes.data);
 
   return {
-    specialities: {data: specialitiesObject},
+    specialties: {data: specialitiesObject},
     subjects: {data: subjectsObject},
     teachers: {data: teachersObject},
     classRooms: {data: classRoomsObject},

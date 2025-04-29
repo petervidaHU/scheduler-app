@@ -12,7 +12,7 @@ const AdminClientComponent = () => {
       <Button onClick={() => redirect("/my-tenancy/admin?entity=class")}>
         Create a New Class
       </Button>
-      <Button onClick={() => redirect("/my-tenancy/admin?entity=speciality")}>
+      <Button onClick={() => redirect("/my-tenancy/admin?entity=specialty")}>
         Create a New Speciality
       </Button>
       <Button onClick={() => redirect("/my-tenancy/admin?entity=subject")}>

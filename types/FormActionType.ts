@@ -34,8 +34,7 @@ export interface LessonInput {
     tempId: string;
 }
 
-export interface ManageFormServerProps<T> {
-    entity: T,
+export interface ManageFormServerProps {
     backBtnUrl: string,
     backBtnText: string,
     submitBtnText: string,

@@ -14,11 +14,12 @@ import {
 import { useForm } from "@mantine/form";
 import {
   FormActionType,
+  ManageFormServerProps,
   SelectOptions,
   SyllabusInputForm,
 } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { ID } from "@/types/databaseTypes";
+import { Classes, ID } from "@/types/databaseTypes";
 import { createClass } from "@/app/[locale]/(tenancy)/_actions/createClass";
 
 const init: FormActionType = {
@@ -27,18 +28,22 @@ const init: FormActionType = {
   success: false,
 };
 
-interface props {
-  subjectsList: SelectOptions[];
-  teachersList: SelectOptions[];
+interface ClassesInput extends ManageFormServerProps {
+  entity?: Classes;
+  error?: string,
 }
 
 interface SyllabusData {
   [subject: ID]: SyllabusInputForm;
 }
 
-export const CreateClass: React.FC<props> = ({
-  subjectsList,
-  teachersList,
+export const CreateClass: React.FC<ClassesInput> = ({
+  entity,
+  error,
+  backBtnUrl,
+  backBtnText,
+  submitBtnText,
+  toastMessage,
 }) => {
   const [isPending, startTransition] = useTransition();
   const [state, action] = useActionState(createClass, {
@@ -77,16 +82,15 @@ export const CreateClass: React.FC<props> = ({
   const handleClassSubmit = (values: typeof classForm.values) => {
     const filteredSyllabus = Object.entries(syllabus)
       .filter(([_subject, { occurence }]) => occurence > 0)
-      .reduce(
-        (acc, [subject, syll]) => ({ ...acc, [subject]: syll }),
-        {}
-      );
+      .reduce((acc, [subject, syll]) => ({ ...acc, [subject]: syll }), {});
     values.syllabus = filteredSyllabus;
 
     startTransition(() => {
       action(values);
     });
   };
+
+  // TODO update create / edit with state refetch logic
 
   return (
     <Container size="md" my="xl">

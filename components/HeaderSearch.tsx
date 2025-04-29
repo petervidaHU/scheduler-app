@@ -54,8 +54,8 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const getTenancies = () => {
     return tenancies.map((tenancy) => {
       return {
-        value: tenancy.TENANCY_ID.toString(),
-        label: `${tenancy.TENANCY_NAME} (${tenancy.ROLE_NAME})`,
+        value: tenancy.ID.toString(),
+        label: `${tenancy.NAME} (${tenancy.ROLE_NAME})`,
       };
     });
   };
@@ -64,7 +64,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const tenancyChangeHandler = async (value: any) => {
     setLoading(true);
     fillTenancyBasedData({
-      specialities: { isLoading: true },
+      specialties: { isLoading: true },
       subjects: { isLoading: true },
       teachers: { isLoading: true },
       classRooms: { isLoading: true },
@@ -87,7 +87,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
         id: Date.now().toString(),
       });
       fillTenancyBasedData({
-        specialities: { error: true, isLoading: false },
+        specialties: { error: true, isLoading: false },
         subjects: { error: true, isLoading: false },
         teachers: { error: true, isLoading: false },
         classRooms: { error: true, isLoading: false },
@@ -98,7 +98,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
       setLoading(false);
     }
   };
-  console.log("selectedTenancy", selectedTenancy);
+
   return (
     <header className={classes.header}>
       <div className={classes.inner}>

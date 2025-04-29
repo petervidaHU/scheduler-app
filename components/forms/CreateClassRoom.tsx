@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useTransition, useActionState } from "react";
+import React, { useTransition, useActionState, FC } from "react";
 import {
   Container,
   TextInput,
@@ -13,9 +13,11 @@ import {
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { ClassRoom, Specialty } from "@/types/databaseTypes";
+import { ClassRoom, ErrorResponse } from "@/types/databaseTypes";
 import { manageClassRoom } from "@/app/[locale]/(tenancy)/_actions/manageClassRoom";
 import { useFormResponse } from "@/lib/hooks/useFormResponse";
+import { useStore } from "@/store/store";
+import { Entities } from "@/types/Entities";
 
 const init: FormActionType = {
   error: null,
@@ -23,18 +25,22 @@ const init: FormActionType = {
   success: false,
 };
 
-interface props extends ManageFormServerProps<ClassRoom> {
-  specialities: Specialty[];
+interface ClassRoomInput extends ManageFormServerProps {
+  entity?: ClassRoom;
+  error?: string,
 }
 
-export const CreateClassRoom: React.FC<props> = ({
-  specialities,
+export const CreateClassRoom: FC<ClassRoomInput> = ({
   entity,
+  error,
   backBtnUrl,
   backBtnText,
   submitBtnText,
   toastMessage,
 }) => {
+  const {
+    tenancyBasedData: { specialties },
+  } = useStore();
   const [isPending, startTransition] = useTransition();
   const [crState, crAction] = useActionState(manageClassRoom, {
     ...init,
@@ -42,12 +48,12 @@ export const CreateClassRoom: React.FC<props> = ({
 
   const classRoomForm = useForm({
     initialValues: {
-      name: entity.CLASSROOM_NAME || "",
-      specialityId: entity.SPECIALITY_ID || null,
+      name: entity?.NAME || "",
+      specialityId: entity?.SPECIALITY_ID || null,
       // TODO description ?
       description: "",
-      capacity: entity.CAPACITY || 0,
-      id: entity.CLASSROOM_ID || null,
+      capacity: entity?.CAPACITY || 0,
+      id: entity?.ID || null,
     },
     validate: {
       capacity: (value) =>
@@ -56,8 +62,12 @@ export const CreateClassRoom: React.FC<props> = ({
     },
   });
 
-  console.log("entit", entity, classRoomForm.values);
-  const { manageState } = useFormResponse(crState, classRoomForm, toastMessage);
+  const { manageState } = useFormResponse(
+    crState,
+    entity?.ID ? null : classRoomForm, // reset form only on create
+    toastMessage,
+    Entities.classroom
+  );
   manageState();
 
   const handleClassRoomSubmit = (values: typeof classRoomForm.values) => {
@@ -66,8 +76,16 @@ export const CreateClassRoom: React.FC<props> = ({
     });
   };
 
+  if (error) return (
+    <Container size="md" my="xl">
+      <p>{error}</p>
+    </Container>
+  );
+
   return (
     <Container size="md" my="xl">
+      {specialties.error && <p>{specialties.error}</p>}
+      {specialties.isLoading && <p>Loading specialities</p>}
       <form onSubmit={classRoomForm.onSubmit(handleClassRoomSubmit)}>
         <Stack>
           <TextInput
@@ -91,10 +109,7 @@ export const CreateClassRoom: React.FC<props> = ({
           <Select
             label="Select a speciality"
             placeholder="Select a speciality"
-            data={specialities.map((speciality) => ({
-              value: speciality.SPECIALTY_ID.toString(),
-              label: speciality.SPECIALTY_NAME,
-            }))}
+            data={Object.values(specialties?.data || {})}
             {...classRoomForm.getInputProps("specialityId")}
             value={classRoomForm.values.specialityId?.toString()}
           />
@@ -109,5 +124,3 @@ export const CreateClassRoom: React.FC<props> = ({
     </Container>
   );
 };
-
-export default CreateClassRoom;

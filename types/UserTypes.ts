@@ -10,7 +10,7 @@ export interface UserSession {
 }
 
 export interface User {
-    USER_ID: number,
+    ID: number,
     email: string,
     password_hash: string,
     first_name: string,

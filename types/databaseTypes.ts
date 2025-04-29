@@ -79,3 +79,7 @@ export interface Syllabus {
 }
 
 export type GlobalTimeslot= 'HUN1';
+
+export interface ErrorResponse {
+    error: string;
+}

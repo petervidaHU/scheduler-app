@@ -11,6 +11,7 @@ import { getRoleName } from "../utils";
 import {
   Classes,
   ClassRoom,
+  ErrorResponse,
   GetTenancyByUserResult,
   GlobalTimeslot,
   ID,
@@ -23,6 +24,15 @@ import {
 import { NormalizedSyllabus } from "@/app/[locale]/(tenancy)/_actions/createClass";
 import { LessonInput } from "@/types/FormActionType";
 import { Entities } from "@/types/Entities";
+import { labelMapper } from "../hooks/labelMapperForTenancyBasedData";
+
+const tableNameMapping: Record<Entities, string> = {
+  specialty: "specialties",
+  classroom: "classrooms",
+  subject: "subjects",
+  teacher: "teachers",
+  class: "classes",
+} as Record<Entities, string>;
 
 interface ExtendedExecuteOptions extends ExecuteOptions {
   bindDefs?: {
@@ -37,9 +47,9 @@ export class DatabaseService {
   private static initialized = false;
   private pool: oracledb.Pool | undefined;
   private tenancyId: ID | null = null;
-  
+
   constructor() {}
-  
+
   public static async getInstance(): Promise<DatabaseService> {
     if (!DatabaseService.instance) {
       DatabaseService.instance = new DatabaseService();
@@ -61,10 +71,15 @@ export class DatabaseService {
   }
 
   async init(): Promise<void> {
-    console.log("++++++++++ Initializing Oracle database connection pool & Tenancy Id +++++++++++++");
+    console.log(
+      "++++++++++ Initializing Oracle database connection pool & Tenancy Id +++++++++++++"
+    );
     this.setTenancyFromSession();
     if (this.pool) {
-      console.log('Number of available connections in pool:', this.pool.connectionsOpen);
+      console.log(
+        "Number of available connections in pool:",
+        this.pool.connectionsOpen
+      );
       return;
     }
 
@@ -128,7 +143,7 @@ export class DatabaseService {
     connectionParam: oracledb.Connection | null = null,
     params: ExtendedExecuteOptions = { outFormat: OUT_FORMAT_OBJECT }
   ): Promise<oracledb.Result<any>> {
-    const conn = connectionParam || await oracledb.getConnection();
+    const conn = connectionParam || (await oracledb.getConnection());
     let result: oracledb.Result<unknown>;
 
     try {
@@ -230,7 +245,7 @@ export class DatabaseService {
     const query = `
       UPDATE users
       SET ${setClauses.join(", ")}
-      WHERE user_id = :id
+      WHERE id = :id
     `;
     bindVariables.id = id;
 
@@ -323,7 +338,7 @@ export class DatabaseService {
 
     try {
       const userResult = await this.getUserByEmail(userEmail);
-      const userId = userResult.USER_ID;
+      const userId = userResult.ID;
 
       const insertTenancyQuery = `
         INSERT INTO tenancies (tenancy_name)
@@ -353,19 +368,24 @@ export class DatabaseService {
     }
   }
 
-  async getTenanciesByUser(userEmail: string): Promise<Array<GetTenancyByUserResult>> {
+  async getTenanciesByUser(
+    userEmail: string
+  ): Promise<Array<GetTenancyByUserResult>> {
     const userResult = await this.getUserByEmail(userEmail);
-    const userId = userResult.USER_ID;
+    const userId = userResult.ID;
     const query = `
-    SELECT t.*, ur.role_id, r.role_name
+    SELECT t.*, ur.role_id, r.name as role_name
     FROM tenancies t
-    JOIN user_roles ur ON t.tenancy_id = ur.tenancy_id
-    JOIN roles r ON ur.role_id = r.role_id
+    JOIN user_roles ur ON t.id = ur.tenancy_id
+    JOIN roles r ON ur.role_id = r.id
     WHERE ur.user_id = :userId
   `;
     try {
       const result = await this.executeQuery(query, [userId]);
-      console.log('*---------------------------------gettenanciesbyuser', result);
+      console.log(
+        "*---------------------------------gettenanciesbyuser",
+        result
+      );
       return result as GetTenancyByUserResult[];
     } catch (error) {
       console.error(`Error getting tenancies by user: ${error}`);
@@ -373,10 +393,89 @@ export class DatabaseService {
     }
   }
 
+  // ------------------- Tenancy Based Common -------------------
+  async getAllEntity<T>(label: Entities): Promise<T[]> {
+    const query = `SELECT * FROM  ${tableNameMapping[label]} WHERE(tenancy_id = :tenancyId)`;
+    try {
+      const tenancyId = this.getTenancy();
+      const result = await this.executeQuery(query, [tenancyId]);
+      return result as T[];
+    } catch (error) {
+      console.error(`Error getting array of ${label}: ${error}`);
+      throw error;
+    }
+  }
+
+  async getAllBasicEntity<T>(label: Entities): Promise<T[]> {
+    const query = `SELECT * FROM  ${tableNameMapping[label]} WHERE(tenancy_id IS NULL)`;
+    try {
+      const result = await this.executeQuery(query, []);
+      return result as T[];
+    } catch (error) {
+      console.error(`Error getting array of ${label}: ${error}`);
+      throw error;
+    }
+  }
+
+  async getOneEntityById<T>(id: number, label: Entities): Promise<T> {
+    const query = `SELECT * FROM ${tableNameMapping[label]} WHERE id = :id AND (tenancy_id = :tenancyId)`;
+    try {
+      const tenancyId = this.getTenancy();
+      const result = await this.executeQuery(query, [id, tenancyId]);
+      return (result as T[])[0];
+    } catch (error) {
+      console.error(`Error getting ${label}: ${error}`);
+      throw error;
+    }
+  }
+
+  async deleteTenancyBasedData(id: number, label: Entities): Promise<void> {
+    const query = `DELETE FROM ${tableNameMapping[label]} WHERE id = :id`;
+    const bindVariables = [id];
+    try {
+      await this.executeCommand(query, bindVariables);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async insertMultipleTenancyBasedData(
+    label: Entities,
+    keys: string[],
+    data: any
+  ) {
+    const tenancyId = this.getTenancy();
+    const rows = data
+      .map((item: any) => {
+        return `(${keys
+          .map((key) =>
+            key === "TENANCY_ID"
+              ? `'${tenancyId}'`
+              : item[key] === null
+                ? `NULL`
+                : `'${item[key]}'`
+          )
+          .join(", ")})`;
+      })
+      .join(",\n");
+    const query = `INSERT INTO ${labelMapper[label]}(${keys.join(", ")}) VALUES
+      ${rows} `;
+
+    try {
+      const res = await this.executeCommand(query, []);
+      return { error: null, rowsAffected: res.rowsAffected };
+    } catch (error) {
+      return {
+        error: `There is an error loading ${label}: ${error}`,
+        rowsAffected: null,
+      };
+    }
+  }
+
   // ----------------- SPECIALITIES ----------------------
 
   async createSpeciality(name: string, desc: string): Promise<void> {
-    const query = `INSERT INTO specialties (specialty_name, description, tenancy_id) VALUES (:name, :description, :tenancyId)`;
+    const query = `INSERT INTO specialties (name, description, tenancy_id) VALUES (:name, :description, :tenancyId)`;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = [name, desc, tenancyId];
@@ -392,56 +491,13 @@ export class DatabaseService {
     desc: string,
     id: number
   ): Promise<void> {
-    const query = `UPDATE specialties SET specialty_name = :name, description = :description WHERE specialty_id = :id AND (tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
+    const query = `UPDATE specialties SET ame = :name, description = :description WHERE id = :id AND (tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = [name, desc, id, tenancyId];
       await this.executeCommand(query, bindVariables);
     } catch (error) {
       console.error(`Error updating speciality: ${error}`);
-      throw error;
-    }
-  }
-
-  async getAllSpeciality(): Promise<Specialty[]> {
-    const query = `SELECT * FROM specialties WHERE(tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
-    try {
-      const tenancyId = this.getTenancy();
-      console.log('in db.getallspeciality', tenancyId);
-      const result = await this.executeQuery(query, [tenancyId]);
-      return result as Specialty[];
-    } catch (error) {
-      console.error(`Error getting array of speciality: ${error}`);
-      throw error;
-    }
-  }
-
-  async getSpecialityById(id: number): Promise<Specialty> {
-    const query = `SELECT * FROM specialties WHERE specialty_id = :id AND (tenancy_id = :tenancyId OR tenancy_id IS NULL)`;
-    try {
-      const tenancyId = this.getTenancy();
-      const result = await this.executeQuery(query, [id, tenancyId]);
-      return (result as Specialty[])[0];
-    } catch (error) {
-      console.error(`Error getting speciality: ${error}`);
-      throw error;
-    }
-  }
-
-  async deleteTenancyBasedData(id: number, label: Entities): Promise<void> {
-    const tableNameMapping: Record<Entities, string> = {
-      specialty: 'specialties',
-      classroom: 'classrooms',
-      subject: 'subjects',
-      teacher: 'teachers',
-      class: 'classes',
-    } as Record<Entities, string>;
-
-    const query = `DELETE FROM ${tableNameMapping[label]} WHERE ${label}_id = :id`;
-    const bindVariables = [id];
-    try {
-      await this.executeCommand(query, bindVariables);
-    } catch (error) {
       throw error;
     }
   }
@@ -459,15 +515,15 @@ export class DatabaseService {
     }
   }
 
-  // ----------------- SUBJECT-TEACHER -------------------
-
+  // ----------------- SUBJECT -------------------
+  
   async createSubject(
     name: string,
     description: string,
     specialityId: ID | null,
-    helperColor: string | null,
+    helperColor: string | null
   ): Promise<void> {
-    const query = `INSERT INTO subjects (subject_name, specialty_id, tenancy_id, description, helper_color) VALUES (:name, :specialityId, :tenancyId, :description, :helperColor)`;
+    const query = `INSERT INTO subjects (name, specialty_id, tenancy_id, description, helper_color) VALUES (:name, :specialityId, :tenancyId, :description, :helperColor)`;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = [
@@ -483,12 +539,32 @@ export class DatabaseService {
     }
   }
 
+  async updateSubject(
+    id: number,
+    name: string,
+    description: string,
+    specialtyId: ID | null,
+    helperColor: string | null  
+  ): Promise<void> {
+    const query = `UPDATE subjects SET name = :name, description = :description, specialty_id = :specialtyId, helper_color = :helperColor WHERE id = :id AND (tenancy_id = :tenancyId)`;
+    try {
+      const tenancyId = this.getTenancy();
+      const bindVariables = [name, description, specialtyId, helperColor, id, tenancyId];
+      await this.executeCommand(query, bindVariables);
+    } catch (error) {
+      console.error(`Error updating subject: ${error}`);
+      throw error;
+    }
+  }
+    
+  // ----------------- TEACHER -------------------
+
   async createTeacher(
     name: string,
     email: string,
     description: string
   ): Promise<void> {
-    const query = `INSERT INTO teachers (teacher_name, teacher_email, description, tenancy_id) VALUES (:name, :email, :description, :tenancyId)`;
+    const query = `INSERT INTO teachers (name, email, description, tenancy_id) VALUES (:name, :email, :description, :tenancyId)`;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = [name, email, description, tenancyId];
@@ -498,39 +574,24 @@ export class DatabaseService {
     }
   }
 
-  async deleteTeacher(teacherId: number): Promise<void> {
-    const query = `DELETE FROM teachers WHERE teacher_id = :teacherId`;
-    const bindVariables = [teacherId];
+  async updateTeacher(
+    id: number,
+    name: string,
+    email: string,
+    description: string
+  ): Promise<void> {
+    const query = `UPDATE teachers SET name = :name, email = :email, description = :description WHERE id = :id AND (tenancy_id = :tenancyId)`;
     try {
+      const tenancyId = this.getTenancy();
+      const bindVariables = [name, email, description, id, tenancyId];
       await this.executeCommand(query, bindVariables);
     } catch (error) {
+      console.error(`Error updating teacher: ${error}`);
       throw error;
     }
   }
-
-  async getAllTeachers(): Promise<Teacher[]> {
-    const query = `SELECT * FROM teachers WHERE tenancy_id = :tenancyId`;
-    try {
-      const tenancyId = this.getTenancy();
-      const result = await this.executeQuery(query, [tenancyId]);
-      return result as Teacher[];
-    } catch (error) {
-      console.error(`Error getting teachers: ${error}`);
-      throw error;
-    }
-  }
-
-  async getAllSubjects(): Promise<Subject[]> {
-    const query = `SELECT * FROM subjects WHERE tenancy_id = :tenancyId`;
-    try {
-      const tenancyId = this.getTenancy();
-      const result = await this.executeQuery(query, [tenancyId]);
-      return result as Subject[];
-    } catch (error) {
-      console.error(`Error getting subjects: ${error}`);
-      throw error;
-    }
-  }
+  
+  // ----------------- SYLLABUS -------------------
 
   async createSyllabus(
     classId: ID,
@@ -588,7 +649,7 @@ export class DatabaseService {
     }
   }
 
-  // ----------------- CLASS-CLASSROOM -------------------
+  // ----------------- CLASS -------------------
   async createClass(
     name: string,
     numberOfStudents: string,
@@ -599,9 +660,9 @@ export class DatabaseService {
       throw new Error("Failed to get connection");
     }
     const query = `
-      INSERT INTO classes (class_name, number_of_students, tenancy_id)
+      INSERT INTO classes (name, number_of_students, tenancy_id)
       VALUES (:name, :numberOfStudents, :tenancyId)
-      RETURNING class_id INTO :classId`;
+      RETURNING id INTO :classId`;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = {
@@ -638,35 +699,6 @@ export class DatabaseService {
     }
   }
 
-  async getAllClasses(): Promise<Classes[]> {
-    const query = `SELECT * FROM classes WHERE tenancy_id = :tenancyId`;
-    try {
-      const tenancyId = this.getTenancy();
-      const result = await this.executeQuery(query, [tenancyId]);
-      return result as Classes[];
-    } catch (error) {
-      console.error(`Error getting classes: ${error}`);
-      throw error;
-    }
-  }
-
-  async deleteClass(classId: number): Promise<void> {
-    const conn = await this.pool!.getConnection();
-    // TODO tenancy based query
-    // TODO delete syllabuses as well
-    const query = `DELETE FROM classes WHERE class_id = :classId`;
-    const bindVariables = [classId];
-    try {
-      await this.executeCommand(query, bindVariables, conn);
-      await conn.commit();
-    } catch (error) {
-      await conn.rollback();
-      throw error;
-    } finally {
-      await conn.close();
-    }
-  }
-
   // ----------------- CLASSROOM -------------------
 
   async createClassRoom(
@@ -674,44 +706,10 @@ export class DatabaseService {
     capacity: number,
     specialityId: ID | null
   ): Promise<void> {
-    const query = `INSERT INTO classrooms (classroom_name, capacity, speciality_id, tenancy_id) VALUES (:name, :capacity, :specialityId, :tenancyId)`;
+    const query = `INSERT INTO classrooms (name, capacity, speciality_id, tenancy_id) VALUES (:name, :capacity, :specialityId, :tenancyId)`;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = [name, capacity, specialityId, tenancyId];
-      await this.executeCommand(query, bindVariables);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async getAllClassRooms(): Promise<ClassRoom[]> {
-    const query = `SELECT * FROM classrooms WHERE tenancy_id = :tenancyId`;
-    try {
-      const tenancyId = this.getTenancy();
-      const result = await this.executeQuery(query, [tenancyId]);
-      return result as ClassRoom[];
-    } catch (error) {
-      console.error(`Error getting class rooms: ${error}`);
-      throw error;
-    }
-  }
-
-  async getClassRoomById(id: number): Promise<ClassRoom> {
-    const query = `SELECT * FROM classrooms WHERE classroom_id = :id AND tenancy_id = :tenancyId`;
-    try {
-      const tenancyId = this.getTenancy();
-      const result = await this.executeQuery(query, [id, tenancyId]);
-      return (result as ClassRoom[])[0];
-    } catch (error) {
-      console.error(`Error getting class room: ${error}`);
-      throw error;
-    }
-  }
-
-  async deleteClassRoom(id: number): Promise<void> {
-    const query = `DELETE FROM classrooms WHERE classroom_id = :id`;
-    const bindVariables = [id];
-    try {
       await this.executeCommand(query, bindVariables);
     } catch (error) {
       throw error;
@@ -725,7 +723,7 @@ export class DatabaseService {
     id: number
   ): Promise<void> {
     const tenancyId = this.getTenancy();
-    const query = `UPDATE classrooms SET capacity = :capacity,  classroom_name = :name, speciality_id = :specialityId WHERE classroom_id = :id AND tenancy_id = :tenancyId`;
+    const query = `UPDATE classrooms SET capacity = :capacity,  name = :name, speciality_id = :specialityId WHERE id = :id AND tenancy_id = :tenancyId`;
     const bindVariables = [capacity, name, specialityId, id, tenancyId];
     try {
       await this.executeCommand(query, bindVariables);

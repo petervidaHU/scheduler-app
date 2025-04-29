@@ -36,7 +36,7 @@ type TenancyBasedProperties =
 interface ScheduleState {
   //Tenancy based data
   tenancyBasedData: {
-    specialities: PreloadDataObject<DataWithOptions<Specialty>>;
+    specialties: PreloadDataObject<DataWithOptions<Specialty>>;
     subjects: PreloadDataObject<DataWithOptions<Subject>>;
     teachers: PreloadDataObject<DataWithOptions<Teacher>>;
     classes: PreloadDataObject<DataWithOptions<Classes>>;
@@ -73,7 +73,7 @@ interface ScheduleState {
 
 const createScheduleSlice = (set: any): ScheduleState => ({
   tenancyBasedData: {
-    specialities: {},
+    specialties: {},
     subjects: {},
     teachers: {},
     classRooms: {},
@@ -134,7 +134,7 @@ const createScheduleSlice = (set: any): ScheduleState => ({
         teachers: {...payload.teachers},
         classRooms: {...payload.classRooms},
         classes: {...payload.classes},
-        specialities: {...payload.specialities},
+        specialties: {...payload.specialties},
         basicTimeslots: {...payload.timeslots},
       },
     })),

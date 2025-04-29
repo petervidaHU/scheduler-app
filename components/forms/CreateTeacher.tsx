@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useTransition, useActionState } from "react";
+import React, { useTransition, useActionState, FC } from "react";
 import { Container, TextInput, Button, Group, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { FormActionType } from "@/types/FormActionType";
+import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
 import { createTeacher } from "@/app/[locale]/(tenancy)/_actions/createTeacher";
+import { Teacher } from "@/types/databaseTypes";
+import { useFormResponse } from "@/lib/hooks/useFormResponse";
+import { Entities } from "@/types/Entities";
 
 const init: FormActionType = {
   error: null,
@@ -13,7 +16,13 @@ const init: FormActionType = {
   success: false,
 };
 
-export const CreateTeacher = () => {
+export const CreateTeacher: FC<ManageFormServerProps<Teacher>> = ({
+  entity,
+  backBtnUrl,
+  backBtnText,
+  submitBtnText,
+  toastMessage,
+}) => {
   const [isPending, startTransition] = useTransition();
   const [state, action] = useActionState(createTeacher, {
     ...init,
@@ -22,9 +31,9 @@ export const CreateTeacher = () => {
   const teacherForm = useForm({
     mode: "controlled",
     initialValues: {
-      teacherName: "",
-      teacherEmail: "",
-      description: "",
+      teacherName: entity?.NAME || "",
+      teacherEmail: entity?.EMAIL || "",
+      description: entity?.DESCRIPTION || "",
     },
     validate: {
       teacherName: (value) =>
@@ -34,16 +43,19 @@ export const CreateTeacher = () => {
     },
   });
 
+  const { manageState } = useFormResponse(
+    state,
+    entity.ID ? null : teacherForm,
+    toastMessage,
+    Entities.teacher
+  );
+  manageState()
+
   const handleTeacherFormSubmit = (values: typeof teacherForm.values) => {
     startTransition(() => {
       action(values);
     });
   };
-
-  if (state.success === true) {
-    teacherForm.reset();
-    state.success = false;
-  }
 
   return (
     <Container size="md" my="xl">

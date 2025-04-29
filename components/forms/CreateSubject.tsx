@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useTransition, useActionState } from "react";
+import React, { FC, useTransition, useActionState } from "react";
 import {
   Container,
   TextInput,
@@ -8,14 +8,16 @@ import {
   Group,
   Stack,
   Select,
-  NumberInput,
   ColorPicker,
-} from "@mantine/core";
+  } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { FormActionType } from "@/types/FormActionType";
+import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { Specialty } from "@/types/databaseTypes";
-import { createSubject } from "@/app/[locale]/(tenancy)/_actions/createSubject";
+import { Subject,  } from "@/types/databaseTypes";
+import { useFormResponse } from "@/lib/hooks/useFormResponse";
+import { Entities } from "@/types/Entities";
+import { useStore } from "@/store/store";
+import { manageSubject } from "@/app/[locale]/(tenancy)/_actions/createSubject";
 
 const init: FormActionType = {
   error: null,
@@ -23,37 +25,65 @@ const init: FormActionType = {
   success: false,
 };
 
-interface props {
-  specialities: Specialty[];
+interface SubjectInput extends ManageFormServerProps {
+  entity?: Subject,
+  error?: string,
+  backBtnUrl: string,
+  backBtnText: string,
+  submitBtnText: string,
 }
 
-export const CreateSubject: React.FC<props> = ({ specialities }) => {
+
+export const CreateSubject: FC<SubjectInput> = ({ 
+  entity,
+  error,
+  backBtnUrl,
+  backBtnText,
+  submitBtnText,
+  toastMessage,
+ }) => {
+  const { tenancyBasedData: { specialties }} = useStore();
   const [isPending, startTransition] = useTransition();
-  const [subjectState, subjectAction] = useActionState(createSubject, {
+  const [subjectState, subjectAction] = useActionState(manageSubject, {
     ...init,
   });
 
   const subjectForm = useForm({
     initialValues: {
-      name: "",
-      specialityId: null,
-      description: "",
-      helperColor: null,
+      name: entity?.NAME || "",
+      specialityId: entity?.SPECIALTY_ID || null,
+      description: entity?.DESCRIPTION || "",
+      helperColor: entity?.HELPER_COLOR || null,
+      id: entity?.ID || null,
     },
     validate: {
       name: (value) => (value === "" ? "Subject name must be valid" : null),
     },
   });
 
+  const { manageState } = useFormResponse(
+    subjectState,
+    entity?.ID ? null : subjectForm,
+    'Subject created successfully',
+    Entities.subject
+  );
+  manageState();
+
   const handleSubjectSubmit = (values: typeof subjectForm.values) => {
     startTransition(() => {
       subjectAction(values);
     });
   };
-  console.log(subjectForm.getValues());
+
+    if (error) return (
+      <Container size="md" my="xl">
+        <p>{error}</p>
+      </Container>
+    );
 
   return (
     <Container size="md" my="xl">
+      {specialties.isLoading && (<p>loading specialities</p>)}
       <form onSubmit={subjectForm.onSubmit(handleSubjectSubmit)}>
         <Stack>
           <TextInput
@@ -70,9 +100,9 @@ export const CreateSubject: React.FC<props> = ({ specialities }) => {
           <Select
             label="Select a speciality"
             placeholder="Select a speciality"
-            data={specialities.map((speciality) => ({
-              value: speciality.SPECIALTY_ID.toString(),
-              label: speciality.SPECIALTY_NAME,
+            data={Object.values(specialties?.data || {}).map((speciality) => ({
+              value: speciality.ID.toString(),
+              label: speciality.NAME,
             }))}
             {...subjectForm.getInputProps("specialityId")}
           />
@@ -82,12 +112,12 @@ export const CreateSubject: React.FC<props> = ({ specialities }) => {
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              Create Subject
+              {submitBtnText}
             </Button>
           </Group>
         </Stack>
       </form>
-      <Button onClick={() => redirect("/my-tenancy/admin")}>Cancel</Button>
+      <Button onClick={() => redirect(backBtnUrl)}>Cancel</Button>
     </Container>
   );
 };

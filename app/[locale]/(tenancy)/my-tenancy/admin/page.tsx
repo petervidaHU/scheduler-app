@@ -3,15 +3,32 @@ import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
 import { redirect } from "next/navigation";
 import CreateSpeciality from "@/components/forms/CreateSpeciality";
 import AdminClientComponent from "@/components/AdminClientComponent";
-import CreateClassRoom from "@/components/forms/CreateClassRoom";
-import { ClassRoom, Specialty, Subject } from "@/types/databaseTypes";
+import { CreateClassRoom } from "@/components/forms/CreateClassRoom";
+import {
+  Classes,
+  ClassRoom,
+  Specialty,
+  Subject,
+  Teacher,
+} from "@/types/databaseTypes";
 import CreateClass from "@/components/forms/CreateClass";
 import CreateSubject from "@/components/forms/CreateSubject";
-import { ManageFormServerProps, SelectOptions } from "@/types/FormActionType";
+import { ManageFormServerProps } from "@/types/FormActionType";
 import CreateTeacher from "@/components/forms/CreateTeacher";
 import { Entities } from "@/types/Entities";
-import { Satisfy } from "next/font/google";
 import { getDbInstance } from "@/lib/database/db-instance";
+
+export const TenancyBaseUrl = "";
+
+async function getEntityFromDatabase<T>(id: number | null, label: Entities) {
+  const db = await getDbInstance();
+  const response = id ? await db.getOneEntityById<T>(id, label) : null;
+  return response
+    ? typeof response === "string"
+      ? { error: response }
+      : { entity: response }
+    : null;
+}
 
 interface AdminPageProps {
   searchParams: { entity?: string; id?: string };
@@ -19,7 +36,6 @@ interface AdminPageProps {
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   const auth = await getAuth();
-  const db = await getDbInstance();
 
   if (!auth || auth.userRole !== "admin") {
     redirect("/tenancy");
@@ -30,135 +46,143 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const getContent = async () => {
     const contents = {
-      [Entities.classroom]: async (id: string) => {
-        let serverProps: ManageFormServerProps<ClassRoom> = {} as any;
-        let specialities: Specialty[] = [];
-        try {
-          const specials = await db.getAllSpeciality();
-          if (specials.length > 0) {
-            specialities.push(...specials);
-          }
-        } catch (error) {
-          console.error("Error fetching specialities:", error);
-        }
+      [Entities.classroom]: async (id: number | null) => {
+        const entityToEdit = await getEntityFromDatabase<ClassRoom>(
+          id,
+          Entities.classroom
+        );
 
-        if (id) {
-          const entity = await db.getClassRoomById(+id);
-          serverProps.entity = entity;
-          serverProps.backBtnUrl = "/my-tenancy";
-          serverProps.backBtnText = "Go Back";
-          serverProps.submitBtnText = "Update Classroom";
-          serverProps.toastMessage = "Classroom updated successfully";
-        } else {
-          serverProps.backBtnUrl = "/my-tenancy/admin";
-          serverProps.backBtnText = "Cancel";
-          serverProps.submitBtnText = "Create Classroom";
-          serverProps.toastMessage = "Classroom created successfully";
-        }
-
+        const serverProps: ManageFormServerProps = {
+          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy/",
+          backBtnText: id ? "Go Back" : "Cancel",
+          submitBtnText: id ? "Update classroom" : "Create classroom",
+          toastMessage: id
+            ? "Classroom updated successfully"
+            : "Classroom created successfully",
+        };
         const title = id ? "Update classroom" : "Create classroom";
 
         return (
           <>
             <h2>{title}</h2>
-            <CreateClassRoom specialities={specialities} {...serverProps} />
-          </>
-        );
-      },
-      [Entities.class]: async (id: string) => {
-        let subjects: Subject[] = [];
-        try {
-          const subs = await db.getAllSubjects();
-          if (subs.length > 0) {
-            subjects.push(...subs);
-          }
-        } catch (error) {
-          console.error("Error fetching subjects:", error);
-        }
-        const subjectList: SelectOptions[] = subjects.map((s) => ({
-          value: s.SUBJECT_ID.toString(),
-          label: s.SUBJECT_NAME,
-        }));
-
-        let teachers: any[] = [];
-        try {
-          const tchs = await db.getAllTeachers();
-          if (tchs.length > 0) {
-            teachers.push(...tchs);
-          }
-        } catch (error) {
-          console.error("Error fetching teachers:", error);
-        }
-        const teachersList: SelectOptions[] = teachers.map((t) => ({
-          value: t.TEACHER_ID.toString(),
-          label: t.TEACHER_NAME,
-        }));
-
-        return (
-          <>
-            <h2>Create new class</h2>
-            <CreateClass
-              subjectsList={subjectList}
-              teachersList={teachersList}
+            <CreateClassRoom
+              {...serverProps}
+              {...(entityToEdit ? entityToEdit : {})}
             />
           </>
         );
       },
-      [Entities.speciality]: async (id: string) => {
-        let serverProps: ManageFormServerProps<Specialty> = {} as any;
-        const title = id ? "Update Speciality" : "Create Speciality";
 
-        if (id) {
-          // TODO try-catch error handling with toast and redirect?
-          const res = await db.getSpecialityById(+id);
-          serverProps.entity = res;
-          serverProps.backBtnUrl = "/my-tenancy";
-          serverProps.backBtnText = "Back to dashboard";
-          serverProps.submitBtnText = "Update Speciality";
-          serverProps.toastMessage = "Speciality updated successfully";
-        } else {
-          serverProps.backBtnUrl = "/my-tenancy/admin";
-          serverProps.backBtnText = "Cancel";
-          serverProps.submitBtnText = "Create Speciality";
-          serverProps.toastMessage = "Speciality created successfully";
-        }
+      [Entities.class]: async (id: number | null) => {
+        const entityToEdit = await getEntityFromDatabase<Classes>(
+          id,
+          Entities.class
+        );
+
+        const serverProps: ManageFormServerProps = {
+          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
+          backBtnText: id ? "Go Back" : "Cancel",
+          submitBtnText: id ? "Update class" : "Create class",
+          toastMessage: id
+            ? "Class updated successfully"
+            : "Class created successfully",
+        };
+        const title = id ? "Update class" : "Create class";
+
         return (
           <>
             <h2>{title}</h2>
-            <CreateSpeciality {...serverProps} />
+            <CreateClass
+              {...(entityToEdit ? entityToEdit : {})}
+              {...serverProps}
+            />
           </>
         );
       },
-      [Entities.subject]: async (id: string) => {
-        let specialities: Specialty[] = [];
-        try {
-          const specials = await db.getAllSpeciality();
-          if (specials.length > 0) {
-            specialities.push(...specials);
-          }
-        } catch (error) {
-          console.error("Error fetching specialities:", error);
-        }
+
+      [Entities.specialty]: async (id: number | null) => {
+        const entityToEdit = await getEntityFromDatabase<Specialty>(
+          id,
+          Entities.specialty
+        );
+
+        const serverProps: ManageFormServerProps = {
+          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
+          backBtnText: id ? "Go Back" : "Cancel",
+          submitBtnText: id ? "Update speciality" : "Create speciality",
+          toastMessage: id
+            ? "Speciality updated successfully"
+            : "Speciality created successfully",
+        };
+        const title = id ? "Update speciality" : "Create speciality";
+
         return (
           <>
-            <h2>Create new subject</h2>
-            <CreateSubject specialities={specialities} />
+            <h2>{title}</h2>
+            <CreateSpeciality
+              {...(entityToEdit ? entityToEdit : {})}
+              {...serverProps}
+            />
           </>
         );
       },
-      [Entities.teacher]: async (id: string) => {
+
+      [Entities.subject]: async (id: number | null) => {
+        const entityToEdit = await getEntityFromDatabase<Subject>(
+          id,
+          Entities.subject
+        );
+
+        const serverProps: ManageFormServerProps = {
+          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
+          backBtnText: id ? "Go Back" : "Cancel",
+          submitBtnText: id ? "Update subject" : "Create subject",
+          toastMessage: id
+            ? "Subject updated successfully"
+            : "Subject created successfully",
+        };
+
+        const title = id ? "Update subject" : "Create subject";
         return (
           <>
-            <h2>Create new teacher</h2>
-            <CreateTeacher />
+            <h2>{title}</h2>
+            <CreateSubject
+              {...(entityToEdit ? entityToEdit : {})}
+              {...serverProps}
+            />
+          </>
+        );
+      },
+      [Entities.teacher]: async (id: number | null) => {
+        const entityToEdit = await getEntityFromDatabase<Teacher>(
+          id,
+          Entities.teacher
+        );
+
+        const serverProps: ManageFormServerProps = {
+          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
+          backBtnText: id ? "Go Back" : "Cancel",
+          submitBtnText: id ? "Update teacher" : "Create teacher",
+          toastMessage: id
+            ? "Teacher updated successfully"
+            : "Teacher created successfully",
+        };
+
+        const title = id ? "Update teacher" : "Create teacher";
+        return (
+          <>
+            <h2>{title}</h2>
+            <CreateTeacher
+              {...(entityToEdit ? entityToEdit : {})}
+              {...serverProps}
+            />
           </>
         );
       },
     };
-    console.log("actionType", entity);
 
     return entity && contents[entity as keyof typeof contents] ? (
-      contents[entity as keyof typeof contents](id || "")
+      contents[entity as keyof typeof contents](id ? +id : null)
     ) : (
       <div>
         <h1>Admin Dashboard - Create New Entities</h1>
