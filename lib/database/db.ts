@@ -704,12 +704,13 @@ export class DatabaseService {
   async createClassRoom(
     name: string,
     capacity: number,
+    description: string,
     specialityId: ID | null
   ): Promise<void> {
-    const query = `INSERT INTO classrooms (name, capacity, speciality_id, tenancy_id) VALUES (:name, :capacity, :specialityId, :tenancyId)`;
+    const query = `INSERT INTO classrooms (name, capacity, description, speciality_id, tenancy_id) VALUES (:name, :capacity, :description, :specialityId, :tenancyId)`;
     try {
       const tenancyId = this.getTenancy();
-      const bindVariables = [name, capacity, specialityId, tenancyId];
+      const bindVariables = [name, capacity, description, specialityId, tenancyId];
       await this.executeCommand(query, bindVariables);
     } catch (error) {
       throw error;
@@ -719,12 +720,13 @@ export class DatabaseService {
   async updateClassRoom(
     name: string,
     capacity: number,
+    description: string,
     specialityId: number,
     id: number
   ): Promise<void> {
     const tenancyId = this.getTenancy();
-    const query = `UPDATE classrooms SET capacity = :capacity,  name = :name, speciality_id = :specialityId WHERE id = :id AND tenancy_id = :tenancyId`;
-    const bindVariables = [capacity, name, specialityId, id, tenancyId];
+    const query = `UPDATE classrooms SET capacity = :capacity,  name = :name, description = :description, speciality_id = :specialityId WHERE id = :id AND tenancy_id = :tenancyId`;
+    const bindVariables = [capacity, name, description, specialityId, id, tenancyId];
     try {
       await this.executeCommand(query, bindVariables);
     } catch (error) {

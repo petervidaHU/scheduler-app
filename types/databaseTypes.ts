@@ -43,6 +43,7 @@ export interface ClassRoom {
     NAME: string;
     CAPACITY: number;
     SPECIALITY_ID: ID;
+    DESCRIPTION: string;
 }
 
 export interface Classes {

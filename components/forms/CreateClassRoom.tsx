@@ -50,8 +50,7 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
     initialValues: {
       name: entity?.NAME || "",
       specialityId: entity?.SPECIALITY_ID || null,
-      // TODO description ?
-      description: "",
+      description: entity?.DESCRIPTION || "",
       capacity: entity?.CAPACITY || 0,
       id: entity?.ID || null,
     },

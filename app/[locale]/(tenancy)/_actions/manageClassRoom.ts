@@ -11,7 +11,8 @@ export const manageClassRoom = async (
     capacity,
     specialityId,
     id,
-  }: { name: string; capacity: number; specialityId: ID | null; id: ID | null }
+    description = "",
+  }: { name: string; capacity: number; specialityId: ID | null; id: ID | null, description: string}
 ): Promise<FormActionType> => {
   if (!classRoomName) {
     return { success: false, error: "name is required", data: null };
@@ -22,6 +23,7 @@ export const manageClassRoom = async (
       const result = await db.updateClassRoom(
         classRoomName,
         capacity,
+        description,
         +(specialityId as number),
         +(id as number)
       );
@@ -30,7 +32,8 @@ export const manageClassRoom = async (
     const result = await db.createClassRoom(
       classRoomName,
       capacity,
-      specialityId
+      description,
+      specialityId,
     );
     return { success: true, data: result, error: null };
   } catch (error) {
