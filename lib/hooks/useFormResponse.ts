@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { refetchTenancyBasedData } from "../UpdateTenancyBasedData";
 import { labelMapper } from "./labelMapperForTenancyBasedData";
 
-export const useFormResponse = (
+export const useTenancyBasedFormResponse = (
   state: { success: boolean; error: any },
   form: any,
   successMessage: string | null,

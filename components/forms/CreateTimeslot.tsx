@@ -1,17 +1,10 @@
 "use client";
 
-import React, { FC, useActionState, useTransition } from "react";
-import { manageTimeslotTemplates } from "@/app/[locale]/(tenancy)/my-tenancy/timeslots/_actions/manageTimeslotTemplates";
-import { useFormResponse } from "@/lib/hooks/useFormResponse";
+import React, { FC } from "react";
 import { useStore } from "@/store/store";
-import { Timeslots } from "@/types/databaseTypes";
-import { Entities } from "@/types/Entities";
-import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import {
   Button,
-  Container,
   Fieldset,
-  Grid,
   Group,
   NumberInput,
   Text,
@@ -19,9 +12,6 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { redirect } from "next/navigation";
-import GridContainer from "../day-planner/GridContainer";
-import HourGrid from "../day-planner/HourGrid";
 
 interface props {}
 

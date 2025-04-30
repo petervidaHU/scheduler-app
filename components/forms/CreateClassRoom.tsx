@@ -15,7 +15,7 @@ import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
 import { ClassRoom, ErrorResponse } from "@/types/databaseTypes";
 import { manageClassRoom } from "@/app/[locale]/(tenancy)/_actions/manageClassRoom";
-import { useFormResponse } from "@/lib/hooks/useFormResponse";
+import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { useStore } from "@/store/store";
 import { Entities } from "@/types/Entities";
 
@@ -61,7 +61,7 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
     },
   });
 
-  const { manageState } = useFormResponse(
+  const { manageState } = useTenancyBasedFormResponse(
     crState,
     entity?.ID ? null : classRoomForm, // reset form only on create
     toastMessage,

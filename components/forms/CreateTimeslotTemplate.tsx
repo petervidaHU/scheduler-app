@@ -2,7 +2,7 @@
 
 import React, { FC, useActionState, useTransition } from "react";
 import { manageTimeslotTemplates } from "@/app/[locale]/(tenancy)/my-tenancy/timeslots/_actions/manageTimeslotTemplates";
-import { useFormResponse } from "@/lib/hooks/useFormResponse";
+import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { useStore } from "@/store/store";
 import { Timeslots } from "@/types/databaseTypes";
 import { Entities } from "@/types/Entities";
@@ -10,11 +10,8 @@ import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import {
   Button,
   Container,
-  Fieldset,
   Grid,
   Group,
-  NumberInput,
-  Select,
   Stack,
   TextInput,
 } from "@mantine/core";
@@ -64,7 +61,7 @@ const CreateTimeslotTemplate: FC<props> = ({
     validate: {},
   });
 
-  const { manageState } = useFormResponse(
+  const { manageState } = useTenancyBasedFormResponse(
     timeslotTemplateState,
     entity?.ID ? null : templateForm, // reset form only on create
     toastMessage,

@@ -13,7 +13,7 @@ import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { Specialty } from "@/types/databaseTypes";
 import { redirect } from "next/navigation";
 import { manageSpeciality } from "@/app/[locale]/(tenancy)/_actions/manageSpeciality";
-import { useFormResponse } from "@/lib/hooks/useFormResponse";
+import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
 import AddBasicEntities from "./AddBasicEntities";
 
@@ -53,7 +53,7 @@ export const CreateSpeciality: FC<SpecialtyInput> = ({
     },
   });
 
-  const { manageState } = useFormResponse(
+  const { manageState } = useTenancyBasedFormResponse(
     specialityState,
     entity?.ID ? null : specialityForm,
     toastMessage,

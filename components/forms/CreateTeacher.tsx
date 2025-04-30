@@ -7,7 +7,7 @@ import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
 import { createTeacher } from "@/app/[locale]/(tenancy)/_actions/createTeacher";
 import { Teacher } from "@/types/databaseTypes";
-import { useFormResponse } from "@/lib/hooks/useFormResponse";
+import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
 
 const init: FormActionType = {
@@ -43,7 +43,7 @@ export const CreateTeacher: FC<ManageFormServerProps<Teacher>> = ({
     },
   });
 
-  const { manageState } = useFormResponse(
+  const { manageState } = useTenancyBasedFormResponse(
     state,
     entity.ID ? null : teacherForm,
     toastMessage,

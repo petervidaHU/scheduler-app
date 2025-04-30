@@ -47,7 +47,6 @@ interface ScheduleState {
     id: number | null;
     name: string;
     description: string;
-    timeslots: Array<number>;
   };
 
   //Reducers
@@ -106,7 +105,6 @@ const createScheduleSlice = (set: any): ScheduleState => ({
     id: null,
     name: "",
     description: "",
-    timeslots: [],
   },
 
   addActiveTimeslot: (payload: TimeslotInput) =>

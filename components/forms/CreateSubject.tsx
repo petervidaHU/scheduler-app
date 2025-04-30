@@ -14,7 +14,7 @@ import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
 import { Subject,  } from "@/types/databaseTypes";
-import { useFormResponse } from "@/lib/hooks/useFormResponse";
+import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
 import { useStore } from "@/store/store";
 import { manageSubject } from "@/app/[locale]/(tenancy)/_actions/createSubject";
@@ -61,7 +61,7 @@ export const CreateSubject: FC<SubjectInput> = ({
     },
   });
 
-  const { manageState } = useFormResponse(
+  const { manageState } = useTenancyBasedFormResponse(
     subjectState,
     entity?.ID ? null : subjectForm,
     'Subject created successfully',
