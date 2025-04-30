@@ -41,7 +41,6 @@ interface ScheduleState {
     teachers: PreloadDataObject<DataWithOptions<Teacher>>;
     classes: PreloadDataObject<DataWithOptions<Classes>>;
     classRooms: PreloadDataObject<DataWithOptions<ClassRoom>>;
-    basicTimeslots: Timeslots[];
   };
 
   //Schedule
@@ -78,7 +77,6 @@ const createScheduleSlice = (set: any): ScheduleState => ({
     teachers: {},
     classRooms: {},
     classes: {},
-    basicTimeslots: [],
   },
   scheduleState: {
     id: "",
@@ -135,7 +133,6 @@ const createScheduleSlice = (set: any): ScheduleState => ({
         classRooms: {...payload.classRooms},
         classes: {...payload.classes},
         specialties: {...payload.specialties},
-        basicTimeslots: {...payload.timeslots},
       },
     })),
   updateTenancyBasedData: (payload: Partial<TenancyBasedData>) =>

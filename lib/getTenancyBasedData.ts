@@ -7,7 +7,6 @@ import {
   ClassRoom,
   Classes,
   Teacher,
-  Timeslots,
 } from "@/types/databaseTypes";
 import { TenancyBasedData } from "@/types/ScheduleTypes";
 import { dataObjectCreator } from "./dataObjectCreator";
@@ -15,14 +14,13 @@ import { Entities } from "@/types/Entities";
 
 export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
   const db = await getDbInstance();
-  const [specialties, subjects, classRooms, classes, teachers, timeslots] =
+  const [specialties, subjects, classRooms, classes, teachers] =
     await Promise.all([
       dataFetcherAll<Specialty>(db.getAllEntity, Entities.specialty),
       dataFetcherAll<Subject>(db.getAllEntity, Entities.subject),
       dataFetcherAll<ClassRoom>(db.getAllEntity, Entities.classroom),
       dataFetcherAll<Classes>(db.getAllEntity, Entities.class),
       dataFetcherAll<Teacher>(db.getAllEntity, Entities.teacher),
-      dataFetcherAll<Timeslots>(() => db.getBasicTimeSlots("HUN1")),
     ]);
 
   if (
@@ -30,8 +28,7 @@ export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
     subjects.error ||
     classRooms.error ||
     classes.error ||
-    teachers.error ||
-    timeslots.error
+    teachers.error 
   ) {
     throw new Error(
       `Error getting tenancy based data:,  ${
@@ -40,7 +37,7 @@ export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
         classRooms.error,
         classes.error,
         teachers.error,
-        timeslots.error)
+        )
       }`
     );
   }
@@ -57,6 +54,5 @@ export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
     teachers: {data: teachersObject},
     classRooms: {data: classRoomsObject},
     classes: {data: classesObject},
-    timeslots: timeslots.data,
   };
 };

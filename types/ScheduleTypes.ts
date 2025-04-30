@@ -60,5 +60,4 @@ export interface TenancyBasedData {
   subjects: PreloadDataObject<DataWithOptions<Subject>>;
   specialties: PreloadDataObject<DataWithOptions<Specialty>>;
   classes: PreloadDataObject<DataWithOptions<Classes>>;
-  timeslots: Timeslots[];
 }
