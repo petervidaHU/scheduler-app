@@ -36,9 +36,7 @@ export const getTenancyBasedData = async (): Promise<TenancyBasedData> => {
         subjects.error,
         classRooms.error,
         classes.error,
-        teachers.error,
-        )
-      }`
+        teachers.error)}`
     );
   }
 

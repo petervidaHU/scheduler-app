@@ -7,7 +7,7 @@ import { labelMapper } from "./labelMapperForTenancyBasedData";
 export const useFormResponse = (
   state: { success: boolean; error: any },
   form: any,
-  successMessage: string,
+  successMessage: string | null,
   label?: Entities
 ) => {
   const { addToast, updateTenancyBasedData } = useStore();
@@ -20,38 +20,45 @@ export const useFormResponse = (
           (async () => {
             try {
               const result = await refetchTenancyBasedData(label);
-              updateTenancyBasedData({ [labelMapper[label]]: { data: result.data } });
+              updateTenancyBasedData({
+                [labelMapper[label]]: { data: result.data },
+              });
             } catch (error) {
               console.error(
                 `Error refetch data after manipulating data: ${error}`
               );
-              addToast({
-                title: "Error",
-                message: "Error refetch data",
-                type: "error",
-                autoClose: false,
-                id: Date.now().toString(),
-              });
+              if (successMessage) {
+                addToast({
+                  title: "Error",
+                  message: "Error refetch data",
+                  type: "error",
+                  autoClose: false,
+                  id: Date.now().toString(),
+                });
+              }
             }
           })();
         }
         state.success = false;
-
-        addToast({
-          message: successMessage,
-          title: "Success",
-          type: "success",
-          autoClose: true,
-          id: Date.now().toString(),
-        });
+        if (successMessage) {
+          addToast({
+            message: successMessage,
+            title: "Success",
+            type: "success",
+            autoClose: true,
+            id: Date.now().toString(),
+          });
+        }
       } else if (state.error) {
-        addToast({
-          message: state.error.message || "Something went wrong",
-          title: "Error",
-          type: "error",
-          autoClose: true,
-          id: Date.now().toString(),
-        });
+        if (successMessage) {
+          addToast({
+            message: state.error.message || "Something went wrong",
+            title: "Error",
+            type: "error",
+            autoClose: true,
+            id: Date.now().toString(),
+          });
+        }
       }
     }, [state]);
 

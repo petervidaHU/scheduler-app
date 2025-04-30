@@ -55,8 +55,8 @@ export interface Classes {
 export interface Timeslots {
     ID: ID;
     NAME: string;
-    PERIOD_START: string;
-    PERIOD_END: string;
+    PERIOD_START: number;
+    PERIOD_END: number;
     TENANCY_ID: ID | null;
     DESCRIPTION: string;
 }

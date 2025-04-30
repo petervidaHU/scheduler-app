@@ -3,12 +3,10 @@
 import React from "react";
 import { Group, Text } from "@mantine/core";
 import { DayPlan } from "@/types/ScheduleTypes";
-import { Timeslots } from "@/types/databaseTypes";
 import { useStore } from "@/store/store";
-import { useModal } from "./ModalProvider";
-import CreateLessonModal from "./modals/CreateLessonModal";
-import ActionIconX from "./UI-elements/ActionIcons/X";
-import { Days_One } from "next/font/google";
+import { useModal } from "../ModalProvider";
+import CreateLessonModal from "../modals/CreateLessonModal";
+import ActionIconX from "../UI-elements/ActionIcons/X";
 
 interface DayPlannerProps {
   day: DayPlan;
@@ -21,9 +19,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day }) => {
     windowHeight,
     scheduleState: { timeslots, lessons },
     deleteOneLesson,
-    subjects,
-    classRooms,
-    teachers,
+    tenancyBasedData: { subjects, classRooms, teachers },
   } = useStore();
   // console.log("slotTemplates", scheduleState.lessons);
 
@@ -32,7 +28,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day }) => {
     return date.getHours() * 60 + date.getMinutes();
   };
   const handleOpenModal = (slot: string) => {
-    console.log('handle open:', slot)
+    console.log("handle open:", slot);
     openModal(
       <CreateLessonModal slotId={slot} day={day.id} closeModal={closeModal} />
     );
@@ -74,8 +70,13 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day }) => {
             {isFilled ? (
               <Group>
                 <Text size="s">{subjects[isFilled.subject].SUBJECT_NAME}</Text>
-                <Text size="xs">{isFilled.teacher && teachers[isFilled.teacher].TEACHER_NAME}</Text>
-                <Text size="xs">{isFilled.classRoom && classRooms[isFilled.classRoom].CLASSROOM_NAME}</Text>
+                <Text size="xs">
+                  {isFilled.teacher && teachers[isFilled.teacher].TEACHER_NAME}
+                </Text>
+                <Text size="xs">
+                  {isFilled.classRoom &&
+                    classRooms[isFilled.classRoom].CLASSROOM_NAME}
+                </Text>
                 <ActionIconX
                   label="delete"
                   onClickCallback={(e) =>

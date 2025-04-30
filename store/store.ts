@@ -25,13 +25,7 @@ import {
 import { Toast } from "@/types/UIFeedbackTypes";
 import { error } from "console";
 
-type TenancyBasedProperties =
-  | "subjects"
-  | "teachers"
-  | "classRooms"
-  | "classes"
-  | "timeslots"
-  | "specialities";
+type TimeslotInput = Omit<Timeslots, "TENANCY_ID">
 
 interface ScheduleState {
   //Tenancy based data
@@ -46,6 +40,15 @@ interface ScheduleState {
   //Schedule
   scheduleState: Schedule;
   syllabus: SyllabusForm;
+
+  //Timeslots
+  activeTimeslots: Record<number, TimeslotInput>;
+  activeTemplate: {
+    id: number | null;
+    name: string;
+    description: string;
+    timeslots: Array<number>;
+  };
 
   //Reducers
   fillTenancyBasedData: (payload: TenancyBasedData) => void;
@@ -68,6 +71,8 @@ interface ScheduleState {
   ) => void;
   addTimeslotToSchedule: (payload: Record<string, Timeslots>) => void;
   addTimeslotToDay: (payload: { dayId: string; timeslotId: string }) => void;
+  addActiveTimeslot: (payload: TimeslotInput) => void;
+  removeActiveTimeslot: (payload: number) => void;
 }
 
 const createScheduleSlice = (set: any): ScheduleState => ({
@@ -95,6 +100,34 @@ const createScheduleSlice = (set: any): ScheduleState => ({
     classId: 0,
     subjects: {},
   },
+
+  activeTimeslots: {},
+  activeTemplate: {
+    id: null,
+    name: "",
+    description: "",
+    timeslots: [],
+  },
+
+  addActiveTimeslot: (payload: TimeslotInput) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      activeTimeslots: {
+        ...state.activeTimeslots,
+        [payload.ID]: payload,
+      },
+    })),
+  removeActiveTimeslot: (payload: number) =>
+    set((state: ScheduleState) => {
+      const oldTimeslots = state.activeTimeslots;
+      delete oldTimeslots[payload];
+      return {
+        ...state,
+        activeTimeslots: {
+          ...oldTimeslots,
+        },
+      };
+    }),
 
   addTimeslotToSchedule: (payload: Record<string, Timeslots>) =>
     set((state: ScheduleState) => ({
@@ -128,11 +161,11 @@ const createScheduleSlice = (set: any): ScheduleState => ({
     set((state: ScheduleState) => ({
       ...state,
       tenancyBasedData: {
-        subjects: {...payload.subjects},
-        teachers: {...payload.teachers},
-        classRooms: {...payload.classRooms},
-        classes: {...payload.classes},
-        specialties: {...payload.specialties},
+        subjects: { ...payload.subjects },
+        teachers: { ...payload.teachers },
+        classRooms: { ...payload.classRooms },
+        classes: { ...payload.classes },
+        specialties: { ...payload.specialties },
       },
     })),
   updateTenancyBasedData: (payload: Partial<TenancyBasedData>) =>
