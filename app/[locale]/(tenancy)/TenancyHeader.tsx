@@ -10,8 +10,9 @@ export const TenancyHeader = () => {
 
   const secondaryLinks = [
     { link: `${basePath}/admin`, label: "Admin settings" },
-    { link: `${basePath}/users`, label: "Users" },
+    //{ link: `${basePath}/users`, label: "Users" },
     { link: `${basePath}/schedules`, label: "Schedules" },
+    { link: `${basePath}/timeslots`, label: "Timeslots manager" },
   ];
 
   return (

@@ -53,11 +53,12 @@ export interface Classes {
 }
 
 export interface Timeslots {
-    TEMPLATE_ID: ID;
+    ID: ID;
     NAME: string;
     PERIOD_START: string;
     PERIOD_END: string;
     TENANCY_ID: ID | null;
+    DESCRIPTION: string;
 }
 
 export interface Lesson {
