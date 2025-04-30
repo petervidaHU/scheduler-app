@@ -4,7 +4,6 @@ import {
   DayPlan,
   Schedule,
   SyllabusForm,
-  SStatus,
   TenancyBasedData,
   DataWithOptions,
 } from "@/types/ScheduleTypes";
@@ -13,19 +12,12 @@ import {
   ClassRoom,
   Specialty,
   Subject,
-  Syllabus,
   Teacher,
+  TimeslotInput,
   Timeslots,
 } from "@/types/databaseTypes";
-import {
-  LessonInput,
-  PreloadDataObject,
-  SelectOptions,
-} from "@/types/FormActionType";
+import { LessonInput, PreloadDataObject } from "@/types/FormActionType";
 import { Toast } from "@/types/UIFeedbackTypes";
-import { error } from "console";
-
-type TimeslotInput = Omit<Timeslots, "TENANCY_ID">
 
 interface ScheduleState {
   //Tenancy based data
@@ -70,11 +62,13 @@ interface ScheduleState {
   ) => void;
   addTimeslotToSchedule: (payload: Record<string, Timeslots>) => void;
   addTimeslotToDay: (payload: { dayId: string; timeslotId: string }) => void;
+
   addActiveTimeslot: (payload: TimeslotInput) => void;
   removeActiveTimeslot: (payload: number) => void;
+  selectActiveTimeslot: (payload: number) => TimeslotInput;
 }
 
-const createScheduleSlice = (set: any): ScheduleState => ({
+const createScheduleSlice = (set: any, get: any): ScheduleState => ({
   tenancyBasedData: {
     specialties: {},
     subjects: {},
@@ -126,6 +120,8 @@ const createScheduleSlice = (set: any): ScheduleState => ({
         },
       };
     }),
+  selectActiveTimeslot: (payload: number) =>
+    get().activeTimeslots[payload],
 
   addTimeslotToSchedule: (payload: Record<string, Timeslots>) =>
     set((state: ScheduleState) => ({
@@ -318,7 +314,7 @@ export const useStore = create<AppState>()(
   devtools(
     persist(
       (set, get) => ({
-        ...createScheduleSlice(set),
+        ...createScheduleSlice(set, get),
         ...scheduleGeneralSlice(set),
         ...toastSlice(set),
       }),

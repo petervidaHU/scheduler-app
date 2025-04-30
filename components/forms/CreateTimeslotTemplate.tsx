@@ -1,11 +1,10 @@
 "use client";
 
-import React, { FC, useActionState, useTransition } from "react";
+import React, { FC, useActionState, useState, useTransition } from "react";
 import { manageTimeslotTemplates } from "@/app/[locale]/(tenancy)/my-tenancy/timeslots/_actions/manageTimeslotTemplates";
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { useStore } from "@/store/store";
 import { Timeslots } from "@/types/databaseTypes";
-import { Entities } from "@/types/Entities";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import {
   Button,
@@ -20,6 +19,8 @@ import { redirect } from "next/navigation";
 import GridContainer from "../day-planner/GridContainer";
 import HourGrid from "../day-planner/HourGrid";
 import CreateTimeslot from "./CreateTimeslot";
+import DayPlanner from "../day-planner/DayPlanner";
+import TimeslotsList from "../day-planner/TimeslotsList";
 
 const init: FormActionType = {
   error: null,
@@ -42,15 +43,15 @@ const CreateTimeslotTemplate: FC<props> = ({
 }) => {
   const {
     tenancyBasedData: { specialties },
+    activeTimeslots,
     windowHeight,
   } = useStore();
   const [isPending, startTransition] = useTransition();
   const [timeslotTemplateState, tstAction] = useActionState(
     manageTimeslotTemplates,
-    {
-      ...init,
-    }
+    { ...init }
   );
+  const [selectedTimeslot, setSelectedTimeslot] = useState<number | null>(null);
 
   const templateForm = useForm({
     initialValues: {
@@ -64,8 +65,7 @@ const CreateTimeslotTemplate: FC<props> = ({
   const { manageState } = useTenancyBasedFormResponse(
     timeslotTemplateState,
     entity?.ID ? null : templateForm, // reset form only on create
-    toastMessage,
-    Entities.classroom
+    toastMessage
   );
   manageState();
 
@@ -75,12 +75,24 @@ const CreateTimeslotTemplate: FC<props> = ({
     });
   };
 
+  // TODO useMemo
+  const timeslotMapping = () =>
+    Object.values(activeTimeslots).map((timeslot) => ({
+      timeslot: timeslot,
+    }));
+
+    const handleClickOnTimeslot = (id: number) => {
+      console.log('in handle id:', id);
+      setSelectedTimeslot(id);
+    };
+
   if (error)
     return (
       <Container size="md" my="xl">
         <p>{error}</p>
       </Container>
     );
+
   return (
     <Container size="md" my="xl">
       {specialties.error && <p>{specialties.error}</p>}
@@ -108,12 +120,16 @@ const CreateTimeslotTemplate: FC<props> = ({
         </Stack>
       </form>
 
-      <CreateTimeslot />
+      <CreateTimeslot key={selectedTimeslot?.toString()} timeslotId={selectedTimeslot} />
 
       <Grid>
         <Grid.Col span={4}>
           <GridContainer windowHeight={windowHeight}>
             <HourGrid />
+            <TimeslotsList
+              timeSlots={timeslotMapping()}
+              onClickHandler={handleClickOnTimeslot}
+            />
           </GridContainer>
         </Grid.Col>
       </Grid>

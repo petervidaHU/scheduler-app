@@ -12,20 +12,41 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { time } from "console";
+import { start } from "repl";
 
-interface props {}
+interface props {
+  timeslotId: number | null;
+}
 
-const CreateTimeslot: FC<props> = () => {
-  const { addActiveTimeslot } = useStore();
+export const getTimeInMinutes = (hour: number, minute: number) => {
+  return hour * 60 + minute;
+};
+
+export const getHour = (time: number | undefined) => {
+  if (!time) return 0;
+  return Math.floor(time / 60);
+};
+
+export const getMinute = (time: number | undefined) => {
+  if (!time) return 0;
+  return time % 60;
+};
+
+const CreateTimeslot: FC<props> = ({ timeslotId }) => {
+  const { addActiveTimeslot, selectActiveTimeslot } = useStore();
+  const timeslot = timeslotId ? selectActiveTimeslot(timeslotId) : null;
+  console.log("// timeslot in timeslotcreate", timeslot);
 
   const timeslotForm = useForm({
     initialValues: {
-      name: "",
-      description: "",
-      startTimeHour: 0,
-      startTimeMinute: 0,
-      endTimeHour: 0,
-      endTimeMinute: 0,
+      id: timeslot || new Date().getTime(),
+      name: timeslot?.NAME || "",
+      description: timeslot?.DESCRIPTION || "",
+      startTimeHour: getHour(timeslot?.PERIOD_START) || 0,
+      startTimeMinute: getMinute(timeslot?.PERIOD_START) || 0,
+      endTimeHour: getHour(timeslot?.PERIOD_END) || 0,
+      endTimeMinute: getMinute(timeslot?.PERIOD_END) || 0,
     },
     validate: (values) => {
       const startTime = values.startTimeHour * 60 + values.startTimeMinute;
@@ -53,13 +74,18 @@ const CreateTimeslot: FC<props> = () => {
     },
   });
 
-  const getTimeInMinutes = (hour: number, minute: number) => {
-    return hour * 60 + minute;
+  const handleAddDuration = (duration: number) => () => {
+    const startTime = timeslotForm.values.startTimeHour * 60 + timeslotForm.values.startTimeMinute;
+    const endTime = startTime + duration;
+    timeslotForm.setValues({
+      endTimeHour: getHour(endTime),
+      endTimeMinute: getMinute(endTime),
+    });
   };
 
   const handleSubmit = (values: typeof timeslotForm.values) => {
     addActiveTimeslot({
-      ID: new Date().getTime(),
+      ID: values.id,
       NAME: values.name,
       DESCRIPTION: values.description,
       PERIOD_START: getTimeInMinutes(
@@ -98,6 +124,10 @@ const CreateTimeslot: FC<props> = () => {
             {...timeslotForm.getInputProps("startTimeMinute")}
           />
         </Fieldset>
+        <Stack>
+          <Button onClick={handleAddDuration(45)}>+45 min</Button>
+          <Button onClick={handleAddDuration(60)}>+1 hour</Button>
+        </Stack>
         <Fieldset legend="End time">
           <NumberInput
             label="hour"

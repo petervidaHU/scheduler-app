@@ -61,6 +61,8 @@ export interface Timeslots {
     DESCRIPTION: string;
 }
 
+export type TimeslotInput = Omit<Timeslots, "TENANCY_ID">;
+
 export interface Lesson {
     TIMESLOT_ID: ID;
     TENANCY_ID: ID;
