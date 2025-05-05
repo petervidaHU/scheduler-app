@@ -12,6 +12,7 @@ import {
   Grid,
   Group,
   Stack,
+  Switch,
   TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
@@ -52,6 +53,7 @@ const CreateTimeslotTemplate: FC<props> = ({
     { ...init }
   );
   const [selectedTimeslot, setSelectedTimeslot] = useState<number | null>(null);
+  const [checked, setChecked] = useState(false);
 
   const templateForm = useForm({
     initialValues: {
@@ -81,10 +83,10 @@ const CreateTimeslotTemplate: FC<props> = ({
       timeslot: timeslot,
     }));
 
-    const handleClickOnTimeslot = (id: number) => {
-      console.log('in handle id:', id);
-      setSelectedTimeslot(id);
-    };
+  const handleClickOnTimeslot = (id: number) => {
+    console.log("in handle id:", id);
+    setSelectedTimeslot(id);
+  };
 
   if (error)
     return (
@@ -112,6 +114,11 @@ const CreateTimeslotTemplate: FC<props> = ({
           />
 
           <Group mt="md">
+            <Switch
+              checked={checked}
+              onChange={(event) => setChecked(event.currentTarget.checked)}
+              label="Overlapping accepted"
+            />
             <Button disabled={isPending} type="submit">
               {submitBtnText}
             </Button>
@@ -120,7 +127,11 @@ const CreateTimeslotTemplate: FC<props> = ({
         </Stack>
       </form>
 
-      <CreateTimeslot key={selectedTimeslot?.toString()} timeslotId={selectedTimeslot} />
+      <CreateTimeslot
+        overlappingAccepted={checked}
+        key={selectedTimeslot?.toString()}
+        timeslotId={selectedTimeslot}
+      />
 
       <Grid>
         <Grid.Col span={4}>

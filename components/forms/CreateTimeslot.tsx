@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import { useStore } from "@/store/store";
 import {
   Button,
@@ -10,13 +10,13 @@ import {
   Text,
   Stack,
   TextInput,
+  Switch,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { time } from "console";
-import { start } from "repl";
 
 interface props {
   timeslotId: number | null;
+  overlappingAccepted: boolean;
 }
 
 export const getTimeInMinutes = (hour: number, minute: number) => {
@@ -33,14 +33,18 @@ export const getMinute = (time: number | undefined) => {
   return time % 60;
 };
 
-const CreateTimeslot: FC<props> = ({ timeslotId }) => {
-  const { addActiveTimeslot, selectActiveTimeslot } = useStore();
+const CreateTimeslot: FC<props> = ({
+  timeslotId,
+  overlappingAccepted = true,
+}) => {
+  const { addActiveTimeslot, selectActiveTimeslot, activeTimeslots } =
+    useStore();
+  const [checked, setChecked] = useState<boolean>(!!timeslotId);
   const timeslot = timeslotId ? selectActiveTimeslot(timeslotId) : null;
-  console.log("// timeslot in timeslotcreate", timeslot);
 
   const timeslotForm = useForm({
     initialValues: {
-      id: timeslot || new Date().getTime(),
+      id: timeslotId || new Date().getTime(),
       name: timeslot?.NAME || "",
       description: timeslot?.DESCRIPTION || "",
       startTimeHour: getHour(timeslot?.PERIOD_START) || 0,
@@ -61,8 +65,25 @@ const CreateTimeslot: FC<props> = ({ timeslotId }) => {
           __error: "End time must be after start time",
         };
       }
+
+      // overlapping timeslots
+      if (
+        overlappingAccepted === false &&
+        Object.values(activeTimeslots).some(
+          (t) =>
+            t.ID !== timeslotId &&
+            t.PERIOD_START < endTime &&
+            t.PERIOD_END > startTime
+        )
+      ) {
+        return {
+          __error: "Timeslots cannot overlap",
+        };
+      }
+
       return {};
     },
+
     onValuesChange(values, previous) {
       if (
         values.endTimeHour !== previous.endTimeHour ||
@@ -75,12 +96,35 @@ const CreateTimeslot: FC<props> = ({ timeslotId }) => {
   });
 
   const handleAddDuration = (duration: number) => () => {
-    const startTime = timeslotForm.values.startTimeHour * 60 + timeslotForm.values.startTimeMinute;
+    const startTime =
+      timeslotForm.values.startTimeHour * 60 +
+      timeslotForm.values.startTimeMinute;
     const endTime = startTime + duration;
     timeslotForm.setValues({
       endTimeHour: getHour(endTime),
       endTimeMinute: getMinute(endTime),
     });
+  };
+
+  const clearForm = () => {
+    timeslotForm.setValues({
+      id: new Date().getTime(),
+      name: "",
+      description: "",
+      startTimeHour: 0,
+      startTimeMinute: 0,
+      endTimeHour: 0,
+      endTimeMinute: 0,
+    });
+  };
+
+  const handleEditMode = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.currentTarget.checked === false) {
+      clearForm();
+    } else {
+      timeslotForm.reset();
+    }
+    setChecked(event.currentTarget.checked);
   };
 
   const handleSubmit = (values: typeof timeslotForm.values) => {
@@ -94,11 +138,20 @@ const CreateTimeslot: FC<props> = ({ timeslotId }) => {
       ),
       PERIOD_END: getTimeInMinutes(values.endTimeHour, values.endTimeMinute),
     });
-    timeslotForm.reset();
+    clearForm();
   };
 
   return (
     <form onSubmit={timeslotForm.onSubmit(handleSubmit)}>
+      {timeslotId && (
+        <Switch
+          checked={checked}
+          onChange={(event) => {
+            handleEditMode(event);
+          }}
+          label={`Editing mode: ${timeslotId}`}
+        />
+      )}
       <Group mt="md">
         <Fieldset legend="Start time">
           <NumberInput
