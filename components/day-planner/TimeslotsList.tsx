@@ -1,29 +1,37 @@
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import TimeslotFilledCard from "./TimeslotFilledCard";
 import { useStore } from "@/store/store";
 import { TimeslotInput } from "@/types/databaseTypes";
-import { Text } from "@mantine/core";
+import { ActionIcon, Text } from "@mantine/core";
+import { IconTrash } from "@tabler/icons-react";
 
 interface props {
   timeSlots: Array<{ timeslot: TimeslotInput; lessonId?: string }>;
-  onClickHandler: any,
+  onClickHandler: any;
 }
 
 const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
-  const { windowHeight } = useStore();
-  console.log('timeslots', timeSlots);
+  const { windowHeight, removeActiveTimeslot } = useStore();
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   return (
     <>
       {timeSlots.map((slot) => {
-        const { PERIOD_END: end, PERIOD_START: start, ID, NAME } = slot.timeslot;
+        const {
+          PERIOD_END: end,
+          PERIOD_START: start,
+          ID,
+          NAME,
+        } = slot.timeslot;
         const top = (start / windowHeight) * windowHeight;
         const height = ((end - start) / windowHeight) * windowHeight;
 
         return (
           <div
-            onClick={() => onClickHandler(ID)}
             key={ID}
+            onClick={() => onClickHandler(ID)}
+            onMouseEnter={() => setHoveredId(ID)}
+            onMouseLeave={() => setHoveredId(null)}
             style={{
               position: "absolute",
               top: `${top}px`,
@@ -36,12 +44,27 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
               padding: "2px 4px",
               boxSizing: "border-box",
               zIndex: 100,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
             {slot.lessonId ? (
               <TimeslotFilledCard lessonId={slot.lessonId} />
             ) : (
               <Text size="xs">{NAME}</Text>
+            )}
+            {hoveredId === ID && (
+              <ActionIcon
+                variant="light"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent triggering the onClickHandler for timeslots
+                  removeActiveTimeslot(ID);
+                }}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
             )}
           </div>
         );
