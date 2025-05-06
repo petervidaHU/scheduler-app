@@ -4,11 +4,12 @@ import React, { FC, useActionState, useState, useTransition } from "react";
 import { manageTimeslotTemplates } from "@/app/[locale]/(tenancy)/my-tenancy/timeslots/_actions/manageTimeslotTemplates";
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { useStore } from "@/store/store";
-import { Timeslots } from "@/types/databaseTypes";
+import { DayTemplates, Timeslots } from "@/types/databaseTypes";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import {
   Button,
   Container,
+  Divider,
   Grid,
   Group,
   Stack,
@@ -21,6 +22,7 @@ import GridContainer from "../day-planner/GridContainer";
 import HourGrid from "../day-planner/HourGrid";
 import CreateTimeslot from "./CreateTimeslot";
 import TimeslotsList from "../day-planner/TimeslotsList";
+import SmallCard from "../UI-elements/SmallCard";
 
 const init: FormActionType = {
   error: null,
@@ -31,6 +33,7 @@ const init: FormActionType = {
 interface props extends ManageFormServerProps {
   entity?: Timeslots;
   error?: string;
+  dayTemplates: Array<DayTemplates>;
 }
 
 const CreateTimeslotTemplate: FC<props> = ({
@@ -40,6 +43,7 @@ const CreateTimeslotTemplate: FC<props> = ({
   backBtnText,
   submitBtnText,
   toastMessage,
+  dayTemplates,
 }) => {
   const {
     tenancyBasedData: { specialties },
@@ -71,7 +75,7 @@ const CreateTimeslotTemplate: FC<props> = ({
   manageState();
 
   const handleSubmit = (values: typeof templateForm.values) => {
-    const context = {...values, timeslots: Object.values(activeTimeslots)};
+    const context = { ...values, timeslots: Object.values(activeTimeslots) };
     startTransition(() => {
       tstAction(context);
     });
@@ -99,6 +103,16 @@ const CreateTimeslotTemplate: FC<props> = ({
     <Container size="md" my="xl">
       {specialties.error && <p>{specialties.error}</p>}
       {specialties.isLoading && <p>Loading specialities</p>}
+      <div>Available timeslot templates:</div>
+      {dayTemplates.map((template) => (
+        <SmallCard
+          key={template.ID}
+          name={template.NAME}
+          description={template.DESCRIPTION}
+        />
+      ))}
+      <Divider />
+      <div>Create new template:</div>
       <form onSubmit={templateForm.onSubmit(handleSubmit)}>
         <Stack>
           <TextInput

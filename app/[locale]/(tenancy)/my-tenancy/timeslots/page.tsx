@@ -1,8 +1,9 @@
 import CreateTimeslotTemplate from "@/components/forms/CreateTimeslotTemplate";
 import { ManageFormServerProps } from "@/types/FormActionType";
 import React from "react";
+import { getDayTemplates } from "./_actions/getDayTemplates";
 
-const timeslotsPage = () => {
+const timeslotsPage = async () => {
   const id = null;
   const serverProps: ManageFormServerProps = {
     backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
@@ -12,13 +13,12 @@ const timeslotsPage = () => {
       ? "Timeslot template updated successfully"
       : "Timeslot template created successfully",
   };
+  const dayTemplates = await getDayTemplates();
 
   return (
     <>
-      <div>Available timeslot templates:</div>
-      <div>TBD</div>
-      <div>Create new template:</div>
-      <CreateTimeslotTemplate {...serverProps}/>
+     
+      <CreateTimeslotTemplate {...serverProps} dayTemplates={dayTemplates}/>
     </>
   );
 };

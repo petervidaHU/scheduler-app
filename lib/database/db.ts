@@ -9,6 +9,7 @@ import oracledb, {
 import path from "path";
 import { getRoleName } from "../utils";
 import {
+  DayTemplates,
   GetTenancyByUserResult,
   GlobalTimeslot,
   ID,
@@ -505,6 +506,29 @@ export class DatabaseService {
       return result as Timeslots[];
     } catch (error) {
       console.error(`Error getting timeslots: ${error}`);
+      throw error;
+    }
+  }
+
+  async getBasicDayTemplates(): Promise<Array<DayTemplates>> {
+    const query = `SELECT * FROM DAY_TEMPLATES WHERE TENANCY_ID IS NULL`;
+    try {
+      const result = await this.executeQuery(query, []);
+      return result as Array<DayTemplates>;
+    } catch (error) {
+      console.error(`Error getting day templates: ${error}`);
+      throw error;
+    }
+  }
+
+  async getDayTemplatesByTenancy(): Promise<Array<DayTemplates>> {
+    const query = `SELECT * FROM DAY_TEMPLATES WHERE TENANCY_ID = :tenancyId`;
+    try {
+      const tenancyId = this.getTenancy();
+      const result = await this.executeQuery(query, [tenancyId]);
+      return result as Array<DayTemplates>;
+    } catch (error) {
+      console.error(`Error getting day templates: ${error}`);
       throw error;
     }
   }

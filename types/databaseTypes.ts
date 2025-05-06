@@ -52,6 +52,14 @@ export interface Classes {
     NUMBER_OF_STUDENTS: number;
 }
 
+export interface DayTemplates {
+    ID: ID;
+    NAME: string;
+    TENANCY_ID: ID;
+    DESCRIPTION: string;
+    TIMESLOTS: Array<number>;
+}
+
 export interface Timeslots {
     ID: ID;
     NAME: string;
