@@ -9,16 +9,10 @@ import oracledb, {
 import path from "path";
 import { getRoleName } from "../utils";
 import {
-  Classes,
-  ClassRoom,
-  ErrorResponse,
   GetTenancyByUserResult,
   GlobalTimeslot,
   ID,
-  Specialty,
-  Subject,
   Syllabus,
-  Teacher,
   Timeslots,
 } from "@/types/databaseTypes";
 import { NormalizedSyllabus } from "@/app/[locale]/(tenancy)/_actions/createClass";
@@ -502,7 +496,7 @@ export class DatabaseService {
     }
   }
 
-  // ----------------- SLOTS ----------------------
+  // ----------------- TIMESLOTS & DAYS ----------------------
 
   async getBasicTimeSlots(global: GlobalTimeslot): Promise<Timeslots[]> {
     const query = `SELECT * FROM TIMESLOT_TEMPLATE WHERE GLOBAL_TEMPLATE = :global AND TENANCY_ID IS NULL`;
@@ -515,8 +509,141 @@ export class DatabaseService {
     }
   }
 
-  // ----------------- SUBJECT -------------------
+  async createTimeslot(
+    name: string,
+    description: string,
+    periodStart: number,
+    periodEnd: number
+  ): Promise<void> {
+    const query = `INSERT INTO timeslots (name, description, period_start, period_end, tenancy_id) VALUES (:name, :description, :periodStart, :periodEnd, :tenancyId)`;
+    try {
+      const tenancyId = this.getTenancy();
+      const bindVariables = [
+        name,
+        description,
+        periodStart,
+        periodEnd,
+        tenancyId,
+      ];
+      await this.executeCommand(query, bindVariables);
+    } catch (error) {
+      console.error(`Error creating timeslot: ${error}`);
+      throw error;
+    }
+  }
+
+  async createDayTemplateWithTimeslots(
+    name: string,
+    description: string,
+    timeslots: Timeslots[]
+  ): Promise<void> {
+    let connection;
+    try {
+      connection = await oracledb.getConnection();
+
+      const tenancyId = Number(this.getTenancy());
+      const names = timeslots.map((t) => t.NAME);
+      const descs = timeslots.map((t) => t.DESCRIPTION);
+      const periodStarts = timeslots.map((t) => t.PERIOD_START);
+      const periodEnds = timeslots.map((t) => t.PERIOD_END);
+
+      const plsql = `
+DECLARE
+  -- Define associative array types for input values.
+  TYPE t_names_type IS TABLE OF VARCHAR2(100) INDEX BY BINARY_INTEGER;
+  TYPE t_descs_type IS TABLE OF VARCHAR2(4000) INDEX BY BINARY_INTEGER;
+  TYPE t_nums_type IS TABLE OF NUMBER INDEX BY BINARY_INTEGER;
   
+  v_names    t_names_type := :names;
+  v_descs    t_descs_type := :descs;
+  v_starts   t_nums_type  := :periodStarts;
+  v_ends     t_nums_type  := :periodEnds;
+  v_tenancy  NUMBER       := :tenancyId;
+  
+  v_ids SYS.ODCINUMBERLIST := SYS.ODCINUMBERLIST();
+BEGIN
+  FORALL i IN 1 .. v_names.COUNT
+    INSERT INTO timeslots (name, description, period_start, period_end, tenancy_id)
+    VALUES (v_names(i), v_descs(i), v_starts(i), v_ends(i), v_tenancy)
+    RETURNING id BULK COLLECT INTO v_ids;
+    
+  OPEN :out_ids FOR SELECT COLUMN_VALUE AS id FROM TABLE(v_ids);
+END;
+    `;
+
+      const bindVars = {
+        names: { type: oracledb.STRING, dir: oracledb.BIND_IN, val: names },
+        descs: { type: oracledb.STRING, dir: oracledb.BIND_IN, val: descs },
+        periodStarts: {
+          type: oracledb.NUMBER,
+          dir: oracledb.BIND_IN,
+          val: periodStarts,
+        },
+        periodEnds: {
+          type: oracledb.NUMBER,
+          dir: oracledb.BIND_IN,
+          val: periodEnds,
+        },
+        tenancyId: {
+          type: oracledb.NUMBER,
+          dir: oracledb.BIND_IN,
+          val: tenancyId,
+        },
+        out_ids: {
+          type: oracledb.CURSOR,
+          dir: oracledb.BIND_OUT,
+          resultSet: true,
+        },
+      };
+
+      const result = (await connection.execute(plsql, bindVars, {
+        outFormat: oracledb.OUT_FORMAT_OBJECT,
+      })) as oracledb.Result<any>;
+
+      const cursor = result.outBinds.out_ids;
+      const rows = await cursor.getRows();
+      await cursor.close();
+      const generatedIds: number[] = rows.map((row: { ID: number }) => row.ID);
+
+      const dayTemplateSQL = `
+      INSERT INTO day_templates (name, description, timeslots, tenancy_id)
+      VALUES (:name, :description, :timeslots, :tenancyId)
+    `;
+      const dayBindVars = {
+        name,
+        description,
+        timeslots: JSON.stringify(generatedIds),
+        tenancyId,
+      };
+
+      await connection.execute(dayTemplateSQL, dayBindVars, {
+        autoCommit: false,
+      });
+
+      await connection.commit();
+    } catch (err) {
+      if (connection) {
+        try {
+          await connection.rollback();
+        } catch (rollbackErr) {
+          console.error("Rollback error:", rollbackErr);
+        }
+      }
+      console.error("Error creating day template with timeslots:", err);
+      throw err;
+    } finally {
+      if (connection) {
+        try {
+          await connection.close();
+        } catch (closeErr) {
+          console.error("Error closing connection:", closeErr);
+        }
+      }
+    }
+  }
+
+  // ----------------- SUBJECT -------------------
+
   async createSubject(
     name: string,
     description: string,
@@ -544,19 +671,26 @@ export class DatabaseService {
     name: string,
     description: string,
     specialtyId: ID | null,
-    helperColor: string | null  
+    helperColor: string | null
   ): Promise<void> {
     const query = `UPDATE subjects SET name = :name, description = :description, specialty_id = :specialtyId, helper_color = :helperColor WHERE id = :id AND (tenancy_id = :tenancyId)`;
     try {
       const tenancyId = this.getTenancy();
-      const bindVariables = [name, description, specialtyId, helperColor, id, tenancyId];
+      const bindVariables = [
+        name,
+        description,
+        specialtyId,
+        helperColor,
+        id,
+        tenancyId,
+      ];
       await this.executeCommand(query, bindVariables);
     } catch (error) {
       console.error(`Error updating subject: ${error}`);
       throw error;
     }
   }
-    
+
   // ----------------- TEACHER -------------------
 
   async createTeacher(
@@ -590,7 +724,7 @@ export class DatabaseService {
       throw error;
     }
   }
-  
+
   // ----------------- SYLLABUS -------------------
 
   async createSyllabus(
@@ -710,7 +844,13 @@ export class DatabaseService {
     const query = `INSERT INTO classrooms (name, capacity, description, speciality_id, tenancy_id) VALUES (:name, :capacity, :description, :specialityId, :tenancyId)`;
     try {
       const tenancyId = this.getTenancy();
-      const bindVariables = [name, capacity, description, specialityId, tenancyId];
+      const bindVariables = [
+        name,
+        capacity,
+        description,
+        specialityId,
+        tenancyId,
+      ];
       await this.executeCommand(query, bindVariables);
     } catch (error) {
       throw error;
@@ -726,7 +866,14 @@ export class DatabaseService {
   ): Promise<void> {
     const tenancyId = this.getTenancy();
     const query = `UPDATE classrooms SET capacity = :capacity,  name = :name, description = :description, speciality_id = :specialityId WHERE id = :id AND tenancy_id = :tenancyId`;
-    const bindVariables = [capacity, name, description, specialityId, id, tenancyId];
+    const bindVariables = [
+      capacity,
+      name,
+      description,
+      specialityId,
+      id,
+      tenancyId,
+    ];
     try {
       await this.executeCommand(query, bindVariables);
     } catch (error) {

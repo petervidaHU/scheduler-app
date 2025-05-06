@@ -20,7 +20,6 @@ import { redirect } from "next/navigation";
 import GridContainer from "../day-planner/GridContainer";
 import HourGrid from "../day-planner/HourGrid";
 import CreateTimeslot from "./CreateTimeslot";
-import DayPlanner from "../day-planner/DayPlanner";
 import TimeslotsList from "../day-planner/TimeslotsList";
 
 const init: FormActionType = {
@@ -72,8 +71,9 @@ const CreateTimeslotTemplate: FC<props> = ({
   manageState();
 
   const handleSubmit = (values: typeof templateForm.values) => {
+    const context = {...values, timeslots: Object.values(activeTimeslots)};
     startTransition(() => {
-      tstAction(values);
+      tstAction(context);
     });
   };
 
