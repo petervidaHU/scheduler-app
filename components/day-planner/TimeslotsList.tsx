@@ -6,7 +6,7 @@ import { ActionIcon, Text } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
 
 interface props {
-  timeSlots: Array<{ timeslot: TimeslotInput; lessonId?: string }>;
+  timeSlots: Array<{ timeslot: TimeslotInput | null; lessonId?: string }>;
   onClickHandler: any;
 }
 
@@ -17,6 +17,7 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
   return (
     <>
       {timeSlots.map((slot) => {
+        if (!slot.timeslot) return null;
         const {
           PERIOD_END: end,
           PERIOD_START: start,

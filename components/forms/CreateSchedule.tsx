@@ -27,7 +27,12 @@ const init: FormActionType = {
 
 const SchedulePage = () => {
   const {
-    tenancyBasedData: { teachers, classes, classRooms, subjects },
+    tenancyBasedData: {
+      teachers: { data: teachers },
+      classes: { data: classes },
+      classRooms: { data: classRooms },
+      subjects: { data: subjects },
+    },
     addDay,
     updateSyllabus,
     updateSchedule,
@@ -48,9 +53,9 @@ const SchedulePage = () => {
     });
   };
 
-  const classOptions = Object.entries(classes).map(([id, classObj]) => ({
+  const classOptions = Object.entries(classes || {}).map(([id, classObj]) => ({
     value: id,
-    label: `${classObj.CLASS_NAME} / (${classObj.NUMBER_OF_STUDENTS} students)`,
+    label: `${classObj.NAME} / (${classObj.NUMBER_OF_STUDENTS} students)`,
   }));
 
   const form = useForm({

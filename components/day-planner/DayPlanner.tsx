@@ -1,42 +1,40 @@
 "use client";
 
 import React from "react";
-import { Group, Text } from "@mantine/core";
 import { DayPlan } from "@/types/ScheduleTypes";
 import { useStore } from "@/store/store";
 import { useModal } from "../ModalProvider";
 import CreateLessonModal from "../modals/CreateLessonModal";
-import ActionIconX from "../UI-elements/ActionIcons/X";
 import TimeslotsList from "./TimeslotsList";
+import { Timeslots } from "@/types/databaseTypes";
 
 interface DayPlannerProps {
   day: DayPlan;
+  timeslots: Array<Timeslots>;
 }
 
-const DayPlanner: React.FC<DayPlannerProps> = ({ day }) => {
+const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots }) => {
   const { openModal, closeModal } = useModal();
-  const {
-    scheduleState: { timeslots },
-  } = useStore();
 
- 
   const handleOpenModal = (slot: string) => {
-    console.log("handle open:", slot);
+    const timeslot = timeslots.find((t) => t.ID.toString() === slot);
     openModal(
-      <CreateLessonModal slotId={slot} day={day.id} closeModal={closeModal} />
+      <CreateLessonModal slotId={timeslot} day={day.id} closeModal={closeModal} />
     );
   };
-
-  // TODO fix input props
-
-  const mappedTimeslots = Object.values(timeslots).map((t) => {
+  const mappedTimeslots = day.timeSlots.map((t) => {
     return {
-      timeslot: t,
-      lessonId: day.timeSlots.find((ts) => ts.timeslotId === t.ID)?.lessonId,
+      timeslot: timeslots.find((ts) => ts.ID === t.timeslotId) || null,
+      lessonId: t.lessonId,
     };
   });
 
-  return (<TimeslotsList timeSlots={mappedTimeslots} onClickHandler={handleOpenModal}/>  );
+  return (
+    <TimeslotsList
+      timeSlots={mappedTimeslots}
+      onClickHandler={handleOpenModal}
+    />
+  );
 };
 
 export default DayPlanner;

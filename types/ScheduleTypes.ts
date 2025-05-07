@@ -24,7 +24,7 @@ export interface DayPlan {
   id: string;
   order: string;
   identifier: string;
-  timeSlots: Array<{timeslotId: string, lessonId?: string}>;
+  timeSlots: Array<{timeslotId: number, lessonId?: string}>;
   lessons: Array<string>;
 }
 
@@ -37,7 +37,7 @@ export interface Schedule {
   [FormFields.owner]: ID | null;
   period: number | null;
   lessons: Record<string, LessonInput>;
-  timeslots: Record<string, Timeslots>;
+  // timeslots: Record<string, Timeslots>;
   days: DayPlan[];
 }
 

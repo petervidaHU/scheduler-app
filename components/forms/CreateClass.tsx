@@ -21,6 +21,7 @@ import {
 import { redirect } from "next/navigation";
 import { Classes, ID } from "@/types/databaseTypes";
 import { createClass } from "@/app/[locale]/(tenancy)/_actions/createClass";
+import { useStore } from "@/store/store";
 
 const init: FormActionType = {
   error: null,
@@ -30,7 +31,7 @@ const init: FormActionType = {
 
 interface ClassesInput extends ManageFormServerProps {
   entity?: Classes;
-  error?: string,
+  error?: string;
 }
 
 interface SyllabusData {
@@ -50,6 +51,12 @@ export const CreateClass: React.FC<ClassesInput> = ({
     ...init,
   });
   const [syllabus, setSyllabus] = useState<SyllabusData>({});
+  const {
+    tenancyBasedData: {
+      teachers: { data: teachers },
+      subjects: { data: subjects },
+    },
+  } = useStore();
 
   const handleSubjectChange = (
     subject: ID,
@@ -109,30 +116,32 @@ export const CreateClass: React.FC<ClassesInput> = ({
           />
           add syllabus
           <Group mt="md">
-            {subjectsList.map((subject, index) => (
+            {Object.values(subjects || {}).map((subject, index) => (
               <Group key={index} mt="md">
                 <div> {subject.label}</div>
                 <NumberInput
                   label="Occurrence per week"
                   placeholder="Occurrence per week"
                   value={
-                    syllabus[subject.value as keyof SyllabusData]?.occurence ||
+                    syllabus[subject.value as keyof SyllabusData]?.occurrence ||
                     0
                   }
                   onChange={(inputValue) =>
                     handleSubjectChange(subject.value, inputValue, "occurence")
                   }
                 />
-                <MultiSelect
-                  searchable
-                  clearable
-                  data={teachersList}
-                  label="Teacher"
-                  placeholder="Select teacher(s)"
-                  onChange={(inputValue) =>
-                    handleSubjectChange(subject.value, inputValue, "teachers")
-                  }
-                />
+                {teachers && (
+                  <MultiSelect
+                    searchable
+                    clearable
+                    data={Object.values(teachers)}
+                    label="Teacher"
+                    placeholder="Select teacher(s)"
+                    onChange={(inputValue) =>
+                      handleSubjectChange(subject.value, inputValue, "teachers")
+                    }
+                  />
+                )}
               </Group>
             ))}
           </Group>

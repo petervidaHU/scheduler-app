@@ -16,7 +16,7 @@ import NotificationCard, {
 } from "../UI-elements/NotificationBadges";
 
 interface props {
-  slotId: string;
+  slot: Timeslots;
   day: ID;
   closeModal: () => void;
 }
@@ -37,10 +37,16 @@ const init: FormActionType = {
   success: false,
 };
 
-const CreateLessonModal: React.FC<props> = ({ slotId, day, closeModal }) => {
-  console.log('slot ID in modal:', slotId);
-  const { syllabus, teachers, classRooms, createOneLesson, subjects, scheduleState: { timeslots } } =
-    useStore();
+const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
+  const {
+    syllabus,
+    tenancyBasedData: {
+      teachers: { data: teachers },
+      classRooms: { data: classRooms },
+      subjects: { data: subjects },
+    },
+    createOneLesson,
+  } = useStore();
   const [warnings, setWarnings] = useState<
     Partial<Record<NotificationContexts, string>>
   >({});
@@ -57,13 +63,13 @@ const CreateLessonModal: React.FC<props> = ({ slotId, day, closeModal }) => {
   const [sState, sAction] = useActionState(createLesson, { ...init });
 
   const subjectOptions = Object.values(syllabus.subjects).map((subject) => ({
-    value: subject.SUBJECT_ID.toString(),
-    label: subjects[subject.SUBJECT_ID].SUBJECT_NAME,
+    value: subject.ID.toString(),
+    label: subjects?.[subject.ID].NAME || '??',
   }));
-
-  const teacherOptions = Object.values(teachers).map((teacher) => ({
-    value: teacher.TEACHER_ID.toString(),
-    label: teacher.TEACHER_NAME,
+  console.log("tttt", teachers);
+  const teacherOptions = Object.values(teachers || {}).map((teacher) => ({
+    value: teacher.ID.toString(),
+    label: teacher.NAME,
   }));
 
   const form = useForm({
@@ -81,8 +87,8 @@ const CreateLessonModal: React.FC<props> = ({ slotId, day, closeModal }) => {
           return null;
         }
         const isSpecialityFit =
-          classRooms[value].SPECIALITY_ID ==
-          subjects[values.subject].SPECIALTY_ID;
+          classRooms?.[value].SPECIALITY_ID ==
+          subjects?.[values.subject].SPECIALTY_ID;
         if (!isSpecialityFit && value) {
           setWarnings((prev) => ({
             ...prev,
@@ -105,14 +111,14 @@ const CreateLessonModal: React.FC<props> = ({ slotId, day, closeModal }) => {
           form.setFieldValue("teacher", newSubject?.TEACHER_ID.toString());
           setPreferredTeacher({
             value: newSubject?.TEACHER_ID.toString(),
-            label: teachers[newSubject?.TEACHER_ID].TEACHER_NAME,
+            label: teachers?.[newSubject?.TEACHER_ID].NAME || '??',
           });
         }
 
-        const specialty = subjects[newSubject.SUBJECT_ID].SPECIALTY_ID || null;
+        const specialty = subjects?.[newSubject.SUBJECT_ID].SPECIALTY_ID || null;
         if (specialty) {
           const groupedBySubjectClassRooms = Object.values(
-            classRooms
+            classRooms || {}
           ).reduce<classRoomsGroupedOptions>(
             (acc, classRoomItem) => {
               if (classRoomItem.SPECIALITY_ID === specialty) {
@@ -143,16 +149,16 @@ const CreateLessonModal: React.FC<props> = ({ slotId, day, closeModal }) => {
   const handleLessonCreate = () => {
     const newLesson: LessonInput = {
       classId: syllabus.classId,
-      subject: form.values.subject,
-      classRoom: form.values.classRoom,
-      teacher: form.values.teacher,
-      timeslot: timeslots[slotId],
+      subject: Number(form.values.subject),
+      classRoom: Number(form.values.classRoom),
+      teacher: Number(form.values.teacher),
+      timeslot: slot.ID,
       tempId: Date.now().toString(),
     };
     createOneLesson({
       dayId: day.toString(),
       newLesson,
-      timeslotId: slotId,
+      timeslotId: slot.ID,
     });
     closeModal();
   };
@@ -195,7 +201,7 @@ const CreateLessonModal: React.FC<props> = ({ slotId, day, closeModal }) => {
             label="Classroom"
             searchable
             clearable
-            data={groupedClassRooms || Object.values(classRooms)}
+            data={groupedClassRooms || Object.values(classRooms || {})}
             {...form.getInputProps("classRoom")}
           />
         </div>

@@ -10,6 +10,7 @@ import {
 import {
   Classes,
   ClassRoom,
+  ID,
   Specialty,
   Subject,
   Teacher,
@@ -54,18 +55,17 @@ interface ScheduleState {
   createOneLesson: (payload: {
     dayId: string;
     newLesson: LessonInput;
-    timeslotId: string;
+    timeslotId: ID;
   }) => void;
   deleteOneLesson: (payload: string) => void;
   updateSchedule: (
     payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>
   ) => void;
-  addTimeslotToSchedule: (payload: Record<string, Timeslots>) => void;
-  addTimeslotToDay: (payload: { dayId: string; timeslotId: string }) => void;
+  addTimeslotToDay: (payload: { dayId: string; timeslotId: ID }) => void;
 
   addActiveTimeslot: (payload: TimeslotInput) => void;
-  removeActiveTimeslot: (payload: number) => void;
-  selectActiveTimeslot: (payload: number) => TimeslotInput;
+  removeActiveTimeslot: (payload: ID) => void;
+  selectActiveTimeslot: (payload: ID) => TimeslotInput;
 }
 
 const createScheduleSlice = (set: any, get: any): ScheduleState => ({
@@ -85,7 +85,6 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
     owner: null,
     period: null,
     lessons: {},
-    timeslots: {},
     days: [],
   },
 
@@ -123,7 +122,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
   selectActiveTimeslot: (payload: number) =>
     get().activeTimeslots[payload],
 
-  addTimeslotToSchedule: (payload: Record<string, Timeslots>) =>
+/*   addTimeslotToSchedule: (payload: Record<string, Timeslots>) =>
     set((state: ScheduleState) => ({
       ...state,
       scheduleState: {
@@ -133,13 +132,13 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
           ...payload,
         },
       },
-    })),
-  addTimeslotToDay: (payload: { dayId: string; timeslotId: string }) =>
+    })), */
+  addTimeslotToDay: (payload: { dayId: string; timeslotId: number }) =>
     set((state: ScheduleState) => {
       const oldDays =
         state.scheduleState.days.find((day) => day.id === payload.dayId)
           ?.timeSlots || [];
-      const timeSlots = state.scheduleState.timeslots;
+      // const timeSlots = state.scheduleState.timeslots;
       oldDays.push({ timeslotId: payload.timeslotId });
       return {
         ...state,
@@ -192,7 +191,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
         (day) => day.id === payload.dayId
       );
       const timeSlotIndex = days[newdayIndex].timeSlots?.findIndex(
-        (timeSlot) => timeSlot.timeslotId === payload.timeslotId
+        (timeSlot) => timeSlot.timeslotId.toString() === payload.timeslotId
       );
       if (newdayIndex < 0 || timeSlotIndex < 0) {
         console.log("store error", newdayIndex, timeSlotIndex);

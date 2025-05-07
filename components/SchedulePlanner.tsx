@@ -1,54 +1,47 @@
 "use client";
 
-import React from "react";
+import React, { FC } from "react";
 import { useStore } from "@/store/store";
-import { ActionIcon, Flex, Grid } from "@mantine/core";
-import { Timeslots } from "@/types/databaseTypes";
-import { nanoid } from "nanoid";
+import { ActionIcon, Grid, Select, Stack } from "@mantine/core";
+import { DayTemplates, Timeslots } from "@/types/databaseTypes";
 import HourGrid from "./day-planner/HourGrid";
 import { IconTrash } from "@tabler/icons-react";
 import DayPlanner from "./day-planner/DayPlanner";
 import PlannerGridHeader from "./day-planner/PlannerGridHeader";
 import GridContainer from "./day-planner/GridContainer";
 
-const gridHeaderHeight = "100px";
-const SchedulePlanner = () => {
+interface props {
+  dayTemplates: Array<DayTemplates>;
+  timeslots: Array<Timeslots>
+}
+
+const gridHeaderHeight = "150px";
+const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
   const [openForNewSlot, setOpenForNewSlot] = React.useState(false);
   const {
-    scheduleState: { days, timeslots, lessons },
+    scheduleState: { days },
     windowHeight,
-    addTimeslotToSchedule,
     addTimeslotToDay,
   } = useStore();
 
-  const handleAddTimeslots = (dayId: string, slots: Array<Timeslots>) => {
+  const handleAddTimeslots = (dayId: string, templateId: string) => {
+    const template = dayTemplates.find((t) => t.ID.toString() === templateId);
+    const timeslotId = template?.TIMESLOTS || [];
     const day = days.find((d) => d.id === dayId);
     if (!day) return;
 
-    const timeslotsInSchedule = Object.values(timeslots).map((t) => t.ID);
-
-    slots.forEach((slot: Timeslots) => {
-      let timeslotId: string;
-
-      if (!timeslotsInSchedule.includes(slot.ID)) {
-        timeslotId = nanoid();
-        addTimeslotToSchedule({ [timeslotId]: slot });
-      } else {
-        const id = Object.keys(timeslots).find(
-          (t) => timeslots[t].ID === slot.ID
-        );
-        if (!id) {
-          throw new Error("error happened during adding timeslots to day!");
-        }
-        timeslotId = id;
-      }
-
+    timeslotId.forEach((slot: number) => {
       const timeslotsInDay = day.timeSlots.map((t) => t.timeslotId);
-      if (!timeslotsInDay.includes(timeslotId)) {
-        addTimeslotToDay({ dayId, timeslotId });
+      if (!timeslotsInDay.includes(slot)) {
+        addTimeslotToDay({ dayId, timeslotId: slot });
       }
     });
   };
+
+  const dayTemplateOptions = dayTemplates.map((t) => ({
+    label: t.NAME,
+    value: t.ID.toString(),
+  }));
 
   return (
     <div>
@@ -59,17 +52,16 @@ const SchedulePlanner = () => {
       />
       <h3>schedule planner</h3>
       <Grid>
-        
         <Grid.Col span={1}>
           <PlannerGridHeader height={gridHeaderHeight}>Time</PlannerGridHeader>
           <HourGrid />
         </Grid.Col>
-        
+
         {days.map((day) => (
           <React.Fragment key={day.id}>
             <Grid.Col span={2}>
-              
               <PlannerGridHeader height={gridHeaderHeight}>
+                <Stack>
                 <ActionIcon
                   onClick={() => useStore.getState().deleteDay(day.id)}
                 >
@@ -79,13 +71,18 @@ const SchedulePlanner = () => {
                   />
                 </ActionIcon>
                 {day.identifier || day.id}
+                <Select
+                  label="choose timeslot template"
+                  data={dayTemplateOptions}
+                  onChange={(value) => handleAddTimeslots(day.id, value!)}
+                />
+                </Stack>
               </PlannerGridHeader>
 
               <GridContainer windowHeight={windowHeight}>
-                <DayPlanner day={day} />
+                <DayPlanner day={day} timeslots={timeslots} />
                 {openForNewSlot && <HourGrid />}
               </GridContainer>
-
             </Grid.Col>
           </React.Fragment>
         ))}

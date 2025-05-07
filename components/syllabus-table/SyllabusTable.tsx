@@ -8,12 +8,19 @@ import React, { useMemo } from "react";
 import SyllabusCard from "./SyllabusCard";
 
 const SyllabusTable = () => {
-  const { syllabus, scheduleState, tenancyBasedData: { classRooms, subjects, teachers }} =
-    useStore();
+  const {
+    syllabus,
+    scheduleState,
+    tenancyBasedData: {
+      classRooms: { data: classRooms },
+      subjects: { data: subjects },
+      teachers: { data: teachers },
+    },
+  } = useStore();
   const validatorFn = useSubjectValidation(
     scheduleState.lessons,
-    subjects,
-    classRooms,
+    subjects || {},
+    classRooms || {},
     {}
   );
 
@@ -43,9 +50,9 @@ const SyllabusTable = () => {
       <h3>SyllabusTable </h3>
       <SimpleGrid cols={4}>
         {Object.entries(syllabus.subjects).map(([key, subject]) => {
-          const subjectLabel = subjects[subject.SUBJECT_ID].label;
+          const subjectLabel = subjects?.[subject.SUBJECT_ID].label || "??";
           const teacherLabel = subject.TEACHER_ID
-            ? teachers[subject.TEACHER_ID].label
+            ? teachers?.[subject.TEACHER_ID].label || "??"
             : "none";
           const occurence = subjectOccurrences[subject.SUBJECT_ID] || 0;
           const plannedOccurence = subject.OCCURRENCE;

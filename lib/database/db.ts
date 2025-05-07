@@ -499,10 +499,11 @@ export class DatabaseService {
 
   // ----------------- TIMESLOTS & DAYS ----------------------
 
-  async getBasicTimeSlots(global: GlobalTimeslot): Promise<Timeslots[]> {
-    const query = `SELECT * FROM TIMESLOT_TEMPLATE WHERE GLOBAL_TEMPLATE = :global AND TENANCY_ID IS NULL`;
+  async getBasicTimeSlots(): Promise<Timeslots[]> {
+    const query = `SELECT * FROM TIMESLOTS WHERE tenancy_id = :tenancyId OR TENANCY_ID IS NULL`;
     try {
-      const result = await this.executeQuery(query, [global]);
+      const tenancyId = this.getTenancy();
+      const result = await this.executeQuery(query, [tenancyId]);
       return result as Timeslots[];
     } catch (error) {
       console.error(`Error getting timeslots: ${error}`);
