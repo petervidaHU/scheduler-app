@@ -10,6 +10,7 @@ import {
   Select,
   NumberInput,
   MultiSelect,
+  ActionIcon,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
@@ -22,6 +23,7 @@ import { redirect } from "next/navigation";
 import { Classes, ID } from "@/types/databaseTypes";
 import { createClass } from "@/app/[locale]/(tenancy)/_actions/createClass";
 import { useStore } from "@/store/store";
+import { IconTrash } from "@tabler/icons-react";
 
 const init: FormActionType = {
   error: null,
@@ -88,7 +90,7 @@ export const CreateClass: React.FC<ClassesInput> = ({
 
   const handleClassSubmit = (values: typeof classForm.values) => {
     const filteredSyllabus = Object.entries(syllabus)
-      .filter(([_subject, { occurence }]) => occurence > 0)
+      .filter(([_subject, { occurrence }]) => occurrence > 0)
       .reduce((acc, [subject, syll]) => ({ ...acc, [subject]: syll }), {});
     values.syllabus = filteredSyllabus;
 
@@ -97,8 +99,17 @@ export const CreateClass: React.FC<ClassesInput> = ({
     });
   };
 
-  // TODO update create / edit with state refetch logic
+  const handleAddSubject = (subject: string) => {
+    setSyllabus((prev) => ({
+      ...prev,
+      [subject]: {
+        teacher: "",
+        occurrence: 0,
+      },
+    }));
+  };
 
+  console.log("SYLLABUS::", syllabus);
   return (
     <Container size="md" my="xl">
       <form onSubmit={classForm.onSubmit(handleClassSubmit)}>
@@ -115,35 +126,51 @@ export const CreateClass: React.FC<ClassesInput> = ({
             {...classForm.getInputProps("numberOfStudents")}
           />
           add syllabus
+          <Select
+            label="Choose subject"
+            data={Object.values(subjects || {})}
+            onChange={(inputValue) =>
+              inputValue && handleAddSubject(inputValue)
+            }
+          />
           <Group mt="md">
-            {Object.values(subjects || {}).map((subject, index) => (
-              <Group key={index} mt="md">
-                <div> {subject.label}</div>
-                <NumberInput
-                  label="Occurrence per week"
-                  placeholder="Occurrence per week"
-                  value={
-                    syllabus[subject.value as keyof SyllabusData]?.occurrence ||
-                    0
-                  }
-                  onChange={(inputValue) =>
-                    handleSubjectChange(subject.value, inputValue, "occurence")
-                  }
-                />
-                {teachers && (
-                  <MultiSelect
-                    searchable
-                    clearable
-                    data={Object.values(teachers)}
-                    label="Teacher"
-                    placeholder="Select teacher(s)"
+            {Object.entries(syllabus).map(([keyString, value]) => {
+              const key = Number(keyString);
+              return (
+                <Group key={key} mt="md">
+                  <div> {subjects?.[Number(key)]?.NAME}</div>
+                  <NumberInput
+                    label="Occurrence per week"
+                    placeholder="Occurrence per week"
+                    value={syllabus[Number(key)]?.occurrence || 0}
                     onChange={(inputValue) =>
-                      handleSubjectChange(subject.value, inputValue, "teachers")
+                      handleSubjectChange(Number(key), inputValue, "occurrence")
                     }
                   />
-                )}
-              </Group>
-            ))}
+                  {teachers && (
+                    <MultiSelect
+                      searchable
+                      clearable
+                      data={Object.values(teachers)}
+                      label="Teacher"
+                      placeholder="Select teacher(s)"
+                      onChange={(inputValue) =>
+                        handleSubjectChange(Number(key), inputValue, "teachers")
+                      }
+                    />
+                  )}
+                  <ActionIcon
+                    onClick={() => {
+                      const newSyllabus = { ...syllabus };
+                      delete newSyllabus[key];
+                      setSyllabus(newSyllabus);
+                    }}
+                  >
+                    <IconTrash />
+                  </ActionIcon>
+                </Group>
+              );
+            })}
           </Group>
           <Group mt="md">
             <Button disabled={isPending} type="submit">
