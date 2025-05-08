@@ -44,7 +44,7 @@ export class DatabaseService {
   private pool: oracledb.Pool | undefined;
   private tenancyId: ID | null = null;
 
-  constructor() {}
+  constructor() { }
 
   public static async getInstance(): Promise<DatabaseService> {
     if (!DatabaseService.instance) {
@@ -853,7 +853,7 @@ END;
 
     console.log("arrrrray::", values);
 
-    const rows = values.subjects.map((_, index) => 
+    const rows = values.subjects.map((_, index) =>
       `(${classId}, ${values.subjects[index]}, '${values.teachers[index]}', ${values.occurrence[index]}, ${tenancyId})`
     ).join(",\n");
 
@@ -915,6 +915,116 @@ END;
       await this.executeCommand(query, bindVariables);
     } catch (error) {
       throw error;
+    }
+  }
+
+  private collectLessonIds(timeSlots: Array<{ timeslotId: ID; lessonId?: string }>): string[] {
+    return timeSlots
+      .filter(slot => slot.lessonId)
+      .map(slot => slot.lessonId as string);
+  }
+
+  async createSchedule(
+    period: number,
+    description: string,
+    owner: string,
+    lessons: Record<string, LessonInput>,
+    days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }> }>
+  ): Promise<number> {
+    const conn = await this.pool!.getConnection();
+    if (!conn) {
+      throw new Error("Failed to get connection");
+    }
+
+    try {
+      // Create the schedule first
+      const querySchedule = `
+        INSERT INTO SCHEDULE (TENANCY_ID, PERIOD, DESCRIPTION, OWNER)
+        VALUES (:tenancyId, :period, :description, :owner)
+        RETURNING ID INTO :scheduleId
+      `;
+      
+      const tenancyId = this.getTenancy();
+      const bindVariables = {
+        tenancyId,
+        period,
+        description,
+        owner,
+        scheduleId: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
+      };
+
+      const result = await conn.execute(querySchedule, bindVariables);
+      const scheduleId = result.outBinds.scheduleId[0];
+
+      // DAY
+      let dayIDs: any = {};
+      for (let i = 0; i < days.length; i++) {
+        const day = days[i];
+        if (!day) continue;
+
+        const queryDay = `
+          INSERT INTO DAYS (
+            TENANCY_ID, SCHEDULE_ID, 
+            SLOT_ORDER, DAY_IDENTIFIER
+          ) VALUES (
+            :tenancyId, :scheduleId, :slotOrder, :dayIdentifier
+          )
+          RETURNING ID INTO :dayId
+        `;
+
+        const lessonBindVars = {
+          tenancyId: Number(tenancyId),
+          scheduleId: Number(scheduleId),
+          slotOrder: i,
+          dayIdentifier: day.id,
+          dayId: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
+        };
+
+        const result = await conn.execute(queryDay, lessonBindVars);
+        dayIDs[day.id] = result.outBinds?.dayId[0];
+
+        const lessonsInDay = this.collectLessonIds(day.timeSlots);
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++lessonsInDay", lessonsInDay);
+
+        
+      }
+
+      // lessons
+      for (const [_, lesson] of Object.entries(lessons)) {
+        const day = days.find(d => d.timeSlots.some(ts => ts.timeslotId === lesson.timeslot));
+        if (!day) continue;
+
+        const queryLesson = `
+          INSERT INTO LESSONS (
+            TENANCY_ID, SCHEDULE_ID, TEMPLATE_ID, DAYS_ID, 
+            SUBJECT_ID, CLASS_ID, TEACHERS, CLASSROOM_ID
+          ) VALUES (
+            :tenancyId, :scheduleId, :templateId, :daysId,
+            :subjectId, :classId, :teachers, :classroomId
+          )
+        `;
+
+        const lessonBindVars = {
+          tenancyId: Number(tenancyId),
+          scheduleId: Number(scheduleId),
+          templateId: Number(lesson.timeslot),
+          daysId: dayIDs[day.id],
+          subjectId: Number(lesson.subject),
+          classId: Number(lesson.classId),
+          teachers: JSON.stringify(this.collectLessonIds(day.timeSlots)),
+          classroomId: Number(lesson.classRoom)
+        };
+
+        await conn.execute(queryLesson, lessonBindVars);
+      }
+
+      await conn.commit();
+      return scheduleId;
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.close();
     }
   }
 }

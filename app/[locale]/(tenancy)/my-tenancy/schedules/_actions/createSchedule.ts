@@ -1,13 +1,43 @@
 'use server';
 
-export async function createSchedule(state, formData: any) {
-  // Parse the form data
-  const days = Number(formData.get('days'));
-  const classType = formData.get('class') as string;
-  const variations = Number(formData.get('variations'));
-  const description = formData.get('description') as string;
+import { getDbInstance } from "@/lib/database/db-instance";
+import { FormActionType, LessonInput } from "@/types/FormActionType";
+import { ID } from "@/types/databaseTypes";
 
-  console.log('Creating schedule:', { days, classType, variations, description });
+export interface ScheduleContext {
+  name: string;
+  description: string;
+  period: number;
+  class: string;
+  lessons: Record<string, LessonInput>;
+  days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID }> }>;
+}
 
-  return { success: true, data: null, error: null };
+export async function createSchedule(state: FormActionType, context: ScheduleContext): Promise<FormActionType> {
+  console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++context", context);
+  try {
+    const db = await getDbInstance();
+    
+    // Create schedule and lessons in a single transaction
+    const scheduleId = await db.createSchedule(
+      context.period,
+      context.description,
+      context.name,
+      context.lessons,
+      context.days
+    );
+
+    return {
+      success: true,
+      data: { id: scheduleId },
+      error: null
+    };
+  } catch (error) {
+    console.error('Error creating schedule:', error);
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
 }

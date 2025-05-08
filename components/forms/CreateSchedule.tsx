@@ -9,7 +9,7 @@ import {
   Checkbox,
   TextInput,
 } from "@mantine/core";
-import { createSchedule } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
+import { createSchedule, ScheduleContext } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
 import { FormActionType } from "@/types/FormActionType";
 import { useActionState, useTransition } from "react";
 import { useStore } from "@/store/store";
@@ -36,6 +36,7 @@ const SchedulePage = () => {
     addDay,
     updateSyllabus,
     updateSchedule,
+    scheduleState: { days, lessons },
   } = useStore();
   const [isPending, startTransition] = useTransition();
   const [sState, sAction] = useActionState(createSchedule, {
@@ -78,7 +79,6 @@ const SchedulePage = () => {
         if (!newSyllabus) {
           return;
         }
-        console.log("newSyllabus", newSyllabus);
 
         // updateSyllabus(syllabusMapping(newSyllabus));
         updateSyllabus(newSyllabus);
@@ -87,8 +87,14 @@ const SchedulePage = () => {
   });
 
   const handleScheduleFormSubmit = (values: typeof form.values) => {
+    const scheduleContext: ScheduleContext = {
+      period: days.length,
+      ...values,
+      days: days,
+      lessons: lessons,
+    };
     startTransition(() => {
-      sAction(values);
+      sAction(scheduleContext);
     });
   };
 
@@ -107,7 +113,7 @@ const SchedulePage = () => {
     addDay(newDay);
   };
 
-  console.log(sState);
+  // console.log(sState);
 
   return (
     <>
