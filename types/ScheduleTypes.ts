@@ -53,6 +53,19 @@ export type SyllabusForm = {
   subjects: Record<ID, SyllabusFormProperties>;
 };
 
+export type SyllabusWithOptions = {
+  [subjectId: string]: {
+    value: string;
+    label: string;
+    ID: ID;
+    CLASS_ID: ID;
+    SUBJECT_ID: ID;
+    TEACHERS: ID[];
+    TENANCY_ID: ID;
+    OCCURRENCE: number;
+  }
+};
+
 // TODO turn key: string to key: ID
 export interface DataWithOptions<T> {
   [key: string]: T & SelectOptions;

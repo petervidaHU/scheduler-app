@@ -2,7 +2,7 @@
 
 import { createLesson } from "@/app/[locale]/(tenancy)/_actions/createLesson";
 import { useStore } from "@/store/store";
-import { ID, Timeslots } from "@/types/databaseTypes";
+import { ID, Timeslots, ClassRoom, Subject, Teacher } from "@/types/databaseTypes";
 import {
   FormActionType,
   LessonInput,
@@ -14,6 +14,8 @@ import { useActionState, useTransition, useState } from "react";
 import NotificationCard, {
   NotificationContexts,
 } from "../UI-elements/NotificationBadges";
+import { useRouter } from "@/lib/i18n/navigation";
+import { DataWithOptions, SyllabusWithOptions } from "@/types/ScheduleTypes";
 
 interface props {
   slot: Timeslots;
@@ -51,28 +53,29 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
     Partial<Record<NotificationContexts, string>>
   >({});
   const [isPending, startTransition] = useTransition();
-  const [preferredTeacherCheckbox, setPreferredTeacherCheckbox] =
-    useState(false);
-  const [subjectSpecialityId, setSubjectSpecialityId] = useState<string | null>(
-    null
-  );
-  const [preferredTeacher, setPreferredTeacher] =
-    useState<SelectOptions | null>(null);
-  const [groupedClassRooms, setGroupedClassRooms] =
-    useState<classRoomsGroupedOptions | null>(null);
+  const [preferredTeacherCheckbox, setPreferredTeacherCheckbox] = useState(false);
+  const [subjectSpecialityId, setSubjectSpecialityId] = useState<string | null>(null);
+  const [preferredTeacher, setPreferredTeacher] = useState<SelectOptions | null>(null);
+  const [groupedClassRooms, setGroupedClassRooms] = useState<classRoomsGroupedOptions | null>(null);
   const [sState, sAction] = useActionState(createLesson, { ...init });
 
-  const subjectOptions = Object.values(syllabus.subjects).map((subject) => ({
-    value: subject.ID.toString(),
-    label: subjects?.[subject.ID].NAME || '??',
+  const subjectOptions = Object.entries(syllabus || {}).map(([subjectId, subject]) => ({
+    value: subjectId,
+    label: subjects?.[Number(subjectId)]?.NAME || '??',
   }));
-  console.log("tttt", teachers);
+
   const teacherOptions = Object.values(teachers || {}).map((teacher) => ({
     value: teacher.ID.toString(),
     label: teacher.NAME,
   }));
 
-  const form = useForm({
+  interface FormValues {
+    subject: string;
+    classRoom: string;
+    teacher: string;
+  }
+
+  const form = useForm<FormValues>({
     initialValues: {
       subject: "",
       classRoom: "",
@@ -81,14 +84,16 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
     validateInputOnChange: ["classRoom"],
     validate: {
       subject: (value) => (!value ? "subject is required" : null),
-      classRoom: (value, values) => {
+      classRoom: (value, values: FormValues) => {
         if (!value) {
           setWarnings((prev) => ({ ...prev, classRoom: "" }));
           return null;
         }
-        const isSpecialityFit =
-          classRooms?.[value].SPECIALITY_ID ==
-          subjects?.[values.subject].SPECIALTY_ID;
+        const subjectId = values.subject;
+        const classRoomId = value;
+        const classRoom = (classRooms as Record<string, ClassRoom & SelectOptions>)?.[classRoomId];
+        const subject = (subjects as Record<string, Subject & SelectOptions>)?.[subjectId];
+        const isSpecialityFit = classRoom?.SPECIALITY_ID === subject?.SPECIALTY_ID;
         if (!isSpecialityFit && value) {
           setWarnings((prev) => ({
             ...prev,
@@ -102,20 +107,28 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
     },
 
     onValuesChange: (values, previous) => {
-      if (!values.subject) setGroupedClassRooms(null);
+      if (!values.subject) {
+        setGroupedClassRooms(null);
+        setPreferredTeacher(null);
+        setPreferredTeacherCheckbox(false);
+        return;
+      }
 
-      if (values.subject && values.subject !== previous.subject) {
-        const newSubject = syllabus.subjects[values.subject];
+      if (values.subject !== previous.subject) {
+        const newSubject = syllabus[values.subject];
 
-        if (newSubject?.TEACHER_ID) {
-          form.setFieldValue("teacher", newSubject?.TEACHER_ID.toString());
+        if (newSubject?.TEACHERS?.length > 0) {
+          const teacherId = newSubject.TEACHERS[0].toString();
+          const teacherName = (teachers as Record<string, Teacher & SelectOptions>)?.[teacherId]?.NAME || '??';
+          
           setPreferredTeacher({
-            value: newSubject?.TEACHER_ID.toString(),
-            label: teachers?.[newSubject?.TEACHER_ID].NAME || '??',
+            value: teacherId,
+            label: teacherName,
           });
+          form.setFieldValue("teacher", teacherId);
         }
 
-        const specialty = subjects?.[newSubject.SUBJECT_ID].SPECIALTY_ID || null;
+        const specialty = (subjects as Record<string, Subject & SelectOptions>)?.[newSubject.SUBJECT_ID.toString()]?.SPECIALTY_ID || null;
         if (specialty) {
           const groupedBySubjectClassRooms = Object.values(
             classRooms || {}
@@ -148,7 +161,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
 
   const handleLessonCreate = () => {
     const newLesson: LessonInput = {
-      classId: syllabus.classId,
+      classId: syllabus[form.values.subject]?.CLASS_ID || 0,
       subject: Number(form.values.subject),
       classRoom: Number(form.values.classRoom),
       teacher: Number(form.values.teacher),
@@ -163,24 +176,15 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
     closeModal();
   };
 
-  /*   const handleScheduleFormSubmit = (values: typeof form.values) => {
-    startTransition(() => {
-      console.log("values", values);
-      const extendedValues = {
-        ...values,
-        timeslot: slot.TEMPLATE_ID,
-        classId: syllabus.classId,
-        day: day,
-      };
-      sAction(extendedValues);
-    });
-  }; */
-
-  const handlepreferredTeacherCheck = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setPreferredTeacherCheckbox(e.target.checked);
-    form.setFieldValue("teacher", preferredTeacher?.value || "");
+  const handlepreferredTeacherCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    setPreferredTeacherCheckbox(isChecked);
+    
+    if (isChecked && preferredTeacher) {
+      form.setFieldValue("teacher", preferredTeacher.value);
+    } else {
+      form.setFieldValue("teacher", "");
+    }
   };
 
   return (

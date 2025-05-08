@@ -15,6 +15,7 @@ export const getSyllabusAction = async (classId: ID): Promise<DataWithOptions<Sy
           value: item.SUBJECT_ID.toString(),
           label: item.SUBJECT_ID.toString(),
           ...item,
+          TEACHERS: item.TEACHERS ? JSON.parse(item.TEACHERS) : [],
         };
         return acc;
       },

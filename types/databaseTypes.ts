@@ -85,7 +85,7 @@ export interface Syllabus {
     ID: ID;
     CLASS_ID: ID;
     SUBJECT_ID: ID;
-    TEACHER_ID: ID | null;
+    TEACHERS: string;
     TENANCY_ID: ID;
     OCCURRENCE: number;
 }

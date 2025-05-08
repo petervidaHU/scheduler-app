@@ -6,6 +6,7 @@ import {
   SyllabusForm,
   TenancyBasedData,
   DataWithOptions,
+  SyllabusWithOptions,
 } from "@/types/ScheduleTypes";
 import {
   Classes,
@@ -32,7 +33,7 @@ interface ScheduleState {
 
   //Schedule
   scheduleState: Schedule;
-  syllabus: SyllabusForm;
+  syllabus: SyllabusWithOptions;
 
   //Timeslots
   activeTimeslots: Record<number, TimeslotInput>;
@@ -88,10 +89,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
     days: [],
   },
 
-  syllabus: {
-    classId: 0,
-    subjects: {},
-  },
+  syllabus: {} as SyllabusWithOptions,
 
   activeTimeslots: {},
   activeTemplate: {
@@ -183,7 +181,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
   createOneLesson: (payload: {
     dayId: string;
     newLesson: LessonInput;
-    timeslotId: string;
+    timeslotId: ID;
   }) =>
     set((state: ScheduleState) => {
       const days = state.scheduleState.days;
@@ -191,7 +189,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
         (day) => day.id === payload.dayId
       );
       const timeSlotIndex = days[newdayIndex].timeSlots?.findIndex(
-        (timeSlot) => timeSlot.timeslotId.toString() === payload.timeslotId
+        (timeSlot) => timeSlot.timeslotId === payload.timeslotId
       );
       if (newdayIndex < 0 || timeSlotIndex < 0) {
         console.log("store error", newdayIndex, timeSlotIndex);
