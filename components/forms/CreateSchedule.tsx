@@ -62,13 +62,13 @@ const SchedulePage = () => {
   const form = useForm({
     initialValues: {
       [FormFields.name]: "",
-      [FormFields.class]: null,
+      [FormFields.class]: "",
       [FormFields.description]: "",
-      [FormFields.owner]: null,
-      [FormFields.status]: null,
+      [FormFields.owner]: "",
+      [FormFields.status]: "",
+      variations: "",
     },
     validate: {
-      // owner: (value) => (!value ? "Owner is required" : null),
       class: (value) => (!value ? "Class is required" : null),
     },
     onValuesChange: async (values, previous) => {
@@ -89,7 +89,6 @@ const SchedulePage = () => {
           return;
         }
 
-        // updateSyllabus(syllabusMapping(newSyllabus));
         updateSyllabus(newSyllabus);
       }
     },
@@ -128,8 +127,6 @@ const SchedulePage = () => {
     addDay(newDay);
   };
 
-  // console.log(sState);
-
   return (
     <>
       <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
@@ -144,28 +141,27 @@ const SchedulePage = () => {
           label="Class"
           name={FormFields.class}
           data={classOptions}
-          {...form.getInputProps(FormFields.class)}
+          value={form.values.class}
+          onChange={(value) => form.setFieldValue(FormFields.class, value || "")}
         />
         <TextInput
           label="Name"
           name={FormFields.name}
-          {...form.getInputProps(FormFields.name)}
+          value={form.values.name}
+          onChange={(event) => form.setFieldValue(FormFields.name, event.currentTarget.value)}
         />
         <TextInput
           label="Owner"
           name={FormFields.owner}
-          {...form.getInputProps(FormFields.owner)}
+          value={form.values.owner}
+          onChange={(event) => form.setFieldValue(FormFields.owner, event.currentTarget.value)}
         />
-
-        <NumberInput
-          label="Variations"
-          name="variations"
-          {...form.getInputProps("variations")}
-        />
+  
         <Textarea
           label="Description"
           name={FormFields.description}
-          {...form.getInputProps(FormFields.description)}
+          value={form.values.description}
+          onChange={(event) => form.setFieldValue(FormFields.description, event.currentTarget.value)}
         />
         <Button type="submit">Create Schedule</Button>
       </form>
