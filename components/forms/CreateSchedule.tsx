@@ -73,6 +73,15 @@ const SchedulePage = () => {
     },
     onValuesChange: async (values, previous) => {
       updateScheduleState(values, previous);
+      
+      // If class changed and name is empty, populate it
+      if (values.class !== previous.class && values.class) {
+        const selectedClass = classes?.[values.class];
+        if (selectedClass && !values.name) {
+          form.setFieldValue(FormFields.name, `Weekly schedule for ${selectedClass.NAME}`);
+        }
+      }
+
       if (values.class !== form.values.class && values.class !== "") {
         const newSyllabus = await getSyllabusAction(Number(values.class));
 
