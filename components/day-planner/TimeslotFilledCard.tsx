@@ -1,5 +1,5 @@
-import { Group, Text } from "@mantine/core";
-import React, { FC } from "react";
+import { Group, Text, Tooltip, Stack } from "@mantine/core";
+import React, { FC, useState } from "react";
 import ActionIconX from "../UI-elements/ActionIcons/X";
 import { useStore } from "@/store/store";
 
@@ -13,6 +13,7 @@ const TimeslotFilledCard: FC<props> = ({ lessonId }) => {
     scheduleState: { lessons },
     deleteOneLesson
   } = useStore();
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleDeleteLesson = (event: any, id: string) => {
     event.stopPropagation();
@@ -22,19 +23,47 @@ const TimeslotFilledCard: FC<props> = ({ lessonId }) => {
   const lesson = lessons[lessonId];
   if (!lesson) return null;
 
+  const subjectName = subjects.data?.[lesson.subject]?.NAME || 'Unknown Subject';
+  const teacherName = lesson.teacher && teachers.data?.[lesson.teacher]?.NAME || 'Unknown Teacher';
+  const roomName = lesson.classRoom && classRooms.data?.[lesson.classRoom]?.NAME || 'Unknown Room';
+
   return (
-    <Group>
-      <Text size="s">{subjects.data?.[lesson.subject]?.NAME || 'Unknown Subject'}</Text>
-      <Text size="xs">
-        {lesson.teacher && teachers.data?.[lesson.teacher]?.NAME || 'Unknown Teacher'}
-      </Text>
-      <Text size="xs">
-        {lesson.classRoom && classRooms.data?.[lesson.classRoom]?.NAME || 'Unknown Room'}
-      </Text>
-      <ActionIconX
-        label="delete"
-        onClickCallback={(e) => handleDeleteLesson(e, lesson.tempId)}
-      />
+    <Group 
+      style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Tooltip
+        label={
+          <Stack gap="xs">
+            <Text size="sm" fw={500}>{subjectName}</Text>
+            <Text size="xs">Teacher: {teacherName}</Text>
+            <Text size="xs">Room: {roomName}</Text>
+          </Stack>
+        }
+        position="right"
+        withArrow
+        transitionProps={{ transition: 'fade', duration: 200 }}
+      >
+        <Text 
+          size="s" 
+          style={{ 
+            whiteSpace: 'nowrap', 
+            overflow: 'hidden', 
+            textOverflow: 'ellipsis',
+            flex: 1
+          }}
+        >
+          {subjectName}
+        </Text>
+      </Tooltip>
+      {isHovered && (
+        <ActionIconX
+          label="delete"
+          onClickCallback={(e) => handleDeleteLesson(e, lesson.tempId)}
+          style={{ flexShrink: 0, opacity: 0.8 }}
+        />
+      )}
     </Group>
   );
 };

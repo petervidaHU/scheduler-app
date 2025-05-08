@@ -42,12 +42,13 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
               background: `${slot.lessonId ? "rgba(122, 13, 136, 0.5)" : "rgba(255, 208, 235, .5)"}`,
               border: "1px solid #8cbce6",
               borderRadius: "4px",
-              padding: "2px 4px",
+              padding: "4px 8px",
               boxSizing: "border-box",
               zIndex: 100,
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              overflow: "hidden",
             }}
           >
             {slot.lessonId ? (
