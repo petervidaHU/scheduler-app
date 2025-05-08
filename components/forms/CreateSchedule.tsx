@@ -67,8 +67,8 @@ const SchedulePage = () => {
       [FormFields.status]: null,
     },
     validate: {
-      owner: (value) => (!value ? "Owner is required" : null),
-      name: (value) => (!value ? "Owner is required" : null),
+      // owner: (value) => (!value ? "Owner is required" : null),
+      class: (value) => (!value ? "Class is required" : null),
     },
     onValuesChange: async (values, previous) => {
       updateScheduleState(values, previous);
@@ -130,6 +130,12 @@ const SchedulePage = () => {
           name={FormFields.name}
           {...form.getInputProps(FormFields.name)}
         />
+        <TextInput
+          label="Owner"
+          name={FormFields.owner}
+          {...form.getInputProps(FormFields.owner)}
+        />
+
         <NumberInput
           label="Variations"
           name="variations"
