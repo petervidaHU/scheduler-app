@@ -8,7 +8,8 @@ export const useTenancyBasedFormResponse = (
   state: { success: boolean; error: any },
   form: any,
   successMessage: string | null,
-  label?: Entities
+  label?: Entities,
+  onSuccess?: () => void
 ) => {
   const { addToast, updateTenancyBasedData } = useStore();
   const manageState = () =>
@@ -48,6 +49,9 @@ export const useTenancyBasedFormResponse = (
             autoClose: true,
             id: Date.now().toString(),
           });
+        }
+        if (onSuccess) {
+          onSuccess();
         }
       } else if (state.error) {
         if (successMessage) {

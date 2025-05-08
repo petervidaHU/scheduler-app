@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useTransition, useActionState, useState } from "react";
+import React, { useTransition, useActionState, useState, useEffect } from "react";
 import {
   Container,
   TextInput,
@@ -16,7 +16,6 @@ import { useForm } from "@mantine/form";
 import {
   FormActionType,
   ManageFormServerProps,
-  SelectOptions,
   SyllabusInputForm,
 } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
@@ -24,6 +23,8 @@ import { Classes, ID } from "@/types/databaseTypes";
 import { createClass } from "@/app/[locale]/(tenancy)/_actions/createClass";
 import { useStore } from "@/store/store";
 import { IconTrash } from "@tabler/icons-react";
+import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
+import { Entities } from "@/types/Entities";
 
 const init: FormActionType = {
   error: null,
@@ -88,6 +89,15 @@ export const CreateClass: React.FC<ClassesInput> = ({
     },
   });
 
+  const { manageState } = useTenancyBasedFormResponse(
+    state,
+    entity?.ID ? null : classForm,
+    toastMessage,
+    Entities.class,
+    () => setSyllabus({})
+  );
+  manageState();
+
   const handleClassSubmit = (values: typeof classForm.values) => {
     const filteredSyllabus = Object.entries(syllabus)
       .filter(([_subject, { occurrence }]) => occurrence > 0)
@@ -110,7 +120,6 @@ export const CreateClass: React.FC<ClassesInput> = ({
     }));
   };
 
-  // console.log("SYLLABUS::", syllabus);
   return (
     <Container size="md" my="xl">
       <form onSubmit={classForm.onSubmit(handleClassSubmit)}>
