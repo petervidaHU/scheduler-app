@@ -929,7 +929,9 @@ END;
     description: string,
     owner: string,
     lessons: Record<string, LessonInput>,
-    days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }> }>
+    days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }> }>,
+    classId: ID,
+    name: string,
   ): Promise<number> {
     const conn = await this.pool!.getConnection();
     if (!conn) {
@@ -937,10 +939,10 @@ END;
     }
 
     try {
-      // Create the schedule first
+      // schedule 
       const querySchedule = `
-        INSERT INTO SCHEDULE (TENANCY_ID, PERIOD, DESCRIPTION, OWNER)
-        VALUES (:tenancyId, :period, :description, :owner)
+        INSERT INTO SCHEDULE (TENANCY_ID, PERIOD, DESCRIPTION, OWNER, CLASS_ID, NAME)
+        VALUES (:tenancyId, :period, :description, :owner, :classId, :name)
         RETURNING ID INTO :scheduleId
       `;
       
@@ -950,6 +952,8 @@ END;
         period,
         description,
         owner,
+        classId,
+        name,
         scheduleId: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
       };
 
@@ -986,7 +990,7 @@ END;
         const lessonsInDay = this.collectLessonIds(day.timeSlots);
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++lessonsInDay", lessonsInDay);
 
-        
+
       }
 
       // lessons

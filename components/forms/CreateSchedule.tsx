@@ -62,7 +62,7 @@ const SchedulePage = () => {
   const form = useForm({
     initialValues: {
       [FormFields.name]: "",
-      [FormFields.class]: "",
+      [FormFields.class]: null,
       [FormFields.description]: "",
       [FormFields.owner]: null,
       [FormFields.status]: null,
@@ -87,11 +87,17 @@ const SchedulePage = () => {
   });
 
   const handleScheduleFormSubmit = (values: typeof form.values) => {
+    if (!values.class) {
+      return;
+    }
     const scheduleContext: ScheduleContext = {
       period: days.length,
-      ...values,
       days: days,
       lessons: lessons,
+      name: values.name,
+      class: Number(values.class),
+      description: values.description,
+      owner: values.owner || "",
     };
     startTransition(() => {
       sAction(scheduleContext);

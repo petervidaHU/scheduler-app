@@ -8,9 +8,10 @@ export interface ScheduleContext {
   name: string;
   description: string;
   period: number;
-  class: string;
+  class: ID;
   lessons: Record<string, LessonInput>;
   days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID }> }>;
+  owner: string;
 }
 
 export async function createSchedule(state: FormActionType, context: ScheduleContext): Promise<FormActionType> {
@@ -22,9 +23,11 @@ export async function createSchedule(state: FormActionType, context: ScheduleCon
     const scheduleId = await db.createSchedule(
       context.period,
       context.description,
-      context.name,
+      context.owner,
       context.lessons,
-      context.days
+      context.days,
+      context.class,
+      context.name,
     );
 
     return {
