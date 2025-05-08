@@ -43,7 +43,7 @@ const SyllabusTable = () => {
           ID: Number(key),
           CLASS_ID: subject.CLASS_ID,
           SUBJECT_ID: subject.SUBJECT_ID,
-          TEACHER_ID: subject.TEACHERS?.[0] || null,
+          TEACHERS: JSON.stringify(subject.TEACHERS || []),
           TENANCY_ID: subject.TENANCY_ID,
           OCCURRENCE: subject.OCCURRENCE,
           value: key,
