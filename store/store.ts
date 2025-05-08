@@ -213,17 +213,27 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
         },
       };
     }),
-  // TODO update days lesson array as well!
   deleteOneLesson: (payload: string) =>
     set((state: ScheduleState) => {
       const newLessons = state.scheduleState.lessons;
       delete newLessons[payload];
+
+      // Update days to remove the lessonId from timeSlots
+      const updatedDays = state.scheduleState.days.map(day => ({
+        ...day,
+        timeSlots: day.timeSlots.map(slot => 
+          slot.lessonId === payload 
+            ? { ...slot, lessonId: undefined }
+            : slot
+        )
+      }));
 
       return {
         ...state,
         scheduleState: {
           ...state.scheduleState,
           lessons: newLessons,
+          days: updatedDays,
         },
       };
     }),
