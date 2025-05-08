@@ -58,7 +58,7 @@ const validationFunctionWithLessonsBinder = (
     if (preferredTeachers.length === 0) return null;
 
     const result = lessonsFilteredBySubjects.filter(
-      (l) => l.teacher && !preferredTeachers.includes(Number(l.teacher))
+      (l) => l.teacher && !preferredTeachers.map(Number).includes(Number(l.teacher))
     );
     if (result.length === 0) return null;
 
