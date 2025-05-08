@@ -129,7 +129,11 @@ export const CreateClass: React.FC<ClassesInput> = ({
           add syllabus
           <Select
             label="Choose subject"
-            data={Object.values(subjects || {})}
+            placeholder="Select a subject here"
+            value={null}
+            data={Object.values(subjects || {}).filter(
+              (subject) => !syllabus[subject.ID]
+            )}
             onChange={(inputValue) =>
               inputValue && handleAddSubject(inputValue)
             }
