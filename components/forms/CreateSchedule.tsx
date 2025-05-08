@@ -73,7 +73,7 @@ const SchedulePage = () => {
     onValuesChange: async (values, previous) => {
       updateScheduleState(values, previous);
       if (values.class !== form.values.class && values.class !== "") {
-        const newSyllabus = await getSyllabusAction(values.class);
+        const newSyllabus = await getSyllabusAction(Number(values.class));
 
         if (!newSyllabus) {
           return;
@@ -81,10 +81,7 @@ const SchedulePage = () => {
         console.log("newSyllabus", newSyllabus);
 
         // updateSyllabus(syllabusMapping(newSyllabus));
-        updateSyllabus({
-          classId: Number(values.class),
-          subjects: newSyllabus,
-        });
+        updateSyllabus(newSyllabus);
       }
     },
   });

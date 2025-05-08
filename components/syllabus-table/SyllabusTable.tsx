@@ -6,6 +6,7 @@ import { useStore } from "@/store/store";
 import { SimpleGrid } from "@mantine/core";
 import React, { useMemo } from "react";
 import SyllabusCard from "./SyllabusCard";
+import { SyllabusFormProperties } from "@/types/ScheduleTypes";
 
 const SyllabusTable = () => {
   const {
@@ -17,6 +18,11 @@ const SyllabusTable = () => {
       teachers: { data: teachers },
     },
   } = useStore();
+
+  if (!syllabus?.subjects || Object.keys(syllabus.subjects).length === 0) {
+    return null;
+  }
+
   const validatorFn = useSubjectValidation(
     scheduleState.lessons,
     subjects || {},
@@ -39,7 +45,16 @@ const SyllabusTable = () => {
       ScheduleValidationResult
     > = {};
     Object.entries(syllabus.subjects).forEach(([key, subject]) => {
-      const res = validatorFn(subject);
+      const res = validatorFn({
+        ID: Number(key),
+        CLASS_ID: syllabus.classId,
+        SUBJECT_ID: Number(key),
+        TEACHER_ID: subject.teachers[0] || null,
+        TENANCY_ID: 0,
+        OCCURRENCE: subject.occurrence,
+        value: key,
+        label: subjects?.[Number(key)]?.NAME || key,
+      });
       allSubjectsValidationResult[key] = res;
     });
     return allSubjectsValidationResult;
@@ -50,12 +65,12 @@ const SyllabusTable = () => {
       <h3>SyllabusTable </h3>
       <SimpleGrid cols={4}>
         {Object.entries(syllabus.subjects).map(([key, subject]) => {
-          const subjectLabel = subjects?.[subject.SUBJECT_ID].label || "??";
-          const teacherLabel = subject.TEACHER_ID
-            ? teachers?.[subject.TEACHER_ID].label || "??"
+          const subjectLabel = subjects?.[Number(key)]?.NAME || "??";
+          const teacherLabel = subject.teachers[0]
+            ? teachers?.[subject.teachers[0]]?.NAME || "??"
             : "none";
-          const occurence = subjectOccurrences[subject.SUBJECT_ID] || 0;
-          const plannedOccurence = subject.OCCURRENCE;
+          const occurence = subjectOccurrences[key] || 0;
+          const plannedOccurence = subject.occurrence;
           return (
             <React.Fragment key={key}>
               <SyllabusCard

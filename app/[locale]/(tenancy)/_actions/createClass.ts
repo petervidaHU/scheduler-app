@@ -2,24 +2,9 @@
 
 import { getDbInstance } from "@/lib/database/db-instance";
 import { ID } from "@/types/databaseTypes";
-import { FormActionType, SyllabusInputForm } from "@/types/FormActionType";
+import { FormActionType } from "@/types/FormActionType";
+import { SyllabusFormProperties } from "@/types/ScheduleTypes";
 export type NormalizedSyllabus = [ID, number, ID | null][];
-
-const normalizeSyllabus = (syllabus: Record<ID, SyllabusInputForm>) => {
-  return Object.entries(syllabus).reduce<NormalizedSyllabus>(
-    (acc, [subjectId, { occurence, teachers }]) => {
-      if (teachers.length === 0) {
-        acc.push([subjectId, occurence, null]);
-      } else {
-        teachers.forEach((_teacherId, idx) => {
-          acc.push([subjectId, occurence, teachers[idx]]);          
-        })
-      }
-      return acc;
-    },
-    []
-  );
-};
 
 export const createClass = async (
   state: FormActionType,
@@ -27,7 +12,7 @@ export const createClass = async (
     className,
     numberOfStudents,
     syllabus,
-  }: { className: string; numberOfStudents: string; syllabus: Record<ID, any> }
+  }: { className: string; numberOfStudents: string; syllabus: Record<ID, SyllabusFormProperties> }
 ): Promise<FormActionType> => {
   if (!className || !numberOfStudents) {
     return {
@@ -38,8 +23,7 @@ export const createClass = async (
   }
   try {
     const db = await getDbInstance();
-    const syllabusNormalized = normalizeSyllabus(syllabus);
-    const result = await db.createClass(className, numberOfStudents, syllabusNormalized);
+    const result = await db.createClass(className, numberOfStudents, syllabus);
     return { success: true, data: result, error: null };
   } catch (error) {
     console.error(`Error creating class: ${error}`);

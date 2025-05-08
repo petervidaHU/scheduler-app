@@ -20,6 +20,7 @@ import { NormalizedSyllabus } from "@/app/[locale]/(tenancy)/_actions/createClas
 import { LessonInput } from "@/types/FormActionType";
 import { Entities } from "@/types/Entities";
 import { labelMapper } from "../hooks/labelMapperForTenancyBasedData";
+import { SyllabusForm, SyllabusFormProperties } from "@/types/ScheduleTypes";
 
 const tableNameMapping: Record<Entities, string> = {
   specialty: "specialties",
@@ -675,7 +676,8 @@ END;
     specialityId: ID | null,
     helperColor: string | null
   ): Promise<void> {
-    const query = `INSERT INTO subjects (name, specialty_id, tenancy_id, description, helper_color) VALUES (:name, :specialityId, :tenancyId, :description, :helperColor)`;
+    const query = `INSERT INTO subjects (name, specialty_id, tenancy_id, description, helper_color) 
+    VALUES (:name, :specialityId, :tenancyId, :description, :helperColor)`;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = [
@@ -812,42 +814,110 @@ END;
   async createClass(
     name: string,
     numberOfStudents: string,
-    syllabus: NormalizedSyllabus
+    syllabus: Record<ID, SyllabusFormProperties>
   ): Promise<void> {
     const conn = await this.pool!.getConnection();
     if (!conn) {
       throw new Error("Failed to get connection");
     }
-    const query = `
+
+    const queryClass = `
       INSERT INTO classes (name, number_of_students, tenancy_id)
       VALUES (:name, :numberOfStudents, :tenancyId)
       RETURNING id INTO :classId`;
-    try {
-      const tenancyId = this.getTenancy();
-      const bindVariables = {
-        name,
-        numberOfStudents,
-        tenancyId,
-        classId: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT },
-      };
-      const result = await this.executeCommand(query, bindVariables, conn);
-      const classId = result.outBinds.classId[0];
-      if (!classId) {
-        throw new Error(
-          "Failed to create class, there is no ID for the newly created class"
-        );
-      }
+    const tenancyId = this.getTenancy();
+    const bindVariables = {
+      name,
+      numberOfStudents,
+      tenancyId,
+      classId: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT },
+    };
+    const result = (await conn.execute(queryClass, bindVariables)) as any;
+    const classId = result.outBinds.classId[0];
 
-      syllabus.forEach(([subjectId, occurrence, teacherId]: any[]) =>
-        this.createSyllabus(
-          classId,
-          subjectId,
-          teacherId,
-          occurrence,
-          tenancyId,
-          conn
-        )
-      );
+    // syllabus
+    const syllabusValues = Object.values(syllabus);
+    const values: {
+      subjects: number[];
+      teachers: string[];
+      occurrence: number[];
+    } = {
+      subjects: Object.keys(syllabus).map((k) => Number(k)) || [],
+      teachers: [],
+      occurrence: [],
+    };
+    syllabusValues.forEach((v) => {
+      values.teachers.push(JSON.stringify(v.teachers || []));
+      values.occurrence.push(v.occurrence || 0);
+    });
+
+    console.log("arrrrray::", values);
+
+    const plsql = `
+    DECLARE
+    TYPE t_nums_type IS TABLE OF NUMBER INDEX BY BINARY_INTEGER;
+    TYPE t_json_type IS TABLE OF STRING INDEX BY BINARY_INTEGER;
+    
+    v_class_id     NUMBER      := :classId;
+    v_subject_id   t_nums_type := :subjectId;
+    v_teachers     t_json_type := :teachers;
+    v_occurrence   t_nums_type := :occurrence;
+    v_tenancy      NUMBER      := :tenancyId;
+    
+    v_ids SYS.ODCINUMBERLIST := SYS.ODCINUMBERLIST();
+    BEGIN
+    FORALL i IN 1 .. v_class_id.COUNT
+    INSERT INTO syllabus (class_id, subject_id, teachers, occurrence, tenancy_id)
+    VALUES (v_class_id(i), v_subject_id(i), v_teachers(i), v_occurrence(i), v_tenancy)
+    RETURNING id BULK COLLECT INTO v_ids;
+    
+    OPEN :out_ids FOR SELECT COLUMN_VALUE AS id FROM TABLE(v_ids);
+    END;
+    `;
+
+    const bindVars = {
+      subjectId: {
+        type: oracledb.NUMBER,
+        dir: oracledb.BIND_IN,
+        val: values.subjects,
+      },
+      classId: {
+        type: oracledb.NUMBER,
+        dir: oracledb.BIND_IN,
+        val: classId,
+      },
+      teachers: {
+        type: oracledb.CLOB,
+        dir: oracledb.BIND_IN,
+        val: values.teachers,
+      },
+      occurrence: {
+        type: oracledb.NUMBER,
+        dir: oracledb.BIND_IN,
+        val: values.occurrence,
+      },
+      tenancyId: {
+        type: oracledb.NUMBER,
+        dir: oracledb.BIND_IN,
+        val: tenancyId,
+      },
+      out_ids: {
+        type: oracledb.CURSOR,
+        dir: oracledb.BIND_OUT,
+        resultSet: true,
+      },
+    };
+
+    try {
+      const resultOfSyllabus = (await conn.execute(plsql, bindVars, {
+        outFormat: oracledb.OUT_FORMAT_OBJECT,
+      })) as oracledb.Result<any>;
+
+      const cursor = resultOfSyllabus.outBinds.out_ids;
+      const rows = await cursor.getRows();
+      await cursor.close();
+      const generatedIds: number[] = rows.map((row: { ID: number }) => row.ID);
+      console.log("generated syllabus ids::", generatedIds);
 
       await conn.commit();
     } catch (error) {

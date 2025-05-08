@@ -8,7 +8,7 @@ import {
   Teacher,
   Timeslots,
 } from "./databaseTypes";
-import { LessonInput, PreloadDataObject, SelectOptions } from "./FormActionType";
+import { LessonInput, PreloadDataObject, SelectOptions, SyllabusInputForm } from "./FormActionType";
 
 export type SStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
 
@@ -43,13 +43,17 @@ export interface Schedule {
 
 export type SyllabusSubjectWithOptions = Syllabus & SelectOptions;
 
+export type SyllabusFormProperties = {
+  teachers: Array<number>;
+  occurrence: number;
+}
+
 export type SyllabusForm = {
   classId: ID;
-  subjects: {
-    [key: string]: SyllabusSubjectWithOptions;
-  };
+  subjects: Record<ID, SyllabusFormProperties>;
 };
 
+// TODO turn key: string to key: ID
 export interface DataWithOptions<T> {
   [key: string]: T & SelectOptions;
 }

@@ -93,6 +93,7 @@ export const CreateClass: React.FC<ClassesInput> = ({
       .filter(([_subject, { occurrence }]) => occurrence > 0)
       .reduce((acc, [subject, syll]) => ({ ...acc, [subject]: syll }), {});
     values.syllabus = filteredSyllabus;
+    console.log("VALUES::", values);
 
     startTransition(() => {
       action(values);
@@ -103,13 +104,13 @@ export const CreateClass: React.FC<ClassesInput> = ({
     setSyllabus((prev) => ({
       ...prev,
       [subject]: {
-        teacher: "",
+        teachers: [],
         occurrence: 0,
       },
     }));
   };
 
-  console.log("SYLLABUS::", syllabus);
+  // console.log("SYLLABUS::", syllabus);
   return (
     <Container size="md" my="xl">
       <form onSubmit={classForm.onSubmit(handleClassSubmit)}>
@@ -138,13 +139,13 @@ export const CreateClass: React.FC<ClassesInput> = ({
               const key = Number(keyString);
               return (
                 <Group key={key} mt="md">
-                  <div> {subjects?.[Number(key)]?.NAME}</div>
+                  <div> {subjects?.[key]?.NAME}</div>
                   <NumberInput
                     label="Occurrence per week"
                     placeholder="Occurrence per week"
-                    value={syllabus[Number(key)]?.occurrence || 0}
+                    value={value.occurrence || 0}
                     onChange={(inputValue) =>
-                      handleSubjectChange(Number(key), inputValue, "occurrence")
+                      handleSubjectChange(key, inputValue, "occurrence")
                     }
                   />
                   {teachers && (
@@ -155,7 +156,7 @@ export const CreateClass: React.FC<ClassesInput> = ({
                       label="Teacher"
                       placeholder="Select teacher(s)"
                       onChange={(inputValue) =>
-                        handleSubjectChange(Number(key), inputValue, "teachers")
+                        handleSubjectChange(key, inputValue, "teachers")
                       }
                     />
                   )}
