@@ -11,7 +11,7 @@ interface props {
 }
 
 const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
-  const { windowHeight, removeActiveTimeslot } = useStore();
+  const { windowHeight, removeActiveTimeslot, scheduleState: { lessons }, tenancyBasedData: { subjects } } = useStore();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   return (
@@ -26,6 +26,7 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
         } = slot.timeslot;
         const top = (start / windowHeight) * windowHeight;
         const height = ((end - start) / windowHeight) * windowHeight;
+        const backgroundColor = subjects.data?.[lessons[slot.lessonId || '']?.subject]?.HELPER_COLOR || 'rgba(255, 208, 235, .5)';
 
         return (
           <div
@@ -39,7 +40,7 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
               height: `${height}px`,
               left: "5%",
               width: "90%",
-              background: `${slot.lessonId ? "rgba(122, 13, 136, 0.5)" : "rgba(255, 208, 235, .5)"}`,
+              background: backgroundColor,
               border: "1px solid #8cbce6",
               borderRadius: "4px",
               padding: "4px 8px",

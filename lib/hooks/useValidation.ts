@@ -52,11 +52,11 @@ const validationFunctionWithLessonsBinder = (
 > => ({
   teacher: (s) => {
     const myError = {...teacherError};
-    const preferredTeacher = s.TEACHER_ID?.toString() || null;
-    if (preferredTeacher === null) return null;
+    const preferredTeachers = s.TEACHERS || [];
+    if (preferredTeachers.length === 0) return null;
 
     const result = lessonsFilteredBySubjects.filter(
-      (l) => l.teacher !== preferredTeacher
+      (l) => !preferredTeachers.includes(Number(l.teacher))
     );
     if (result.length === 0) return null;
 
