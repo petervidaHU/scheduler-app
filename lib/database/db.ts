@@ -853,72 +853,14 @@ END;
 
     console.log("arrrrray::", values);
 
-    const plsql = `
-    DECLARE
-    TYPE t_nums_type IS TABLE OF NUMBER INDEX BY BINARY_INTEGER;
-    TYPE t_json_type IS TABLE OF STRING INDEX BY BINARY_INTEGER;
-    
-    v_class_id     NUMBER      := :classId;
-    v_subject_id   t_nums_type := :subjectId;
-    v_teachers     t_json_type := :teachers;
-    v_occurrence   t_nums_type := :occurrence;
-    v_tenancy      NUMBER      := :tenancyId;
-    
-    v_ids SYS.ODCINUMBERLIST := SYS.ODCINUMBERLIST();
-    BEGIN
-    FORALL i IN 1 .. v_class_id.COUNT
-    INSERT INTO syllabus (class_id, subject_id, teachers, occurrence, tenancy_id)
-    VALUES (v_class_id(i), v_subject_id(i), v_teachers(i), v_occurrence(i), v_tenancy)
-    RETURNING id BULK COLLECT INTO v_ids;
-    
-    OPEN :out_ids FOR SELECT COLUMN_VALUE AS id FROM TABLE(v_ids);
-    END;
-    `;
+    const rows = values.subjects.map((_, index) => 
+      `(${classId}, ${values.subjects[index]}, '${values.teachers[index]}', ${values.occurrence[index]}, ${tenancyId})`
+    ).join(",\n");
 
-    const bindVars = {
-      subjectId: {
-        type: oracledb.NUMBER,
-        dir: oracledb.BIND_IN,
-        val: values.subjects,
-      },
-      classId: {
-        type: oracledb.NUMBER,
-        dir: oracledb.BIND_IN,
-        val: classId,
-      },
-      teachers: {
-        type: oracledb.CLOB,
-        dir: oracledb.BIND_IN,
-        val: values.teachers,
-      },
-      occurrence: {
-        type: oracledb.NUMBER,
-        dir: oracledb.BIND_IN,
-        val: values.occurrence,
-      },
-      tenancyId: {
-        type: oracledb.NUMBER,
-        dir: oracledb.BIND_IN,
-        val: tenancyId,
-      },
-      out_ids: {
-        type: oracledb.CURSOR,
-        dir: oracledb.BIND_OUT,
-        resultSet: true,
-      },
-    };
+    const query = `INSERT INTO syllabus (class_id, subject_id, teachers, occurrence, tenancy_id) VALUES ${rows}`;
 
     try {
-      const resultOfSyllabus = (await conn.execute(plsql, bindVars, {
-        outFormat: oracledb.OUT_FORMAT_OBJECT,
-      })) as oracledb.Result<any>;
-
-      const cursor = resultOfSyllabus.outBinds.out_ids;
-      const rows = await cursor.getRows();
-      await cursor.close();
-      const generatedIds: number[] = rows.map((row: { ID: number }) => row.ID);
-      console.log("generated syllabus ids::", generatedIds);
-
+      await conn.execute(query);
       await conn.commit();
     } catch (error) {
       await conn.rollback();
