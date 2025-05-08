@@ -20,17 +20,16 @@ const TimeslotFilledCard: FC<props> = ({ lessonId }) => {
   };
 
   const lesson = lessons[lessonId];
-
-  // TODO fix input props below
+  if (!lesson) return null;
 
   return (
     <Group>
-      <Text size="s">{subjects[lesson.subject].SUBJECT_NAME}</Text>
+      <Text size="s">{subjects.data?.[lesson.subject]?.NAME || 'Unknown Subject'}</Text>
       <Text size="xs">
-        {lesson.teacher && teachers[lesson.teacher].TEACHER_NAME}
+        {lesson.teacher && teachers.data?.[lesson.teacher]?.NAME || 'Unknown Teacher'}
       </Text>
       <Text size="xs">
-        {lesson.classRoom && classRooms[lesson.classRoom].CLASSROOM_NAME}
+        {lesson.classRoom && classRooms.data?.[lesson.classRoom]?.NAME || 'Unknown Room'}
       </Text>
       <ActionIconX
         label="delete"

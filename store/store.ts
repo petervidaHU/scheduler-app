@@ -185,12 +185,15 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
   }) =>
     set((state: ScheduleState) => {
       const days = state.scheduleState.days;
+      console.log("days", days, payload.dayId)
       const newdayIndex = state.scheduleState.days.findIndex(
         (day) => day.id === payload.dayId
       );
+      console.log("newdayIndex", newdayIndex)
       const timeSlotIndex = days[newdayIndex].timeSlots?.findIndex(
         (timeSlot) => timeSlot.timeslotId === payload.timeslotId
       );
+      console.log("timeSlotIndex", timeSlotIndex)
       if (newdayIndex < 0 || timeSlotIndex < 0) {
         console.log("store error", newdayIndex, timeSlotIndex);
         return state;

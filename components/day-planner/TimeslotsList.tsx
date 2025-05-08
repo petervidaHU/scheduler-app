@@ -7,7 +7,7 @@ import { IconTrash } from "@tabler/icons-react";
 
 interface props {
   timeSlots: Array<{ timeslot: TimeslotInput | null; lessonId?: string }>;
-  onClickHandler: any;
+  onClickHandler: (timeslotId: number, lessonId?: string) => void;
 }
 
 const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
@@ -30,7 +30,7 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
         return (
           <div
             key={ID}
-            onClick={() => onClickHandler(ID)}
+            onClick={() => onClickHandler(ID, slot.lessonId)}
             onMouseEnter={() => setHoveredId(ID)}
             onMouseLeave={() => setHoveredId(null)}
             style={{
@@ -53,19 +53,21 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
             {slot.lessonId ? (
               <TimeslotFilledCard lessonId={slot.lessonId} />
             ) : (
-              <Text size="xs">{NAME}</Text>
-            )}
-            {hoveredId === ID && (
-              <ActionIcon
-                variant="light"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent triggering the onClickHandler for timeslots
-                  removeActiveTimeslot(ID);
-                }}
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
+              <>
+                <Text size="xs">{NAME}</Text>
+                {hoveredId === ID && (
+                  <ActionIcon
+                    variant="light"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering the onClickHandler for timeslots
+                      removeActiveTimeslot(ID);
+                    }}
+                  >
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                )}
+              </>
             )}
           </div>
         );

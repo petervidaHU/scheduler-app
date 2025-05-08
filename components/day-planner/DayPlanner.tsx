@@ -16,10 +16,20 @@ interface DayPlannerProps {
 const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots }) => {
   const { openModal, closeModal } = useModal();
 
-  const handleOpenModal = (slot: string) => {
-    const timeslot = timeslots.find((t) => t.ID.toString() === slot);
+  const handleOpenModal = (slot: number, lessonId?: string) => { 
+    const timeslot = timeslots.find((t) => t.ID === slot);
+    if (!timeslot) {
+      console.error('Timeslot not found');
+      return;
+    }
+    console.log("handleOpenModal", day)
     openModal(
-      <CreateLessonModal slotId={timeslot} day={day.id} closeModal={closeModal} />
+      <CreateLessonModal 
+        slot={timeslot} 
+        day={day.id} 
+        closeModal={closeModal} 
+        lessonId={lessonId}
+      />
     );
   };
   const mappedTimeslots = day.timeSlots.map((t) => {

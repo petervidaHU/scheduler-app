@@ -19,8 +19,9 @@ import { DataWithOptions, SyllabusWithOptions } from "@/types/ScheduleTypes";
 
 interface props {
   slot: Timeslots;
-  day: ID;
+  day: string;
   closeModal: () => void;
+  lessonId?: string;
 }
 
 type classRoomsGroupedOptions = [
@@ -39,7 +40,7 @@ const init: FormActionType = {
   success: false,
 };
 
-const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
+const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal, lessonId }) => {
   const {
     syllabus,
     tenancyBasedData: {
@@ -48,6 +49,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
       subjects: { data: subjects },
     },
     createOneLesson,
+    scheduleState: { days, lessons },
   } = useStore();
   const [warnings, setWarnings] = useState<
     Partial<Record<NotificationContexts, string>>
@@ -58,6 +60,10 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
   const [preferredTeacher, setPreferredTeacher] = useState<SelectOptions | null>(null);
   const [groupedClassRooms, setGroupedClassRooms] = useState<classRoomsGroupedOptions | null>(null);
   const [sState, sAction] = useActionState(createLesson, { ...init });
+
+  // Find the lesson if we're editing
+  const currentDay = days.find(d => d.id === day);
+  const currentLesson = lessonId ? lessons[lessonId] : null;
 
   const subjectOptions = Object.entries(syllabus || {}).map(([subjectId, subject]) => ({
     value: subjectId,
@@ -77,9 +83,9 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
 
   const form = useForm<FormValues>({
     initialValues: {
-      subject: "",
-      classRoom: "",
-      teacher: "",
+      subject: currentLesson?.subject?.toString() || '',
+      classRoom: currentLesson?.classRoom?.toString() || '',
+      teacher: currentLesson?.teacher?.toString() || '',
     },
     validateInputOnChange: ["classRoom"],
     validate: {
@@ -93,6 +99,13 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
         const classRoomId = value;
         const classRoom = (classRooms as Record<string, ClassRoom & SelectOptions>)?.[classRoomId];
         const subject = (subjects as Record<string, Subject & SelectOptions>)?.[subjectId];
+        
+        // If subject has no specialty, any classroom is fine
+        if (!subject?.SPECIALTY_ID) {
+          setWarnings((prev) => ({ ...prev, classRoom: "" }));
+          return null;
+        }
+
         const isSpecialityFit = classRoom?.SPECIALITY_ID === subject?.SPECIALTY_ID;
         if (!isSpecialityFit && value) {
           setWarnings((prev) => ({
@@ -155,19 +168,26 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
           setSubjectSpecialityId(specialty.toString());
           setGroupedClassRooms(groupedBySubjectClassRooms);
         }
+
+        // Revalidate classroom if one is selected
+        if (values.classRoom) {
+          form.validateField('classRoom');
+        }
       }
     },
   });
 
   const handleLessonCreate = () => {
+    console.log("handleLessonCreate", slot);
     const newLesson: LessonInput = {
       classId: syllabus[form.values.subject]?.CLASS_ID || 0,
       subject: Number(form.values.subject),
       classRoom: Number(form.values.classRoom),
       teacher: Number(form.values.teacher),
       timeslot: slot.ID,
-      tempId: Date.now().toString(),
+      tempId: lessonId || Date.now().toString(),
     };
+    console.log("newLesson", day)
     createOneLesson({
       dayId: day.toString(),
       newLesson,
@@ -189,7 +209,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
 
   return (
     <div>
-      Create a Lesson
+      {lessonId ? 'Edit Lesson' : 'Create a Lesson'}
       <form onSubmit={form.onSubmit(handleLessonCreate)}>
         <div>
           <Select
@@ -228,6 +248,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
           {Object.entries(warnings).map(([key, value]) => {
             return key && value ? (
               <NotificationCard
+                key={key}
                 message={value}
                 type={"error"}
                 context={key as NotificationContexts}
@@ -235,7 +256,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal }) => {
             ) : null;
           })}
         </Stack>
-        <Button type="submit">create</Button>
+        <Button type="submit">{lessonId ? 'Save Changes' : 'Create'}</Button>
       </form>
     </div>
   );
