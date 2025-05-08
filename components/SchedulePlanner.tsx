@@ -64,6 +64,7 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
                 <Stack>
                 <ActionIcon
                   onClick={() => useStore.getState().deleteDay(day.id)}
+                  disabled={day.timeSlots.some(slot => slot.lessonId)}
                 >
                   <IconTrash
                     style={{ width: "70%", height: "70%" }}
