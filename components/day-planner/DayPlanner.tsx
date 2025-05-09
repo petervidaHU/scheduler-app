@@ -3,7 +3,7 @@
 import React from "react";
 import { DayPlan } from "@/types/ScheduleTypes";
 import { useStore } from "@/store/store";
-import { useModal } from "../ModalProvider";
+import { useModal } from "../modals/ModalManager";
 import CreateLessonModal from "../modals/CreateLessonModal";
 import TimeslotsList from "./TimeslotsList";
 import { Timeslots } from "@/types/databaseTypes";
@@ -22,16 +22,22 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots }) => {
       console.error('Timeslot not found');
       return;
     }
-    console.log("handleOpenModal", day)
+    
     openModal(
       <CreateLessonModal 
         slot={timeslot} 
         day={day.id} 
         closeModal={closeModal} 
         lessonId={lessonId}
-      />
+      />,
+      {
+        title: lessonId ? 'Edit Lesson' : 'Create a Lesson',
+        size: "lg",
+        centered: true
+      }
     );
   };
+  
   const mappedTimeslots = day.timeSlots.map((t) => {
     return {
       timeslot: timeslots.find((ts) => ts.ID === t.timeslotId) || null,

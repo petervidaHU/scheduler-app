@@ -2,14 +2,14 @@
 
 import React, { FC } from "react";
 import { useStore } from "@/store/store";
-import { ActionIcon, Grid, Select, Stack, Modal, Button, Text, Group } from "@mantine/core";
+import { ActionIcon, Grid, Select, Stack, Text, Group } from "@mantine/core";
 import { DayTemplates, Timeslots } from "@/types/databaseTypes";
 import HourGrid from "./day-planner/HourGrid";
 import { IconTrash } from "@tabler/icons-react";
 import DayPlanner from "./day-planner/DayPlanner";
 import PlannerGridHeader from "./day-planner/PlannerGridHeader";
 import GridContainer from "./day-planner/GridContainer";
-import { useDisclosure } from "@mantine/hooks";
+import { useModal } from "./modals/ModalManager";
 
 // Special value for custom frame
 const CUSTOM_FRAME = "CUSTOM";
@@ -23,7 +23,7 @@ const gridHeaderHeight = "150px";
 const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
   const [openForNewSlot, setOpenForNewSlot] = React.useState(false);
   const [dayToDelete, setDayToDelete] = React.useState<string | null>(null);
-  const [opened, { open, close }] = useDisclosure(false);
+  const { openConfirmModal } = useModal();
   
   const {
     scheduleState: { days, frameId },
@@ -56,23 +56,25 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
     
     // If a non-custom frame is selected, show confirmation modal
     if (frameId && frameId !== CUSTOM_FRAME) {
-      setDayToDelete(dayId);
-      open();
+      openConfirmModal({
+        title: "Confirm Day Deletion",
+        children: (
+          <Text size="sm">
+            Deleting this day will convert your schedule to use a custom frame, 
+            disconnecting it from the selected frame template. This cannot be undone.
+          </Text>
+        ),
+        labels: { confirm: "Delete and Convert to Custom", cancel: "Cancel" },
+        onConfirm: () => {
+          // Change frame to custom
+          updateSchedule({ frameId: CUSTOM_FRAME });
+          // Delete the day
+          deleteDay(dayId);
+        }
+      });
     } else {
       // For custom frame or no frame, delete immediately
       deleteDay(dayId);
-    }
-  };
-
-  const confirmDeleteDay = () => {
-    if (dayToDelete) {
-      // Change frame to custom
-      updateSchedule({ frameId: CUSTOM_FRAME });
-      // Delete the day
-      deleteDay(dayToDelete);
-      // Reset state and close modal
-      setDayToDelete(null);
-      close();
     }
   };
 
@@ -83,26 +85,6 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
 
   return (
     <div>
-      <Modal 
-        opened={opened} 
-        onClose={close} 
-        title="Confirm Day Deletion" 
-        centered
-      >
-        <Text size="sm" mb="lg">
-          Deleting this day will convert your schedule to use a custom frame, 
-          disconnecting it from the selected frame template. This cannot be undone.
-        </Text>
-        <Group justify="center" gap="md" mt="xl">
-          <Button variant="outline" onClick={close}>
-            Cancel
-          </Button>
-          <Button color="red" onClick={confirmDeleteDay}>
-            Delete and Convert to Custom
-          </Button>
-        </Group>
-      </Modal>
-
       <input
         type="checkbox"
         id="newSlot"

@@ -8,7 +8,7 @@ import {
   LessonInput,
   SelectOptions,
 } from "@/types/FormActionType";
-import { Button, Checkbox, keys, Select, Stack } from "@mantine/core";
+import { Button, Checkbox, Paper, Select, Stack, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useActionState, useTransition, useState } from "react";
 import NotificationCard, {
@@ -17,7 +17,7 @@ import NotificationCard, {
 import { useRouter } from "@/lib/i18n/navigation";
 import { DataWithOptions, SyllabusWithOptions } from "@/types/ScheduleTypes";
 
-interface props {
+interface CreateLessonProps {
   slot: Timeslots;
   day: string;
   closeModal: () => void;
@@ -40,7 +40,7 @@ const init: FormActionType = {
   success: false,
 };
 
-const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal, lessonId }) => {
+const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal, lessonId }) => {
   const {
     syllabus,
     tenancyBasedData: {
@@ -208,10 +208,10 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal, lessonId })
   };
 
   return (
-    <div>
-      {lessonId ? 'Edit Lesson' : 'Create a Lesson'}
+    <Paper>
+      <Title order={4} mb="md">{lessonId ? 'Edit Lesson' : 'Create a Lesson'}</Title>
       <form onSubmit={form.onSubmit(handleLessonCreate)}>
-        <div>
+        <Stack gap="md">
           <Select
             label="Subject"
             required
@@ -219,8 +219,7 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal, lessonId })
             data={subjectOptions}
             {...form.getInputProps("subject")}
           />
-        </div>
-        <div>
+          
           <Select
             label="Classroom"
             searchable
@@ -228,23 +227,24 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal, lessonId })
             data={groupedClassRooms || Object.values(classRooms || {})}
             {...form.getInputProps("classRoom")}
           />
-        </div>
-        <div>
-          <Select
-            label="teacher"
-            searchable
-            clearable
-            disabled={preferredTeacherCheckbox}
-            data={teacherOptions}
-            {...form.getInputProps("teacher")}
-          />
-          <Checkbox
-            label="preferred teacher"
-            checked={preferredTeacherCheckbox}
-            onChange={handlepreferredTeacherCheck}
-          />
-        </div>
-        <Stack>
+          
+          <div>
+            <Select
+              label="Teacher"
+              searchable
+              clearable
+              disabled={preferredTeacherCheckbox}
+              data={teacherOptions}
+              {...form.getInputProps("teacher")}
+            />
+            <Checkbox
+              mt="xs"
+              label="Use preferred teacher"
+              checked={preferredTeacherCheckbox}
+              onChange={handlepreferredTeacherCheck}
+            />
+          </div>
+          
           {Object.entries(warnings).map(([key, value]) => {
             return key && value ? (
               <NotificationCard
@@ -255,10 +255,11 @@ const CreateLessonModal: React.FC<props> = ({ slot, day, closeModal, lessonId })
               />
             ) : null;
           })}
+          
+          <Button type="submit" mt="md">{lessonId ? 'Save Changes' : 'Create'}</Button>
         </Stack>
-        <Button type="submit">{lessonId ? 'Save Changes' : 'Create'}</Button>
       </form>
-    </div>
+    </Paper>
   );
 };
 
