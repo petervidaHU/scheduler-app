@@ -7,6 +7,7 @@ import { Button, Group, Title } from "@mantine/core";
 import { getScheduleById } from "../_actions/getScheduleById";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getSyllabusAction } from "../_actions/getSyllabusAction";
 
 interface SchedulePageProps {
   params: {
@@ -24,6 +25,12 @@ export default async function EditSchedulePage({ params }: SchedulePageProps) {
   
   const dayTemplates = await getDayTemplates();
   const timeslots = await getTimeslots();
+
+  // Pre-fetch syllabus if class is defined
+  let syllabus = null;
+  if (schedule.class) {
+    syllabus = await getSyllabusAction(schedule.class);
+  }
  
   return (
     <div>
@@ -33,7 +40,11 @@ export default async function EditSchedulePage({ params }: SchedulePageProps) {
           <Button variant="light">Back to List</Button>
         </Link>
       </Group>
-      <CreateSchedule scheduleId={scheduleId} />
+      <CreateSchedule 
+        scheduleId={scheduleId}
+        scheduleData={schedule}
+        syllabusData={syllabus}
+      />
       <SyllabusTable />
       <SchedulePlanner dayTemplates={dayTemplates} timeslots={timeslots} />
     </div>

@@ -21,11 +21,12 @@ import { nanoid } from "nanoid";
 import { getSyllabusAction } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getSyllabusAction";
 import { FormFields } from "@/types/ScheduleTypes";
 import { DayPlan, Schedule } from "@/types/ScheduleTypes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ID } from "@/types/databaseTypes";
+import { ID, Syllabus } from "@/types/databaseTypes";
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
+import { DataWithOptions } from "@/types/ScheduleTypes";
 
 const formFields = Object.values(FormFields);
 
@@ -40,13 +41,19 @@ const init: FormActionType = {
 
 interface SchedulePageProps {
   scheduleId?: string;
+  scheduleData?: Schedule;
+  syllabusData?: DataWithOptions<Syllabus> | null;
 }
 
-const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
+const SchedulePage = ({ 
+  scheduleId, 
+  scheduleData,
+  syllabusData
+}: SchedulePageProps) => {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(scheduleId ? true : false);
-  const [schedule, setSchedule] = useState<Schedule | null>(null);
+  const [isLoading, setIsLoading] = useState(scheduleId && !scheduleData ? true : false);
   const isEditMode = !!scheduleId;
+  const isInitialized = useRef(false);
 
   const {
     tenancyBasedData: {
@@ -64,14 +71,15 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
     resetScheduleState,
   } = useStore();
 
+  // Initialize form with default values or scheduleData if available
   const form = useForm({
     initialValues: {
-      [FormFields.name]: "",
-      [FormFields.class]: "",
-      [FormFields.description]: "",
-      [FormFields.owner]: "",
-      [FormFields.status]: "DRAFT",
-      frameId: "",
+      [FormFields.name]: scheduleData?.name || "",
+      [FormFields.class]: scheduleData?.class?.toString() || "",
+      [FormFields.description]: scheduleData?.description || "",
+      [FormFields.owner]: scheduleData?.owner?.toString() || "",
+      [FormFields.status]: scheduleData?.status || "DRAFT",
+      frameId: scheduleData?.frameId?.toString() || "",
       variations: "",
     },
     validate: {
@@ -90,13 +98,16 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
       }
 
       if (values.class !== previous.class && values.class !== "") {
-        const newSyllabus = await getSyllabusAction(Number(values.class));
-
-        if (!newSyllabus) {
-          return;
+        // Use server-loaded syllabus if available, otherwise fetch it
+        if (values.class === scheduleData?.class?.toString() && syllabusData) {
+          updateSyllabus(syllabusData);
+        } else {
+          const newSyllabus = await getSyllabusAction(Number(values.class));
+          if (!newSyllabus) {
+            return;
+          }
+          updateSyllabus(newSyllabus);
         }
-
-        updateSyllabus(newSyllabus);
       }
 
       // Update frameId in store
@@ -119,6 +130,56 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
     },
   });
 
+  // Initialize data once on component mount
+  useEffect(() => {
+    if (isInitialized.current) return;
+    
+    // Reset state before initializing with new data
+    resetScheduleState();
+    
+    // Initialize with server-provided data if available
+    if (scheduleData) {
+      // Update schedule state in store
+      updateScheduleInStore({
+        id: scheduleData.id,
+        name: scheduleData.name,
+        class: scheduleData.class,
+        description: scheduleData.description,
+        owner: scheduleData.owner,
+        status: scheduleData.status,
+        frameId: scheduleData.frameId,
+      });
+      
+      // Update syllabus if provided
+      if (syllabusData) {
+        updateSyllabus(syllabusData);
+      }
+      
+      // Use a Set to track day IDs for deduplication
+      const dayIds = new Set();
+      
+      // Add days to state one by one to avoid duplicates
+      scheduleData.days.forEach(day => {
+        if (!dayIds.has(day.id)) {
+          dayIds.add(day.id);
+          addDay(day);
+        }
+      });
+      
+      // Add lessons to state
+      Object.entries(scheduleData.lessons).forEach(([id, lesson]) => {
+        updateScheduleInStore({
+          lessons: {
+            ...lessons,
+            [id]: lesson
+          }
+        } as any); // Type cast to any to bypass type check temporarily
+      });
+    }
+    
+    isInitialized.current = true;
+  }, []);
+
   const [isPending, startTransition] = useTransition();
   const [createState, createAction] = useActionState(createSchedule, init);
   const [updateState, updateAction] = useActionState(updateSchedule, init);
@@ -136,33 +197,33 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
     }
   );
 
-  // Load schedule data if in edit mode
+  // Legacy data loading (remove this useEffect once server-side data loading is fully implemented)
   useEffect(() => {
-    if (scheduleId) {
+    if (scheduleId && !scheduleData && !isInitialized.current) {
       const loadSchedule = async () => {
         setIsLoading(true);
         try {
-          const scheduleData = await getScheduleById(scheduleId);
-          setSchedule(scheduleData);
+          // Reset the state before loading new schedule to avoid any stale data
+          resetScheduleState();
+          
+          const fetchedScheduleData = await getScheduleById(scheduleId);
+          console.log("Loading schedule data:", fetchedScheduleData);
 
-          // Clear existing schedule state
-          days.forEach(day => deleteDay(day.id));
-
-          if (scheduleData) {
+          if (fetchedScheduleData) {
             // Update form values with schedule data
             form.setValues({
-              name: scheduleData.name || "",
-              class: scheduleData.class?.toString() || "",
-              description: scheduleData.description || "",
-              owner: scheduleData.owner?.toString() || "",
-              status: scheduleData.status || "DRAFT",
-              frameId: scheduleData.frameId?.toString() || "",
+              name: fetchedScheduleData.name || "",
+              class: fetchedScheduleData.class?.toString() || "",
+              description: fetchedScheduleData.description || "",
+              owner: fetchedScheduleData.owner?.toString() || "",
+              status: fetchedScheduleData.status || "DRAFT",
+              frameId: fetchedScheduleData.frameId?.toString() || "",
               variations: "",
             });
 
             // Update syllabus if class is set
-            if (scheduleData.class) {
-              const syllabus = await getSyllabusAction(scheduleData.class);
+            if (fetchedScheduleData.class) {
+              const syllabus = await getSyllabusAction(fetchedScheduleData.class);
               if (syllabus) {
                 updateSyllabus(syllabus);
               }
@@ -170,22 +231,35 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
 
             // Update schedule state
             updateScheduleInStore({
-              id: scheduleData.id,
-              name: scheduleData.name,
-              class: scheduleData.class,
-              description: scheduleData.description,
-              owner: scheduleData.owner,
-              status: scheduleData.status,
-              frameId: scheduleData.frameId,
+              id: fetchedScheduleData.id,
+              name: fetchedScheduleData.name,
+              class: fetchedScheduleData.class,
+              description: fetchedScheduleData.description,
+              owner: fetchedScheduleData.owner,
+              status: fetchedScheduleData.status,
+              frameId: fetchedScheduleData.frameId,
             });
 
-            // Add days to state
-            scheduleData.days.forEach(day => {
-              addDay(day);
+            // Add days to state one by one to avoid duplicates
+            console.log(`Adding ${fetchedScheduleData.days.length} days to store`);
+            
+            // Use a Set to track day IDs for deduplication
+            const dayIds = new Set();
+            fetchedScheduleData.days.forEach(day => {
+              if (!dayIds.has(day.id)) {
+                dayIds.add(day.id);
+                console.log(`Adding day ${day.id} to store`);
+                addDay(day);
+              } else {
+                console.warn(`Duplicate day ID detected: ${day.id}. Skipping.`);
+              }
             });
 
             // Add lessons to state
-            Object.entries(scheduleData.lessons).forEach(([id, lesson]) => {
+            const lessonCount = Object.keys(fetchedScheduleData.lessons).length;
+            console.log(`Adding ${lessonCount} lessons to store`);
+            
+            Object.entries(fetchedScheduleData.lessons).forEach(([id, lesson]) => {
               updateScheduleInStore({
                 lessons: {
                   ...lessons,
@@ -261,18 +335,6 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
     }
   }, [frames, isEditMode]);
 
-  const handleAddDay = (event: React.MouseEvent<HTMLButtonElement>) => {
-    const newDay: DayPlan = {
-      id: nanoid(),
-      order: String(days.length + 1),
-      identifier: `Day ${days.length + 1}`,
-      timeSlots: [],
-      lessons: [],
-      templateId: undefined,
-    };
-    addDay(newDay);
-  };
-
   const handleScheduleFormSubmit = (values: typeof form.values) => {
     startTransition(() => {
       const context: ScheduleContext = {
@@ -307,73 +369,49 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
       // Reset the schedule state when navigating away from the component
       resetScheduleState();
     };
-  }, []); // Empty dependency array means this runs only on mount/unmount
+  }, []);
 
   return (
-    <Paper p="md" withBorder pos="relative">
+    <Paper p="xl" withBorder mb="xl">
       <LoadingOverlay visible={isLoading} />
-      
       <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
-        <Title order={4} mb="md">{isEditMode ? 'Edit Schedule' : 'Create New Schedule'}</Title>
+        <Title order={3} mb="md">Schedule Details</Title>
+        
+        <TextInput
+          label="Schedule Name"
+          placeholder="Enter a descriptive name for this schedule"
+          withAsterisk
+          mb="md"
+          {...form.getInputProps(FormFields.name)}
+        />
         
         <Select
           label="Class"
-          name={FormFields.class}
+          placeholder="Select a class for this schedule"
           data={classOptions}
-          value={form.values.class}
-          onChange={(value) => form.setFieldValue(FormFields.class, value || "")}
-          required
-          mb="sm"
+          withAsterisk
+          mb="md"
+          {...form.getInputProps(FormFields.class)}
         />
-
+        
         <Select
-          label="Frame"
-          name="frameId"
+          label="Frame Template"
+          placeholder="Select a frame template"
           data={frameOptions}
-          value={form.values.frameId}
-          onChange={(value) => form.setFieldValue("frameId", value || "")}
-          placeholder="Select a frame"
-          required
-          mb="sm"
+          withAsterisk
+          mb="md"
+          {...form.getInputProps("frameId")}
         />
-
-        {/* Show Add Day button only when Custom Frame is selected */}
-        {form.values.frameId === CUSTOM_FRAME && (
-          <Button onClick={handleAddDay} mt="sm" mb="sm">
-            Add Day
-          </Button>
-        )}
-
-        <TextInput
-          label="Name"
-          name={FormFields.name}
-          value={form.values.name}
-          onChange={(event) => form.setFieldValue(FormFields.name, event.currentTarget.value)}
-          mb="sm"
-        />
-
-        <TextInput
-          label="Owner"
-          name={FormFields.owner}
-          value={form.values.owner}
-          onChange={(event) => form.setFieldValue(FormFields.owner, event.currentTarget.value)}
-          mb="sm"
-        />
-
+        
         <Textarea
           label="Description"
-          name={FormFields.description}
-          value={form.values.description}
-          onChange={(event) => form.setFieldValue(FormFields.description, event.currentTarget.value)}
-          mb="lg"
+          placeholder="Enter a description for this schedule"
+          mb="md"
+          {...form.getInputProps(FormFields.description)}
         />
-
-        <Button 
-          type="submit" 
-          loading={isPending} 
-          disabled={isLoading}
-        >
-          {isEditMode ? 'Update Schedule' : 'Create Schedule'}
+        
+        <Button type="submit" loading={isPending} mb="md">
+          {isEditMode ? "Update Schedule" : "Create Schedule"}
         </Button>
       </form>
     </Paper>

@@ -257,13 +257,25 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
       },
     })),
   addDay: (payload: DayPlan) =>
-    set((state: ScheduleState) => ({
-      ...state,
-      scheduleState: {
-        ...state.scheduleState,
-        days: [...state.scheduleState.days, payload],
-      },
-    })),
+    set((state: ScheduleState) => {
+      // Check if a day with this ID already exists
+      const dayExists = state.scheduleState.days.some(day => day.id === payload.id);
+      
+      // If the day already exists, don't add it again
+      if (dayExists) {
+        console.log(`Day with ID ${payload.id} already exists, not adding duplicate`);
+        return state; // Return state unchanged
+      }
+      
+      // Day doesn't exist yet, add it
+      return {
+        ...state,
+        scheduleState: {
+          ...state.scheduleState,
+          days: [...state.scheduleState.days, payload],
+        },
+      };
+    }),
   deleteDay: (payload: string) =>
     set((state: ScheduleState) => ({
       ...state,
