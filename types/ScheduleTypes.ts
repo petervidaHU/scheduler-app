@@ -27,6 +27,7 @@ export interface DayPlan {
   identifier: string;
   timeSlots: Array<{timeslotId: number, lessonId?: string}>;
   lessons: Array<string>;
+  templateId?: string;
 }
 
 export interface Schedule {

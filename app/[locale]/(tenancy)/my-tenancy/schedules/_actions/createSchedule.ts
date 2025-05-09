@@ -10,7 +10,7 @@ export interface ScheduleContext {
   frameId: ID | "CUSTOM";
   class: ID;
   lessons: Record<string, LessonInput>;
-  days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID }> }>;
+  days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }>; templateId?: string }>;
   owner: string;
 }
 

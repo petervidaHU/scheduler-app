@@ -931,7 +931,7 @@ END;
     description: string,
     owner: string,
     lessons: Record<string, LessonInput>,
-    days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }> }>,
+    days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }>; templateId?: string }>,
     classId: ID,
     name: string,
   ): Promise<number> {
@@ -960,7 +960,7 @@ END;
       };
 
       const result = await conn.execute(querySchedule, bindVariables);
-      const scheduleId = result.outBinds.scheduleId[0];
+      const scheduleId = (result.outBinds as any)?.scheduleId[0];
 
       // DAY
       let dayIDs: any = {};
@@ -971,9 +971,9 @@ END;
         const queryDay = `
           INSERT INTO DAYS (
             TENANCY_ID, SCHEDULE_ID, 
-            SLOT_ORDER, DAY_IDENTIFIER
+            SLOT_ORDER, DAY_IDENTIFIER, DAY_TEMPLATE_ID
           ) VALUES (
-            :tenancyId, :scheduleId, :slotOrder, :dayIdentifier
+            :tenancyId, :scheduleId, :slotOrder, :dayIdentifier, :templateId
           )
           RETURNING ID INTO :dayId
         `;
@@ -983,16 +983,15 @@ END;
           scheduleId: Number(scheduleId),
           slotOrder: i,
           dayIdentifier: day.id,
+          templateId: day.templateId ? Number(day.templateId) : null,
           dayId: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
         };
 
-        const result = await conn.execute(queryDay, lessonBindVars);
-        dayIDs[day.id] = result.outBinds?.dayId[0];
+        const dayResult = await conn.execute(queryDay, lessonBindVars);
+        dayIDs[day.id] = (dayResult.outBinds as any)?.dayId[0];
 
         const lessonsInDay = this.collectLessonIds(day.timeSlots);
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++lessonsInDay", lessonsInDay);
-
-
       }
 
       // lessons
@@ -1084,5 +1083,81 @@ END;
       console.error(`Error getting frame: ${error}`);
       throw error;
     }
+  }
+
+  async getScheduleById(scheduleId: ID) {
+    const tenancyId = this.getTenancy();
+    
+    // Get schedule details
+    const querySchedule = `
+      SELECT * FROM SCHEDULE WHERE ID = :scheduleId AND TENANCY_ID = :tenancyId
+    `;
+    const scheduleResult = await this.executeQuery(querySchedule, [scheduleId, tenancyId]);
+    if (!scheduleResult || scheduleResult.length === 0) {
+      throw new Error('Schedule not found');
+    }
+    
+    const schedule = scheduleResult[0] as any;
+    
+    // Get days with template IDs
+    const queryDays = `
+      SELECT ID, SLOT_ORDER, DAY_IDENTIFIER, DAY_TEMPLATE_ID 
+      FROM DAYS 
+      WHERE SCHEDULE_ID = :scheduleId AND TENANCY_ID = :tenancyId
+      ORDER BY SLOT_ORDER
+    `;
+    const daysResult = await this.executeQuery(queryDays, [scheduleId, tenancyId]) as any[];
+    
+    // Get lessons
+    const queryLessons = `
+      SELECT L.*, D.DAY_IDENTIFIER
+      FROM LESSONS L
+      JOIN DAYS D ON L.DAYS_ID = D.ID
+      WHERE L.SCHEDULE_ID = :scheduleId AND L.TENANCY_ID = :tenancyId
+    `;
+    const lessonsResult = await this.executeQuery(queryLessons, [scheduleId, tenancyId]) as any[];
+    
+    // Transform days to include timeslots and template ID
+    const days = daysResult.map(day => ({
+      id: day.DAY_IDENTIFIER,
+      order: day.SLOT_ORDER.toString(),
+      identifier: `Day ${day.SLOT_ORDER + 1}`,
+      templateId: day.DAY_TEMPLATE_ID?.toString() || null,
+      timeSlots: [] as Array<{timeslotId: number, lessonId?: string}>,
+      databaseId: day.ID,
+      lessons: []
+    }));
+    
+    // Add lessons to days
+    lessonsResult.forEach(lesson => {
+      const day = days.find(d => d.databaseId === lesson.DAYS_ID);
+      if (day) {
+        day.timeSlots.push({
+          timeslotId: lesson.TEMPLATE_ID,
+          lessonId: lesson.ID.toString()
+        });
+      }
+    });
+    
+    return {
+      id: schedule.ID.toString(),
+      name: schedule.NAME,
+      description: schedule.DESCRIPTION,
+      owner: schedule.OWNER,
+      class: schedule.CLASS_ID,
+      frameId: schedule.FRAME_ID === null ? "CUSTOM" : schedule.FRAME_ID,
+      days,
+      lessons: lessonsResult.reduce((acc: any, lesson: any) => {
+        acc[lesson.ID] = {
+          tempId: lesson.ID.toString(),
+          timeslot: lesson.TEMPLATE_ID,
+          teacher: lesson.TEACHERS ? JSON.parse(lesson.TEACHERS)[0] : null,
+          classRoom: lesson.CLASSROOM_ID,
+          subject: lesson.SUBJECT_ID,
+          classId: lesson.CLASS_ID
+        };
+        return acc;
+      }, {})
+    };
   }
 }

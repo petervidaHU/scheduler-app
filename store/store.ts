@@ -64,7 +64,7 @@ interface ScheduleState {
   updateSchedule: (
     payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>
   ) => void;
-  addTimeslotToDay: (payload: { dayId: string; timeslotId: ID }) => void;
+  addTimeslotToDay: (payload: { dayId: string; timeslotId: number; templateId?: string }) => void;
 
   addActiveTimeslot: (payload: TimeslotInput) => void;
   removeActiveTimeslot: (payload: ID) => void;
@@ -134,7 +134,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
         },
       },
     })), */
-  addTimeslotToDay: (payload: { dayId: string; timeslotId: number }) =>
+  addTimeslotToDay: (payload: { dayId: string; timeslotId: number; templateId?: string }) =>
     set((state: ScheduleState) => {
       const oldDays =
         state.scheduleState.days.find((day) => day.id === payload.dayId)
@@ -146,7 +146,11 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
         scheduleState: {
           ...state.scheduleState,
           days: state.scheduleState.days.map((day) =>
-            day.id === payload.dayId ? { ...day, timeSlots: oldDays } : day
+            day.id === payload.dayId ? { 
+              ...day, 
+              timeSlots: oldDays,
+              templateId: payload.templateId || day.templateId // Keep existing templateId if not provided
+            } : day
           ),
         },
       };

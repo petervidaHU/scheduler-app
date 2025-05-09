@@ -1,8 +1,8 @@
 "use client";
 
-import React, { FC } from "react";
+import React, { FC, useMemo } from "react";
 import { useStore } from "@/store/store";
-import { ActionIcon, Grid, Select, Stack, Text, Group } from "@mantine/core";
+import { ActionIcon, Grid, Select, Stack, Text, Group, Badge } from "@mantine/core";
 import { DayTemplates, Timeslots } from "@/types/databaseTypes";
 import HourGrid from "./day-planner/HourGrid";
 import { IconTrash } from "@tabler/icons-react";
@@ -33,16 +33,33 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
     updateSchedule,
   } = useStore();
 
+  // Create a map of template IDs to template names for quick lookup
+  const templateNameMap = useMemo(() => {
+    return dayTemplates.reduce((acc, template) => {
+      acc[template.ID.toString()] = template.NAME;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [dayTemplates]);
+
   const handleAddTimeslots = (dayId: string, templateId: string) => {
     const template = dayTemplates.find((t) => t.ID.toString() === templateId);
     const timeslotId = template?.TIMESLOTS || [];
     const day = days.find((d) => d.id === dayId);
     if (!day) return;
 
+    // Clear existing timeslots for this day
+    const existingTimeslots = day.timeSlots.filter(slot => slot.lessonId);
+    day.timeSlots = [...existingTimeslots];
+
+    // Add each timeslot from the template with the template ID
     timeslotId.forEach((slot: number) => {
       const timeslotsInDay = day.timeSlots.map((t) => t.timeslotId);
       if (!timeslotsInDay.includes(slot)) {
-        addTimeslotToDay({ dayId, timeslotId: slot });
+        addTimeslotToDay({ 
+          dayId, 
+          timeslotId: slot, 
+          templateId: template?.ID.toString() 
+        });
       }
     });
   };
@@ -111,11 +128,19 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
                     stroke={1.5}
                   />
                 </ActionIcon>
-                {day.identifier || day.id}
+                <Group>
+                  {day.identifier || day.id}
+                  {day.templateId && templateNameMap[day.templateId] && (
+                    <Badge size="sm" color="blue">
+                      {templateNameMap[day.templateId]}
+                    </Badge>
+                  )}
+                </Group>
                 <Select
                   label="choose timeslot template"
                   data={dayTemplateOptions}
-                  onChange={(value) => handleAddTimeslots(day.id, value!)}
+                  value={day.templateId}
+                  onChange={(value) => value && handleAddTimeslots(day.id, value)}
                 />
                 </Stack>
               </PlannerGridHeader>
