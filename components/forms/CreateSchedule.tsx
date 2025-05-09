@@ -91,7 +91,7 @@ const SchedulePage = () => {
     },
     onValuesChange: async (values, previous) => {
       updateScheduleState(values, previous);
-      
+
       // If class changed and name is empty, populate it
       if (values.class !== previous.class && values.class) {
         const selectedClass = classes?.[values.class];
@@ -113,7 +113,7 @@ const SchedulePage = () => {
       // Update frameId in store
       if (values.frameId !== previous.frameId) {
         updateSchedule({ frameId: values.frameId });
-        
+
         // Handle frame change - update days based on the frame's NUMBER_OF_DAYS
         if (values.frameId && values.frameId !== CUSTOM_FRAME) {
           const selectedFrame = frames?.[values.frameId];
@@ -129,14 +129,14 @@ const SchedulePage = () => {
       }
     },
   });
-  
+
   // Function to update days based on the frame's NUMBER_OF_DAYS property
   const updateDaysBasedOnFrame = (numberOfDays: number) => {
     // First, clear existing days
     days.forEach(day => {
       deleteDay(day.id);
     });
-    
+
     // Then, create the required number of days
     for (let i = 0; i < numberOfDays; i++) {
       const newDay: DayPlan = {
@@ -173,7 +173,7 @@ const SchedulePage = () => {
     if (!values.class || !values.frameId) {
       return;
     }
-    
+
     const scheduleContext: ScheduleContext = {
       frameId: values.frameId === CUSTOM_FRAME ? CUSTOM_FRAME : Number(values.frameId),
       days: days,
@@ -183,28 +183,15 @@ const SchedulePage = () => {
       description: values.description,
       owner: values.owner || "",
     };
-    
+
     startTransition(() => {
       sAction(scheduleContext);
     });
   };
 
-  const handleWeeklyCheckboxChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    // TODO: implement weekly plan
-    console.log("to be done");
-  };
-
   return (
     <>
       <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
-        <Checkbox
-          label="weekly schedule"
-          name="weekly"
-          onChange={handleWeeklyCheckboxChange}
-        />
-        
         <Select
           label="Class"
           name={FormFields.class}
@@ -213,7 +200,7 @@ const SchedulePage = () => {
           onChange={(value) => form.setFieldValue(FormFields.class, value || "")}
           required
         />
-        
+
         <Select
           label="Frame"
           name="frameId"
@@ -223,14 +210,14 @@ const SchedulePage = () => {
           placeholder="Select a frame"
           required
         />
-        
+
         {/* Show Add Day button only when Custom Frame is selected */}
         {form.values.frameId === CUSTOM_FRAME && (
           <Button onClick={handleAddDay} mt="sm" mb="sm">
             Add Day
           </Button>
         )}
-        
+
         <TextInput
           label="Name"
           name={FormFields.name}
@@ -243,7 +230,7 @@ const SchedulePage = () => {
           value={form.values.owner}
           onChange={(event) => form.setFieldValue(FormFields.owner, event.currentTarget.value)}
         />
-  
+
         <Textarea
           label="Description"
           name={FormFields.description}
