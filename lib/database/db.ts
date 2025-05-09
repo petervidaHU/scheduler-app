@@ -1122,7 +1122,7 @@ END;
       id: day.DAY_IDENTIFIER,
       order: day.SLOT_ORDER.toString(),
       identifier: `Day ${day.SLOT_ORDER + 1}`,
-      templateId: day.DAY_TEMPLATE_ID?.toString() || null,
+      templateId: day.DAY_TEMPLATE_ID?.toString() || undefined,
       timeSlots: [] as Array<{timeslotId: number, lessonId?: string}>,
       databaseId: day.ID,
       lessons: []
@@ -1145,6 +1145,7 @@ END;
       description: schedule.DESCRIPTION,
       owner: schedule.OWNER,
       class: schedule.CLASS_ID,
+      status: schedule.STATUS || "DRAFT",
       frameId: schedule.FRAME_ID === null ? "CUSTOM" : schedule.FRAME_ID,
       days,
       lessons: lessonsResult.reduce((acc: any, lesson: any) => {
@@ -1159,5 +1160,124 @@ END;
         return acc;
       }, {})
     };
+  }
+
+  async updateSchedule(
+    scheduleId: string,
+    frameId: number | "CUSTOM",
+    description: string,
+    owner: string,
+    lessons: Record<string, LessonInput>,
+    days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }>; templateId?: string }>,
+    classId: ID,
+    name: string,
+  ): Promise<void> {
+    const conn = await this.pool!.getConnection();
+    if (!conn) {
+      throw new Error("Failed to get connection");
+    }
+
+    try {
+      const tenancyId = this.getTenancy();
+      
+      // Update schedule
+      const querySchedule = `
+        UPDATE SCHEDULE 
+        SET FRAME_ID = :frameId, 
+            DESCRIPTION = :description, 
+            OWNER = :owner,
+            CLASS_ID = :classId,
+            NAME = :name
+        WHERE ID = :scheduleId AND TENANCY_ID = :tenancyId
+      `;
+      
+      const bindVariables = {
+        scheduleId: Number(scheduleId),
+        frameId: frameId === "CUSTOM" ? null : Number(frameId),
+        description,
+        owner,
+        classId: Number(classId),
+        name,
+        tenancyId
+      };
+
+      await conn.execute(querySchedule, bindVariables);
+      
+      // Delete existing days and lessons
+      await conn.execute(
+        `DELETE FROM LESSONS WHERE SCHEDULE_ID = :scheduleId AND TENANCY_ID = :tenancyId`,
+        { scheduleId: Number(scheduleId), tenancyId }
+      );
+      
+      await conn.execute(
+        `DELETE FROM DAYS WHERE SCHEDULE_ID = :scheduleId AND TENANCY_ID = :tenancyId`,
+        { scheduleId: Number(scheduleId), tenancyId }
+      );
+      
+      // Create new days
+      let dayIDs: any = {};
+      for (let i = 0; i < days.length; i++) {
+        const day = days[i];
+        if (!day) continue;
+
+        const queryDay = `
+          INSERT INTO DAYS (
+            TENANCY_ID, SCHEDULE_ID, 
+            SLOT_ORDER, DAY_IDENTIFIER, DAY_TEMPLATE_ID
+          ) VALUES (
+            :tenancyId, :scheduleId, :slotOrder, :dayIdentifier, :templateId
+          )
+          RETURNING ID INTO :dayId
+        `;
+
+        const lessonBindVars = {
+          tenancyId: Number(tenancyId),
+          scheduleId: Number(scheduleId),
+          slotOrder: i,
+          dayIdentifier: day.id,
+          templateId: day.templateId ? Number(day.templateId) : null,
+          dayId: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
+        };
+
+        const dayResult = await conn.execute(queryDay, lessonBindVars);
+        dayIDs[day.id] = (dayResult.outBinds as any)?.dayId[0];
+      }
+
+      // Insert lessons
+      for (const [_, lesson] of Object.entries(lessons)) {
+        const day = days.find(d => d.timeSlots.some(ts => ts.timeslotId === lesson.timeslot));
+        if (!day) continue;
+
+        const queryLesson = `
+          INSERT INTO LESSONS (
+            TENANCY_ID, SCHEDULE_ID, TEMPLATE_ID, DAYS_ID, 
+            SUBJECT_ID, CLASS_ID, TEACHERS, CLASSROOM_ID
+          ) VALUES (
+            :tenancyId, :scheduleId, :templateId, :daysId,
+            :subjectId, :classId, :teachers, :classroomId
+          )
+        `;
+
+        const lessonBindVars = {
+          tenancyId: Number(tenancyId),
+          scheduleId: Number(scheduleId),
+          templateId: Number(lesson.timeslot),
+          daysId: dayIDs[day.id],
+          subjectId: Number(lesson.subject),
+          classId: Number(lesson.classId),
+          teachers: JSON.stringify(this.collectLessonIds(day.timeSlots)),
+          classroomId: Number(lesson.classRoom)
+        };
+
+        await conn.execute(queryLesson, lessonBindVars);
+      }
+
+      await conn.commit();
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.close();
+    }
   }
 }

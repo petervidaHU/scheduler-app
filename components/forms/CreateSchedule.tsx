@@ -2,22 +2,27 @@
 
 import { useForm } from "@mantine/form";
 import {
-  NumberInput,
   Select,
   Textarea,
   Button,
   Checkbox,
   TextInput,
+  LoadingOverlay,
+  Paper,
+  Title,
 } from "@mantine/core";
 import { createSchedule, ScheduleContext } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
+import { updateSchedule } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/updateSchedule";
+import { getScheduleById } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getScheduleById";
 import { FormActionType } from "@/types/FormActionType";
 import { useActionState, useTransition } from "react";
 import { useStore } from "@/store/store";
 import { nanoid } from "nanoid";
 import { getSyllabusAction } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getSyllabusAction";
 import { FormFields } from "@/types/ScheduleTypes";
-import { DayPlan } from "@/types/ScheduleTypes";
-import { useEffect } from "react";
+import { DayPlan, Schedule } from "@/types/ScheduleTypes";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const formFields = Object.values(FormFields);
 
@@ -30,7 +35,16 @@ const init: FormActionType = {
   success: false,
 };
 
-const SchedulePage = () => {
+interface SchedulePageProps {
+  scheduleId?: string;
+}
+
+const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(scheduleId ? true : false);
+  const [schedule, setSchedule] = useState<Schedule | null>(null);
+  const isEditMode = !!scheduleId;
+
   const {
     tenancyBasedData: {
       teachers: { data: teachers },
@@ -42,13 +56,82 @@ const SchedulePage = () => {
     addDay,
     deleteDay,
     updateSyllabus,
-    updateSchedule,
+    updateSchedule: updateScheduleInStore,
     scheduleState: { days, lessons },
   } = useStore();
+
   const [isPending, startTransition] = useTransition();
-  const [sState, sAction] = useActionState(createSchedule, {
-    ...init,
-  });
+  const [createState, createAction] = useActionState(createSchedule, { ...init });
+  const [updateState, updateAction] = useActionState(updateSchedule, { ...init });
+
+  // Load schedule data if in edit mode
+  useEffect(() => {
+    if (scheduleId) {
+      const loadSchedule = async () => {
+        setIsLoading(true);
+        try {
+          const scheduleData = await getScheduleById(scheduleId);
+          setSchedule(scheduleData);
+
+          // Clear existing schedule state
+          days.forEach(day => deleteDay(day.id));
+
+          if (scheduleData) {
+            // Update form values with schedule data
+            form.setValues({
+              name: scheduleData.name || "",
+              class: scheduleData.class?.toString() || "",
+              description: scheduleData.description || "",
+              owner: scheduleData.owner?.toString() || "",
+              status: scheduleData.status || "DRAFT",
+              frameId: scheduleData.frameId?.toString() || "",
+              variations: "",
+            });
+
+            // Update syllabus if class is set
+            if (scheduleData.class) {
+              const syllabus = await getSyllabusAction(scheduleData.class);
+              if (syllabus) {
+                updateSyllabus(syllabus);
+              }
+            }
+
+            // Update schedule state
+            updateScheduleInStore({
+              id: scheduleData.id,
+              name: scheduleData.name,
+              class: scheduleData.class,
+              description: scheduleData.description,
+              owner: scheduleData.owner,
+              status: scheduleData.status,
+              frameId: scheduleData.frameId,
+            });
+
+            // Add days to state
+            scheduleData.days.forEach(day => {
+              addDay(day);
+            });
+
+            // Add lessons to state
+            Object.entries(scheduleData.lessons).forEach(([id, lesson]) => {
+              updateScheduleInStore({
+                lessons: {
+                  ...lessons,
+                  [id]: lesson
+                }
+              } as any); // Type cast to any to bypass type check temporarily
+            });
+          }
+        } catch (error) {
+          console.error("Error loading schedule:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadSchedule();
+    }
+  }, [scheduleId]);
 
   const updateScheduleState = (
     values: Record<FormFields, any>,
@@ -56,7 +139,7 @@ const SchedulePage = () => {
   ) => {
     formFields.forEach((element) => {
       if (values[element] !== previous[element]) {
-        updateSchedule({ [element]: values[element] });
+        updateScheduleInStore({ [element]: values[element] });
       }
     });
   };
@@ -81,7 +164,7 @@ const SchedulePage = () => {
       [FormFields.class]: "",
       [FormFields.description]: "",
       [FormFields.owner]: "",
-      [FormFields.status]: "",
+      [FormFields.status]: "DRAFT",
       frameId: "",
       variations: "",
     },
@@ -100,7 +183,7 @@ const SchedulePage = () => {
         }
       }
 
-      if (values.class !== form.values.class && values.class !== "") {
+      if (values.class !== previous.class && values.class !== "") {
         const newSyllabus = await getSyllabusAction(Number(values.class));
 
         if (!newSyllabus) {
@@ -112,7 +195,7 @@ const SchedulePage = () => {
 
       // Update frameId in store
       if (values.frameId !== previous.frameId) {
-        updateSchedule({ frameId: values.frameId });
+        updateScheduleInStore({ frameId: values.frameId });
 
         // Handle frame change - update days based on the frame's NUMBER_OF_DAYS
         if (values.frameId && values.frameId !== CUSTOM_FRAME) {
@@ -129,6 +212,18 @@ const SchedulePage = () => {
       }
     },
   });
+
+  // Effect to handle success states
+  useEffect(() => {
+    const state = isEditMode ? updateState : createState;
+    if (state.success) {
+      const scheduleId = state.data?.id;
+      // Redirect to the schedule view page or stay on edit page
+      if (scheduleId && !isEditMode) {
+        router.push(`/en/my-tenancy/schedules?scheduleId=${scheduleId}`);
+      }
+    }
+  }, [createState, updateState]);
 
   // Function to update days based on the frame's NUMBER_OF_DAYS property
   const updateDaysBasedOnFrame = (numberOfDays: number) => {
@@ -153,11 +248,13 @@ const SchedulePage = () => {
 
   // Update days if frameId is already set when component mounts
   useEffect(() => {
-    const frameId = form.values.frameId;
-    if (frameId && frameId !== CUSTOM_FRAME && frames?.[frameId]) {
-      updateDaysBasedOnFrame(frames[frameId].NUMBER_OF_DAYS);
+    if (!isEditMode) {
+      const frameId = form.values.frameId;
+      if (frameId && frameId !== CUSTOM_FRAME && frames?.[frameId]) {
+        updateDaysBasedOnFrame(frames[frameId].NUMBER_OF_DAYS);
+      }
     }
-  }, [frames]);
+  }, [frames, isEditMode]);
 
   const handleAddDay = (event: React.MouseEvent<HTMLButtonElement>) => {
     const newDay: DayPlan = {
@@ -187,13 +284,26 @@ const SchedulePage = () => {
     };
 
     startTransition(() => {
-      sAction(scheduleContext);
+      if (isEditMode && scheduleId) {
+        // Update existing schedule
+        updateAction({
+          ...scheduleContext,
+          id: scheduleId
+        });
+      } else {
+        // Create new schedule
+        createAction(scheduleContext);
+      }
     });
   };
 
   return (
-    <>
+    <Paper p="md" withBorder pos="relative">
+      <LoadingOverlay visible={isLoading} />
+      
       <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
+        <Title order={4} mb="md">{isEditMode ? 'Edit Schedule' : 'Create New Schedule'}</Title>
+        
         <Select
           label="Class"
           name={FormFields.class}
@@ -201,6 +311,7 @@ const SchedulePage = () => {
           value={form.values.class}
           onChange={(value) => form.setFieldValue(FormFields.class, value || "")}
           required
+          mb="sm"
         />
 
         <Select
@@ -211,6 +322,7 @@ const SchedulePage = () => {
           onChange={(value) => form.setFieldValue("frameId", value || "")}
           placeholder="Select a frame"
           required
+          mb="sm"
         />
 
         {/* Show Add Day button only when Custom Frame is selected */}
@@ -225,12 +337,15 @@ const SchedulePage = () => {
           name={FormFields.name}
           value={form.values.name}
           onChange={(event) => form.setFieldValue(FormFields.name, event.currentTarget.value)}
+          mb="sm"
         />
+
         <TextInput
           label="Owner"
           name={FormFields.owner}
           value={form.values.owner}
           onChange={(event) => form.setFieldValue(FormFields.owner, event.currentTarget.value)}
+          mb="sm"
         />
 
         <Textarea
@@ -238,10 +353,18 @@ const SchedulePage = () => {
           name={FormFields.description}
           value={form.values.description}
           onChange={(event) => form.setFieldValue(FormFields.description, event.currentTarget.value)}
+          mb="lg"
         />
-        <Button type="submit">Create Schedule</Button>
+
+        <Button 
+          type="submit" 
+          loading={isPending} 
+          disabled={isLoading}
+        >
+          {isEditMode ? 'Update Schedule' : 'Create Schedule'}
+        </Button>
       </form>
-    </>
+    </Paper>
   );
 };
 
