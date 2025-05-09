@@ -327,13 +327,11 @@ const SchedulePage = ({
 
   // Update days if frameId is already set when component mounts
   useEffect(() => {
-    if (!isEditMode) {
-      const frameId = form.values.frameId;
-      if (frameId && frameId !== CUSTOM_FRAME && frames?.[frameId]) {
-        updateDaysBasedOnFrame(frames[frameId].NUMBER_OF_DAYS);
-      }
+    const frameId = form.values.frameId;
+    if (frameId && frameId !== CUSTOM_FRAME && frames?.[frameId]) {
+      updateDaysBasedOnFrame(frames[frameId].NUMBER_OF_DAYS);
     }
-  }, [frames, isEditMode]);
+  }, [frames, form.values.frameId]);
 
   const handleScheduleFormSubmit = (values: typeof form.values) => {
     startTransition(() => {
