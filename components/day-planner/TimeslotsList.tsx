@@ -10,9 +10,25 @@ interface props {
   onClickHandler: (timeslotId: number, lessonId?: string) => void;
 }
 
+// Helper function to calculate position based on time
+const calculatePosition = (time: number, totalMinutes: number, totalHeight: number): number => {
+  // Convert time (in minutes) to a fraction of the day
+  const fraction = time / totalMinutes;
+  // Convert the fraction to pixels
+  return fraction * totalHeight;
+};
+
 const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
-  const { windowHeight, removeActiveTimeslot, scheduleState: { lessons }, tenancyBasedData: { subjects } } = useStore();
+  const { 
+    windowHeight, 
+    removeActiveTimeslot, 
+    scheduleState: { lessons }, 
+    tenancyBasedData: { subjects } 
+  } = useStore();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
+  
+  // Total minutes in a day (24 hours * 60 minutes)
+  const TOTAL_MINUTES = 24 * 60;
 
   return (
     <>
@@ -24,8 +40,11 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
           ID,
           NAME,
         } = slot.timeslot;
-        const top = (start / windowHeight) * windowHeight;
-        const height = ((end - start) / windowHeight) * windowHeight;
+        
+        // Calculate position and height based on start and end times
+        const top = calculatePosition(start, TOTAL_MINUTES, windowHeight);
+        const height = calculatePosition(end - start, TOTAL_MINUTES, windowHeight);
+        
         const backgroundColor = subjects.data?.[lessons[slot.lessonId || '']?.subject]?.HELPER_COLOR || 'rgba(255, 208, 235, .5)';
 
         return (

@@ -1,4 +1,5 @@
 import React, { FC } from "react";
+import { Paper } from "@mantine/core";
 
 interface props {
   children: React.ReactNode;
@@ -7,15 +8,17 @@ interface props {
 
 const GridContainer: FC<props> = ({ children, windowHeight }) => {
   return (
-    <div
+    <Paper
+      withBorder
+      p={0}
       style={{
         position: "relative",
-        height: `${windowHeight}`,
+        height: `${windowHeight}px`,
         overflow: "hidden",
       }}
     >
       {children}
-    </div>
+    </Paper>
   );
 };
 

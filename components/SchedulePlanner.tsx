@@ -2,12 +2,11 @@
 
 import React, { FC, useMemo } from "react";
 import { useStore } from "@/store/store";
-import { ActionIcon, Grid, Select, Stack, Text, Group, Badge } from "@mantine/core";
+import { ActionIcon, Grid, Select, Stack, Text, Group, Badge, Box, Paper } from "@mantine/core";
 import { DayTemplates, Timeslots } from "@/types/databaseTypes";
 import HourGrid from "./day-planner/HourGrid";
 import { IconTrash } from "@tabler/icons-react";
 import DayPlanner from "./day-planner/DayPlanner";
-import PlannerGridHeader from "./day-planner/PlannerGridHeader";
 import GridContainer from "./day-planner/GridContainer";
 import { useModal } from "./modals/ModalManager";
 
@@ -19,7 +18,6 @@ interface props {
   timeslots: Array<Timeslots>
 }
 
-const gridHeaderHeight = "150px";
 const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
   const [openForNewSlot, setOpenForNewSlot] = React.useState(false);
   const [dayToDelete, setDayToDelete] = React.useState<string | null>(null);
@@ -108,49 +106,65 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
         onChange={() => setOpenForNewSlot(!openForNewSlot)}
       />
       <h3>schedule planner</h3>
-      <Grid>
-        <Grid.Col span={1}>
-          <PlannerGridHeader height={gridHeaderHeight}>Time</PlannerGridHeader>
-          <HourGrid />
-        </Grid.Col>
 
+      {/* Day Headers Section */}
+      <Grid mb="md">
+        <Grid.Col span={1}>
+          {/* Empty space for time column */}
+          <Paper p="sm" withBorder>
+            <Text fw={500} ta="center">Time</Text>
+          </Paper>
+        </Grid.Col>
+        
         {days.map((day) => (
-          <React.Fragment key={day.id}>
-            <Grid.Col span={2}>
-              <PlannerGridHeader height={gridHeaderHeight}>
-                <Stack>
-                <ActionIcon
-                  onClick={() => handleDeleteDayClick(day.id)}
-                  disabled={day.timeSlots.some(slot => slot.lessonId)}
-                >
-                  <IconTrash
-                    style={{ width: "70%", height: "70%" }}
-                    stroke={1.5}
-                  />
-                </ActionIcon>
-                <Group>
-                  {day.identifier || day.id}
-                  {day.templateId && templateNameMap[day.templateId] && (
-                    <Badge size="sm" color="blue">
-                      {templateNameMap[day.templateId]}
-                    </Badge>
-                  )}
+          <Grid.Col span={2} key={`header-${day.id}`}>
+            <Paper p="sm" withBorder>
+              <Stack>
+                <Group justify="apart">
+                  <Group>
+                    {day.identifier || day.id}
+                    {day.templateId && templateNameMap[day.templateId] && (
+                      <Badge size="sm" color="blue">
+                        {templateNameMap[day.templateId]}
+                      </Badge>
+                    )}
+                  </Group>
+                  <ActionIcon
+                    color="red"
+                    onClick={() => handleDeleteDayClick(day.id)}
+                    disabled={day.timeSlots.some(slot => slot.lessonId)}
+                  >
+                    <IconTrash
+                      style={{ width: "70%", height: "70%" }}
+                      stroke={1.5}
+                    />
+                  </ActionIcon>
                 </Group>
                 <Select
-                  label="choose timeslot template"
+                  label="Choose timeslot template"
                   data={dayTemplateOptions}
                   value={day.templateId}
                   onChange={(value) => value && handleAddTimeslots(day.id, value)}
                 />
-                </Stack>
-              </PlannerGridHeader>
+              </Stack>
+            </Paper>
+          </Grid.Col>
+        ))}
+      </Grid>
 
-              <GridContainer windowHeight={windowHeight}>
-                <DayPlanner day={day} timeslots={timeslots} />
-                {openForNewSlot && <HourGrid />}
-              </GridContainer>
-            </Grid.Col>
-          </React.Fragment>
+      {/* Time Grid Section */}
+      <Grid>
+        <Grid.Col span={1}>
+          <HourGrid />
+        </Grid.Col>
+
+        {days.map((day) => (
+          <Grid.Col span={2} key={`grid-${day.id}`}>
+            <GridContainer windowHeight={windowHeight}>
+              <DayPlanner day={day} timeslots={timeslots} />
+              {openForNewSlot && <HourGrid />}
+            </GridContainer>
+          </Grid.Col>
         ))}
       </Grid>
     </div>

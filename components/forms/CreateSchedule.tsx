@@ -136,7 +136,7 @@ const SchedulePage = () => {
     days.forEach(day => {
       deleteDay(day.id);
     });
-
+    
     // Then, create the required number of days
     for (let i = 0; i < numberOfDays; i++) {
       const newDay: DayPlan = {
@@ -145,6 +145,7 @@ const SchedulePage = () => {
         identifier: `Day ${i + 1}`,
         timeSlots: [],
         lessons: [],
+        templateId: undefined,
       };
       addDay(newDay);
     }
@@ -165,6 +166,7 @@ const SchedulePage = () => {
       identifier: `Day ${days.length + 1}`,
       timeSlots: [],
       lessons: [],
+      templateId: undefined,
     };
     addDay(newDay);
   };
