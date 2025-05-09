@@ -66,22 +66,27 @@ const validationFunctionWithLessonsBinder = (
     return myError;
   },
   speciality: (s) => {
-    const preferredSpeciality =
-      subjects[
-        s.SUBJECT_ID as keyof typeof subjects
-      ].SPECIALTY_ID?.toString() || null;
+    // Check if the subject exists in the subjects collection
+    const subject = subjects[s.SUBJECT_ID as keyof typeof subjects];
+    if (!subject) return null; // Subject doesn't exist, can't validate
+
+    const preferredSpeciality = subject.SPECIALTY_ID?.toString() || null;
     if (preferredSpeciality === null) return null;
 
-    const result = lessonsFilteredBySubjects.filter(
-      (l) =>
-        classRooms[
-          l.classRoom?.toString() as string
-        ]?.SPECIALITY_ID?.toString() !== preferredSpeciality
-    );
+    const result = lessonsFilteredBySubjects.filter((l) => {
+      // Make sure we have a valid classroom ID and it exists in our classRooms collection
+      if (!l.classRoom) return false;
+      const classroom = classRooms[l.classRoom?.toString() as string];
+      if (!classroom) return false;
+      
+      return classroom.SPECIALITY_ID?.toString() !== preferredSpeciality;
+    });
+    
     if (result.length === 0) return null;
 
-    specilityError.num = result.length;
-    return specilityError;
+    const myError = {...specilityError};
+    myError.num = result.length;
+    return myError;
   },
 });
 

@@ -61,6 +61,7 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
     updateSyllabus,
     updateSchedule: updateScheduleInStore,
     scheduleState: { days, lessons },
+    resetScheduleState,
   } = useStore();
 
   const form = useForm({
@@ -129,6 +130,8 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
     isEditMode ? 'Schedule updated successfully' : 'Schedule created successfully',
     Entities.class, // Still using Entities.class as placeholder for now
     () => {
+      // We only get here on success, so we can assume success is true
+      // Navigation will trigger component unmount which will reset the state
       router.push('/en/my-tenancy/schedules');
     }
   );
@@ -296,6 +299,15 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
       }
     });
   };
+
+  // Add cleanup on component unmount to prevent stale state
+  useEffect(() => {
+    // This cleanup function runs when the component is unmounted
+    return () => {
+      // Reset the schedule state when navigating away from the component
+      resetScheduleState();
+    };
+  }, []); // Empty dependency array means this runs only on mount/unmount
 
   return (
     <Paper p="md" withBorder pos="relative">

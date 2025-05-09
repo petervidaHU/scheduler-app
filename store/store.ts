@@ -65,6 +65,7 @@ interface ScheduleState {
     payload: Partial<Omit<Record<keyof Schedule, any>, "lessons">>
   ) => void;
   addTimeslotToDay: (payload: { dayId: string; timeslotId: number; templateId?: string }) => void;
+  resetScheduleState: () => void;
 
   addActiveTimeslot: (payload: TimeslotInput) => void;
   removeActiveTimeslot: (payload: ID) => void;
@@ -293,6 +294,23 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
     set((state: ScheduleState) => ({
       ...state,
       classRooms: payload,
+    })),
+  resetScheduleState: () =>
+    set((state: ScheduleState) => ({
+      ...state,
+      scheduleState: {
+        id: "",
+        status: null,
+        name: null,
+        class: null,
+        description: null,
+        owner: null,
+        frameId: null,
+        lessons: {},
+        days: [],
+      },
+      syllabus: {} as SyllabusWithOptions,
+      activeTimeslots: {},
     })),
 });
 

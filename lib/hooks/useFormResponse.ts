@@ -15,6 +15,7 @@ export const useTenancyBasedFormResponse = (
 
   useEffect(() => {
     if (state.success === true) {
+      state.success = false;
       if (form) form.reset();
       console.log("in custom hook,", state, label);
       if (label) {
