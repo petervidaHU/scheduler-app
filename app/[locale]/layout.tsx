@@ -8,7 +8,7 @@ import HeaderWithSession from "@/components/HeaderWithSession";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import routing from "@/lib/i18n/routing";
 import { notFound } from "next/navigation";
-import { ModalProvider } from "@/components/ModalProvider";
+import { ModalProvider } from "@/components/modals/ModalManager";
 import ToastContainer from "@/components/toast/Toast";
 
 const geistSans = Geist({
