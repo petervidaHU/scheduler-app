@@ -55,19 +55,18 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
       id: entity?.ID || null,
     },
     validate: {
-      capacity: (value) =>
-        value <= 0 ? "Classroom capacity must be largen than 0" : null,
-      specialityId: (value) => (!value ? "must select speciality" : null),
+      capacity: (value: number) =>
+        value <= 0 ? "Classroom capacity must be larger than 0" : null,
+      specialityId: (value: number | null) => (!value ? "must select speciality" : null),
     },
   });
 
-  const { manageState } = useTenancyBasedFormResponse(
+  useTenancyBasedFormResponse(
     crState,
-    entity?.ID ? null : classRoomForm, // reset form only on create
+    entity?.ID ? null : classRoomForm,
     toastMessage,
     Entities.classroom
   );
-  manageState();
 
   const handleClassRoomSubmit = (values: typeof classRoomForm.values) => {
     startTransition(() => {
@@ -123,3 +122,5 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
     </Container>
   );
 };
+
+export default CreateClassRoom;

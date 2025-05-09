@@ -1162,6 +1162,21 @@ END;
     };
   }
 
+  async getSchedules() {
+    const tenancyId = this.getTenancy();
+    
+    // Get all schedules for the tenancy
+    const query = `
+      SELECT s.*, c.NAME as CLASS_NAME
+      FROM SCHEDULE s
+      LEFT JOIN CLASSES c ON s.CLASS_ID = c.ID
+      WHERE s.TENANCY_ID = :tenancyId
+      ORDER BY s.ID DESC
+    `;
+    const schedulesResult = await this.executeQuery(query, [tenancyId]);
+    return schedulesResult;
+  }
+
   async updateSchedule(
     scheduleId: string,
     frameId: number | "CUSTOM",

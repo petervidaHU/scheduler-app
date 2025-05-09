@@ -15,10 +15,11 @@ const CUSTOM_FRAME = "CUSTOM";
 
 interface props {
   dayTemplates: Array<DayTemplates>;
-  timeslots: Array<Timeslots>
+  timeslots: Array<Timeslots>;
+  readOnly?: boolean;
 }
 
-const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
+const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots, readOnly = false }) => {
   const [openForNewSlot, setOpenForNewSlot] = React.useState(false);
   const [dayToDelete, setDayToDelete] = React.useState<string | null>(null);
   const { openConfirmModal } = useModal();
@@ -100,11 +101,13 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
 
   return (
     <div>
-      <input
-        type="checkbox"
-        id="newSlot"
-        onChange={() => setOpenForNewSlot(!openForNewSlot)}
-      />
+      {!readOnly && (
+        <input
+          type="checkbox"
+          id="newSlot"
+          onChange={() => setOpenForNewSlot(!openForNewSlot)}
+        />
+      )}
       <h3>schedule planner</h3>
 
       {/* Day Headers Section */}
@@ -117,7 +120,7 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
         </Grid.Col>
         
         {days.map((day) => (
-          <Grid.Col span={2} key={`header-${day.id}`}>
+          <Grid.Col span={2} key={`day-header-${day.id}`}>
             <Paper p="sm" withBorder>
               <Stack>
                 <Group justify="apart">
@@ -129,23 +132,27 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
                       </Badge>
                     )}
                   </Group>
-                  <ActionIcon
-                    color="red"
-                    onClick={() => handleDeleteDayClick(day.id)}
-                    disabled={day.timeSlots.some(slot => slot.lessonId)}
-                  >
-                    <IconTrash
-                      style={{ width: "70%", height: "70%" }}
-                      stroke={1.5}
-                    />
-                  </ActionIcon>
+                  {!readOnly && (
+                    <ActionIcon
+                      color="red"
+                      onClick={() => handleDeleteDayClick(day.id)}
+                      disabled={day.timeSlots.some(slot => slot.lessonId)}
+                    >
+                      <IconTrash
+                        style={{ width: "70%", height: "70%" }}
+                        stroke={1.5}
+                      />
+                    </ActionIcon>
+                  )}
                 </Group>
-                <Select
-                  label="Choose timeslot template"
-                  data={dayTemplateOptions}
-                  value={day.templateId}
-                  onChange={(value) => value && handleAddTimeslots(day.id, value)}
-                />
+                {!readOnly && (
+                  <Select
+                    label="Choose timeslot template"
+                    data={dayTemplateOptions}
+                    value={day.templateId}
+                    onChange={(value) => value && handleAddTimeslots(day.id, value)}
+                  />
+                )}
               </Stack>
             </Paper>
           </Grid.Col>
@@ -159,10 +166,10 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots }) => {
         </Grid.Col>
 
         {days.map((day) => (
-          <Grid.Col span={2} key={`grid-${day.id}`}>
+          <Grid.Col span={2} key={`day-grid-${day.id}`}>
             <GridContainer windowHeight={windowHeight}>
-              <DayPlanner day={day} timeslots={timeslots} />
-              {openForNewSlot && <HourGrid />}
+              <DayPlanner day={day} timeslots={timeslots} readOnly={readOnly} />
+              {openForNewSlot && !readOnly && <HourGrid />}
             </GridContainer>
           </Grid.Col>
         ))}

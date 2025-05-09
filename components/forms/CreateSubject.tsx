@@ -48,30 +48,35 @@ export const CreateSubject: FC<SubjectInput> = ({
     ...init,
   });
 
+  const defaultHelperColor = "#FFFFFF";
+
   const subjectForm = useForm({
     initialValues: {
       name: entity?.NAME || "",
-      specialityId: entity?.SPECIALTY_ID || null,
+      specialtyId: entity?.SPECIALTY_ID || null,
       description: entity?.DESCRIPTION || "",
-      helperColor: entity?.HELPER_COLOR || null,
+      helperColor: entity?.HELPER_COLOR || defaultHelperColor,
       id: entity?.ID || null,
     },
     validate: {
-      name: (value) => (value === "" ? "Subject name must be valid" : null),
+      name: (value: string) => (value === "" ? "Subject name must be valid" : null),
     },
   });
 
-  const { manageState } = useTenancyBasedFormResponse(
+  useTenancyBasedFormResponse(
     subjectState,
     entity?.ID ? null : subjectForm,
-    'Subject created successfully',
+    toastMessage || 'Subject action successful',
     Entities.subject
   );
-  manageState();
 
   const handleSubjectSubmit = (values: typeof subjectForm.values) => {
     startTransition(() => {
-      subjectAction(values);
+      const submissionValues = {
+        ...values,
+        helperColor: values.helperColor || defaultHelperColor,
+      };
+      subjectAction(submissionValues);
     });
   };
 
@@ -104,11 +109,12 @@ export const CreateSubject: FC<SubjectInput> = ({
               value: speciality.ID.toString(),
               label: speciality.NAME,
             }))}
-            {...subjectForm.getInputProps("specialityId")}
+            {...subjectForm.getInputProps("specialtyId")}
           />
           <ColorPicker
-            {...subjectForm.getInputProps("helperColor")}
             format="hsl"
+            value={subjectForm.values.helperColor}
+            onChange={(color) => subjectForm.setFieldValue('helperColor', color)}
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
@@ -117,7 +123,7 @@ export const CreateSubject: FC<SubjectInput> = ({
           </Group>
         </Stack>
       </form>
-      <Button onClick={() => redirect(backBtnUrl)}>Cancel</Button>
+      <Button onClick={() => redirect(backBtnUrl)}>{backBtnText}</Button>
     </Container>
   );
 };

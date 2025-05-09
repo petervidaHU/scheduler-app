@@ -23,6 +23,9 @@ import { FormFields } from "@/types/ScheduleTypes";
 import { DayPlan, Schedule } from "@/types/ScheduleTypes";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ID } from "@/types/databaseTypes";
+import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
+import { Entities } from "@/types/Entities";
 
 const formFields = Object.values(FormFields);
 
@@ -60,9 +63,75 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
     scheduleState: { days, lessons },
   } = useStore();
 
+  const form = useForm({
+    initialValues: {
+      [FormFields.name]: "",
+      [FormFields.class]: "",
+      [FormFields.description]: "",
+      [FormFields.owner]: "",
+      [FormFields.status]: "DRAFT",
+      frameId: "",
+      variations: "",
+    },
+    validate: {
+      class: (value) => (!value ? "Class is required" : null),
+      frameId: (value) => (!value ? "Frame is required" : null),
+    },
+    onValuesChange: async (values, previous) => {
+      updateScheduleState(values, previous);
+
+      // If class changed and name is empty, populate it
+      if (values.class !== previous.class && values.class) {
+        const selectedClass = classes?.[values.class];
+        if (selectedClass && !values.name) {
+          form.setFieldValue(FormFields.name, `Weekly schedule for ${selectedClass.NAME}`);
+        }
+      }
+
+      if (values.class !== previous.class && values.class !== "") {
+        const newSyllabus = await getSyllabusAction(Number(values.class));
+
+        if (!newSyllabus) {
+          return;
+        }
+
+        updateSyllabus(newSyllabus);
+      }
+
+      // Update frameId in store
+      if (values.frameId !== previous.frameId) {
+        updateScheduleInStore({ frameId: values.frameId });
+
+        // Handle frame change - update days based on the frame's NUMBER_OF_DAYS
+        if (values.frameId && values.frameId !== CUSTOM_FRAME) {
+          const selectedFrame = frames?.[values.frameId];
+          if (selectedFrame) {
+            updateDaysBasedOnFrame(selectedFrame.NUMBER_OF_DAYS);
+          }
+        } else if (values.frameId === CUSTOM_FRAME) {
+          // For custom frame, clear existing days but don't auto-create new ones
+          days.forEach(day => {
+            deleteDay(day.id);
+          });
+        }
+      }
+    },
+  });
+
   const [isPending, startTransition] = useTransition();
-  const [createState, createAction] = useActionState(createSchedule, { ...init });
-  const [updateState, updateAction] = useActionState(updateSchedule, { ...init });
+  const [createState, createAction] = useActionState(createSchedule, init);
+  const [updateState, updateAction] = useActionState(updateSchedule, init);
+
+  // Call the hook directly. Its useEffect will handle the logic.
+  useTenancyBasedFormResponse(
+    isEditMode ? updateState : createState,
+    isEditMode ? null : form, // Pass form only for create mode to reset it
+    isEditMode ? 'Schedule updated successfully' : 'Schedule created successfully',
+    Entities.class, // Still using Entities.class as placeholder for now
+    () => {
+      router.push('/en/my-tenancy/schedules');
+    }
+  );
 
   // Load schedule data if in edit mode
   useEffect(() => {
@@ -158,73 +227,6 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
     }))
   ];
 
-  const form = useForm({
-    initialValues: {
-      [FormFields.name]: "",
-      [FormFields.class]: "",
-      [FormFields.description]: "",
-      [FormFields.owner]: "",
-      [FormFields.status]: "DRAFT",
-      frameId: "",
-      variations: "",
-    },
-    validate: {
-      class: (value) => (!value ? "Class is required" : null),
-      frameId: (value) => (!value ? "Frame is required" : null),
-    },
-    onValuesChange: async (values, previous) => {
-      updateScheduleState(values, previous);
-
-      // If class changed and name is empty, populate it
-      if (values.class !== previous.class && values.class) {
-        const selectedClass = classes?.[values.class];
-        if (selectedClass && !values.name) {
-          form.setFieldValue(FormFields.name, `Weekly schedule for ${selectedClass.NAME}`);
-        }
-      }
-
-      if (values.class !== previous.class && values.class !== "") {
-        const newSyllabus = await getSyllabusAction(Number(values.class));
-
-        if (!newSyllabus) {
-          return;
-        }
-
-        updateSyllabus(newSyllabus);
-      }
-
-      // Update frameId in store
-      if (values.frameId !== previous.frameId) {
-        updateScheduleInStore({ frameId: values.frameId });
-
-        // Handle frame change - update days based on the frame's NUMBER_OF_DAYS
-        if (values.frameId && values.frameId !== CUSTOM_FRAME) {
-          const selectedFrame = frames?.[values.frameId];
-          if (selectedFrame) {
-            updateDaysBasedOnFrame(selectedFrame.NUMBER_OF_DAYS);
-          }
-        } else if (values.frameId === CUSTOM_FRAME) {
-          // For custom frame, clear existing days but don't auto-create new ones
-          days.forEach(day => {
-            deleteDay(day.id);
-          });
-        }
-      }
-    },
-  });
-
-  // Effect to handle success states
-  useEffect(() => {
-    const state = isEditMode ? updateState : createState;
-    if (state.success) {
-      const scheduleId = state.data?.id;
-      // Redirect to the schedule view page or stay on edit page
-      if (scheduleId && !isEditMode) {
-        router.push(`/en/my-tenancy/schedules?scheduleId=${scheduleId}`);
-      }
-    }
-  }, [createState, updateState]);
-
   // Function to update days based on the frame's NUMBER_OF_DAYS property
   const updateDaysBasedOnFrame = (numberOfDays: number) => {
     // First, clear existing days
@@ -269,30 +271,28 @@ const SchedulePage = ({ scheduleId }: SchedulePageProps) => {
   };
 
   const handleScheduleFormSubmit = (values: typeof form.values) => {
-    if (!values.class || !values.frameId) {
-      return;
-    }
-
-    const scheduleContext: ScheduleContext = {
-      frameId: values.frameId === CUSTOM_FRAME ? CUSTOM_FRAME : Number(values.frameId),
-      days: days,
-      lessons: lessons,
-      name: values.name,
-      class: Number(values.class),
-      description: values.description,
-      owner: values.owner || "",
-    };
-
     startTransition(() => {
+      const context: ScheduleContext = {
+        name: values.name,
+        description: values.description,
+        frameId: values.frameId === CUSTOM_FRAME ? CUSTOM_FRAME : Number(values.frameId),
+        class: Number(values.class),
+        lessons,
+        days: days.map(day => ({
+          id: day.id,
+          timeSlots: day.timeSlots.map(slot => ({
+            timeslotId: slot.timeslotId,
+            lessonId: slot.lessonId
+          })),
+          templateId: day.templateId
+        })),
+        owner: values.owner,
+      };
+
       if (isEditMode && scheduleId) {
-        // Update existing schedule
-        updateAction({
-          ...scheduleContext,
-          id: scheduleId
-        });
+        updateAction({ ...context, id: scheduleId });
       } else {
-        // Create new schedule
-        createAction(scheduleContext);
+        createAction(context);
       }
     });
   };

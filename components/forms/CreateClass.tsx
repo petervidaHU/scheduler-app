@@ -89,14 +89,13 @@ export const CreateClass: React.FC<ClassesInput> = ({
     },
   });
 
-  const { manageState } = useTenancyBasedFormResponse(
+  useTenancyBasedFormResponse(
     state,
     entity?.ID ? null : classForm,
     toastMessage,
     Entities.class,
     () => setSyllabus({})
   );
-  manageState();
 
   const handleClassSubmit = (values: typeof classForm.values) => {
     const filteredSyllabus = Object.entries(syllabus)

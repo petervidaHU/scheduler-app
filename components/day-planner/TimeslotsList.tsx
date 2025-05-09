@@ -8,6 +8,7 @@ import { IconTrash } from "@tabler/icons-react";
 interface props {
   timeSlots: Array<{ timeslot: TimeslotInput | null; lessonId?: string }>;
   onClickHandler: (timeslotId: number, lessonId?: string) => void;
+  readOnly?: boolean;
 }
 
 // Helper function to calculate position based on time
@@ -18,7 +19,7 @@ const calculatePosition = (time: number, totalMinutes: number, totalHeight: numb
   return fraction * totalHeight;
 };
 
-const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
+const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler, readOnly = false }) => {
   const { 
     windowHeight, 
     removeActiveTimeslot, 
@@ -50,9 +51,9 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
         return (
           <div
             key={ID}
-            onClick={() => onClickHandler(ID, slot.lessonId)}
-            onMouseEnter={() => setHoveredId(ID)}
-            onMouseLeave={() => setHoveredId(null)}
+            onClick={readOnly ? undefined : () => onClickHandler(ID, slot.lessonId)}
+            onMouseEnter={readOnly ? undefined : () => setHoveredId(ID)}
+            onMouseLeave={readOnly ? undefined : () => setHoveredId(null)}
             style={{
               position: "absolute",
               top: `${top}px`,
@@ -69,6 +70,7 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
               justifyContent: "space-between",
               alignItems: "center",
               overflow: "hidden",
+              cursor: readOnly ? "default" : "pointer"
             }}
           >
             {slot.lessonId ? (
@@ -76,7 +78,7 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler }) => {
             ) : (
               <>
                 <Text size="xs">{NAME}</Text>
-                {hoveredId === ID && (
+                {!readOnly && hoveredId === ID && (
                   <ActionIcon
                     variant="light"
                     size="sm"

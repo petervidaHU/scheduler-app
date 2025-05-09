@@ -11,12 +11,15 @@ import { Timeslots } from "@/types/databaseTypes";
 interface DayPlannerProps {
   day: DayPlan;
   timeslots: Array<Timeslots>;
+  readOnly?: boolean;
 }
 
-const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots }) => {
+const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots, readOnly = false }) => {
   const { openModal, closeModal } = useModal();
 
-  const handleOpenModal = (slot: number, lessonId?: string) => { 
+  const handleOpenModal = (slot: number, lessonId?: string) => {
+    if (readOnly) return;
+    
     const timeslot = timeslots.find((t) => t.ID === slot);
     if (!timeslot) {
       console.error('Timeslot not found');
@@ -49,6 +52,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots }) => {
     <TimeslotsList
       timeSlots={mappedTimeslots}
       onClickHandler={handleOpenModal}
+      readOnly={readOnly}
     />
   );
 };

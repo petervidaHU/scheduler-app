@@ -61,13 +61,12 @@ export const CreateFrame: FC<FrameInput> = ({
     },
   });
 
-  const { manageState } = useTenancyBasedFormResponse(
+  useTenancyBasedFormResponse(
     frameState,
     entity?.ID ? null : frameForm, // reset form only on create
     toastMessage,
     Entities.frame
   );
-  manageState();
 
   const handleFrameSubmit = (values: typeof frameForm.values) => {
     const { name, recurrence, numberOfDays, description, id } = values;

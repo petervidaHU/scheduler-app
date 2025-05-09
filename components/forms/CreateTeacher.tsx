@@ -16,7 +16,11 @@ const init: FormActionType = {
   success: false,
 };
 
-export const CreateTeacher: FC<ManageFormServerProps<Teacher>> = ({
+interface CreateTeacherProps extends ManageFormServerProps {
+  entity?: Teacher;
+}
+
+export const CreateTeacher: FC<CreateTeacherProps> = ({
   entity,
   backBtnUrl,
   backBtnText,
@@ -36,20 +40,19 @@ export const CreateTeacher: FC<ManageFormServerProps<Teacher>> = ({
       description: entity?.DESCRIPTION || "",
     },
     validate: {
-      teacherName: (value) =>
+      teacherName: (value: string) =>
         value.trim().length === 0 ? "teacher name is required" : null,
-      teacherEmail: (value) =>
-        value.trim().length === 0 ? "teacher name is required" : null,
+      teacherEmail: (value: string) =>
+        value.trim().length === 0 ? "teacher email is required" : null,
     },
   });
 
-  const { manageState } = useTenancyBasedFormResponse(
+  useTenancyBasedFormResponse(
     state,
-    entity.ID ? null : teacherForm,
+    entity?.ID ? null : teacherForm,
     toastMessage,
     Entities.teacher
   );
-  manageState()
 
   const handleTeacherFormSubmit = (values: typeof teacherForm.values) => {
     startTransition(() => {
