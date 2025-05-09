@@ -7,7 +7,7 @@ import { ID } from "@/types/databaseTypes";
 export interface ScheduleContext {
   name: string;
   description: string;
-  frameId: ID;
+  frameId: ID | "CUSTOM";
   class: ID;
   lessons: Record<string, LessonInput>;
   days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID }> }>;

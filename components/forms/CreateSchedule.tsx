@@ -21,6 +21,9 @@ import { useEffect } from "react";
 
 const formFields = Object.values(FormFields);
 
+// Special value for custom frame
+const CUSTOM_FRAME = "CUSTOM";
+
 const init: FormActionType = {
   error: null,
   data: null,
@@ -63,10 +66,14 @@ const SchedulePage = () => {
     label: `${classObj.NAME} / (${classObj.NUMBER_OF_STUDENTS} students)`,
   }));
 
-  const frameOptions = Object.entries(frames || {}).map(([id, frameObj]) => ({
-    value: id,
-    label: `${frameObj.NAME} (${frameObj.RECURRENCE === 1 ? 'Recurring' : 'Non-recurring'}, ${frameObj.NUMBER_OF_DAYS} days)`,
-  }));
+  // Add Custom Frame option to the frame options
+  const frameOptions = [
+    { value: CUSTOM_FRAME, label: "Custom Frame (Manual day creation)" },
+    ...Object.entries(frames || {}).map(([id, frameObj]) => ({
+      value: id,
+      label: `${frameObj.NAME} (${frameObj.RECURRENCE === 1 ? 'Recurring' : 'Non-recurring'}, ${frameObj.NUMBER_OF_DAYS} days)`,
+    }))
+  ];
 
   const form = useForm({
     initialValues: {
@@ -105,14 +112,19 @@ const SchedulePage = () => {
 
       // Update frameId in store
       if (values.frameId !== previous.frameId) {
-        updateSchedule({ frameId: values.frameId ? Number(values.frameId) : null });
+        updateSchedule({ frameId: values.frameId });
         
         // Handle frame change - update days based on the frame's NUMBER_OF_DAYS
-        if (values.frameId) {
+        if (values.frameId && values.frameId !== CUSTOM_FRAME) {
           const selectedFrame = frames?.[values.frameId];
           if (selectedFrame) {
             updateDaysBasedOnFrame(selectedFrame.NUMBER_OF_DAYS);
           }
+        } else if (values.frameId === CUSTOM_FRAME) {
+          // For custom frame, clear existing days but don't auto-create new ones
+          days.forEach(day => {
+            deleteDay(day.id);
+          });
         }
       }
     },
@@ -141,17 +153,29 @@ const SchedulePage = () => {
   // Update days if frameId is already set when component mounts
   useEffect(() => {
     const frameId = form.values.frameId;
-    if (frameId && frames?.[frameId]) {
+    if (frameId && frameId !== CUSTOM_FRAME && frames?.[frameId]) {
       updateDaysBasedOnFrame(frames[frameId].NUMBER_OF_DAYS);
     }
   }, [frames]);
+
+  const handleAddDay = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const newDay: DayPlan = {
+      id: nanoid(),
+      order: String(days.length + 1),
+      identifier: `Day ${days.length + 1}`,
+      timeSlots: [],
+      lessons: [],
+    };
+    addDay(newDay);
+  };
 
   const handleScheduleFormSubmit = (values: typeof form.values) => {
     if (!values.class || !values.frameId) {
       return;
     }
+    
     const scheduleContext: ScheduleContext = {
-      frameId: Number(values.frameId),
+      frameId: values.frameId === CUSTOM_FRAME ? CUSTOM_FRAME : Number(values.frameId),
       days: days,
       lessons: lessons,
       name: values.name,
@@ -159,6 +183,7 @@ const SchedulePage = () => {
       description: values.description,
       owner: values.owner || "",
     };
+    
     startTransition(() => {
       sAction(scheduleContext);
     });
@@ -198,6 +223,13 @@ const SchedulePage = () => {
           placeholder="Select a frame"
           required
         />
+        
+        {/* Show Add Day button only when Custom Frame is selected */}
+        {form.values.frameId === CUSTOM_FRAME && (
+          <Button onClick={handleAddDay} mt="sm" mb="sm">
+            Add Day
+          </Button>
+        )}
         
         <TextInput
           label="Name"

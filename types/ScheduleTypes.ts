@@ -36,7 +36,7 @@ export interface Schedule {
   [FormFields.class]: ID | null;
   [FormFields.description]: string | null;
   [FormFields.owner]: ID | null;
-  frameId: ID | null;
+  frameId: ID | "CUSTOM" | null;
   lessons: Record<string, LessonInput>;
   // timeslots: Record<string, Timeslots>;
   days: DayPlan[];

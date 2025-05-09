@@ -927,7 +927,7 @@ END;
   }
 
   async createSchedule(
-    frameId: number,
+    frameId: number | "CUSTOM",
     description: string,
     owner: string,
     lessons: Record<string, LessonInput>,
@@ -951,7 +951,7 @@ END;
       const tenancyId = this.getTenancy();
       const bindVariables = {
         tenancyId,
-        frameId,
+        frameId: frameId === "CUSTOM" ? null : frameId,
         description,
         owner,
         classId,
