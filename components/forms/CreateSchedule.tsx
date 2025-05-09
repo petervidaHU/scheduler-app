@@ -16,6 +16,8 @@ import { useStore } from "@/store/store";
 import { nanoid } from "nanoid";
 import { getSyllabusAction } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getSyllabusAction";
 import { FormFields } from "@/types/ScheduleTypes";
+import { DayPlan } from "@/types/ScheduleTypes";
+import { useEffect } from "react";
 
 const formFields = Object.values(FormFields);
 
@@ -35,6 +37,7 @@ const SchedulePage = () => {
       frames: { data: frames },
     },
     addDay,
+    deleteDay,
     updateSyllabus,
     updateSchedule,
     scheduleState: { days, lessons },
@@ -103,9 +106,45 @@ const SchedulePage = () => {
       // Update frameId in store
       if (values.frameId !== previous.frameId) {
         updateSchedule({ frameId: values.frameId ? Number(values.frameId) : null });
+        
+        // Handle frame change - update days based on the frame's NUMBER_OF_DAYS
+        if (values.frameId) {
+          const selectedFrame = frames?.[values.frameId];
+          if (selectedFrame) {
+            updateDaysBasedOnFrame(selectedFrame.NUMBER_OF_DAYS);
+          }
+        }
       }
     },
   });
+  
+  // Function to update days based on the frame's NUMBER_OF_DAYS property
+  const updateDaysBasedOnFrame = (numberOfDays: number) => {
+    // First, clear existing days
+    days.forEach(day => {
+      deleteDay(day.id);
+    });
+    
+    // Then, create the required number of days
+    for (let i = 0; i < numberOfDays; i++) {
+      const newDay: DayPlan = {
+        id: nanoid(),
+        order: String(i + 1),
+        identifier: `Day ${i + 1}`,
+        timeSlots: [],
+        lessons: [],
+      };
+      addDay(newDay);
+    }
+  };
+
+  // Update days if frameId is already set when component mounts
+  useEffect(() => {
+    const frameId = form.values.frameId;
+    if (frameId && frames?.[frameId]) {
+      updateDaysBasedOnFrame(frames[frameId].NUMBER_OF_DAYS);
+    }
+  }, [frames]);
 
   const handleScheduleFormSubmit = (values: typeof form.values) => {
     if (!values.class || !values.frameId) {
@@ -132,14 +171,6 @@ const SchedulePage = () => {
     console.log("to be done");
   };
 
-  const handleAddDay = (event: React.MouseEvent<HTMLButtonElement>) => {
-    const newDay = {
-      id: nanoid(),
-      timeSlots: [],
-    };
-    addDay(newDay);
-  };
-
   return (
     <>
       <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
@@ -148,8 +179,7 @@ const SchedulePage = () => {
           name="weekly"
           onChange={handleWeeklyCheckboxChange}
         />
-        <Button onClick={handleAddDay}>add day</Button>
-
+        
         <Select
           label="Class"
           name={FormFields.class}
