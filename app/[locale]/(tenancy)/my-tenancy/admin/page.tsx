@@ -10,11 +10,13 @@ import {
   Specialty,
   Subject,
   Teacher,
+  Frame,
 } from "@/types/databaseTypes";
 import CreateClass from "@/components/forms/CreateClass";
 import CreateSubject from "@/components/forms/CreateSubject";
 import { ManageFormServerProps } from "@/types/FormActionType";
 import CreateTeacher from "@/components/forms/CreateTeacher";
+import { CreateFrame } from "@/components/forms/CreateFrame";
 import { Entities } from "@/types/Entities";
 import { getDbInstance } from "@/lib/database/db-instance";
 
@@ -173,6 +175,32 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <>
             <h2>{title}</h2>
             <CreateTeacher
+              {...(entityToEdit ? entityToEdit : {})}
+              {...serverProps}
+            />
+          </>
+        );
+      },
+      [Entities.frame]: async (id: number | null) => {
+        const entityToEdit = await getEntityFromDatabase<Frame>(
+          id,
+          Entities.frame
+        );
+
+        const serverProps: ManageFormServerProps = {
+          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
+          backBtnText: id ? "Go Back" : "Cancel",
+          submitBtnText: id ? "Update frame" : "Create frame",
+          toastMessage: id
+            ? "Frame updated successfully"
+            : "Frame created successfully",
+        };
+
+        const title = id ? "Update frame" : "Create frame";
+        return (
+          <>
+            <h2>{title}</h2>
+            <CreateFrame
               {...(entityToEdit ? entityToEdit : {})}
               {...serverProps}
             />

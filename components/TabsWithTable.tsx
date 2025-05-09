@@ -32,11 +32,12 @@ const loadingIndicator: Partial<Record<Entities, any>> = {
   [Entities.teacher]: { teachers: { isLoading: true } },
   [Entities.classroom]: { classRoom: { isLoading: true } },
   [Entities.class]: { classes: { isLoading: true } },
+  [Entities.frame]: { frames: { isLoading: true } },
 };
 
 const TabsWithTable = () => {
   const {
-    tenancyBasedData: { specialties, classRooms, classes, teachers, subjects },
+    tenancyBasedData: { specialties, classRooms, classes, teachers, subjects, frames },
     updateTenancyBasedData,
     addToast,
   } = useStore();
@@ -139,6 +140,26 @@ const TabsWithTable = () => {
                   : "-",
               ];
             });
+          }
+          return [];
+        })(),
+      },
+    },
+    {
+      label: Entities.frame,
+      error: !!frames.error,
+      isLoading: !!frames.isLoading,
+      data: {
+        head: ["id", "name", "description", "recurrence", "number of days"],
+        body: (() => {
+          if (frames.data) {
+            return Object.values(frames.data).map((f) => [
+              f.ID,
+              f.NAME,
+              f.DESCRIPTION || "-",
+              f.RECURRENCE === 1 ? "Yes" : "No",
+              f.NUMBER_OF_DAYS,
+            ]);
           }
           return [];
         })(),

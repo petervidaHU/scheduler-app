@@ -6,4 +6,5 @@ export enum Entities {
     teacher = "teacher",
     student = "student",
     syllabus = "syllabus",
+    frame = "frame",
 }

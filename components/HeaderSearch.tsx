@@ -69,7 +69,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
       teachers: { isLoading: true },
       classRooms: { isLoading: true },
       classes: { isLoading: true },
-      timeslots: [],
+      frames: { isLoading: true },
     });
     try {
       await update({ tenancyId: value });
@@ -92,7 +92,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
         teachers: { error: true, isLoading: false },
         classRooms: { error: true, isLoading: false },
         classes: { error: true, isLoading: false },
-        timeslots: [],
+        frames: { error: true, isLoading: false },
       });
     } finally {
       setLoading(false);

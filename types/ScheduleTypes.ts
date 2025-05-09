@@ -7,6 +7,7 @@ import {
   Syllabus,
   Teacher,
   Timeslots,
+  Frame,
 } from "./databaseTypes";
 import { LessonInput, PreloadDataObject, SelectOptions, SyllabusInputForm } from "./FormActionType";
 
@@ -35,7 +36,7 @@ export interface Schedule {
   [FormFields.class]: ID | null;
   [FormFields.description]: string | null;
   [FormFields.owner]: ID | null;
-  period: number | null;
+  frameId: ID | null;
   lessons: Record<string, LessonInput>;
   // timeslots: Record<string, Timeslots>;
   days: DayPlan[];
@@ -77,4 +78,5 @@ export interface TenancyBasedData {
   subjects: PreloadDataObject<DataWithOptions<Subject>>;
   specialties: PreloadDataObject<DataWithOptions<Specialty>>;
   classes: PreloadDataObject<DataWithOptions<Classes>>;
+  frames: PreloadDataObject<DataWithOptions<Frame>>;
 }

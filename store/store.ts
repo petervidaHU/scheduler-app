@@ -17,6 +17,7 @@ import {
   Teacher,
   TimeslotInput,
   Timeslots,
+  Frame,
 } from "@/types/databaseTypes";
 import { LessonInput, PreloadDataObject } from "@/types/FormActionType";
 import { Toast } from "@/types/UIFeedbackTypes";
@@ -29,6 +30,7 @@ interface ScheduleState {
     teachers: PreloadDataObject<DataWithOptions<Teacher>>;
     classes: PreloadDataObject<DataWithOptions<Classes>>;
     classRooms: PreloadDataObject<DataWithOptions<ClassRoom>>;
+    frames: PreloadDataObject<DataWithOptions<Frame>>;
   };
 
   //Schedule
@@ -76,6 +78,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
     teachers: {},
     classRooms: {},
     classes: {},
+    frames: {},
   },
   scheduleState: {
     id: "",
@@ -84,7 +87,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
     class: null,
     description: null,
     owner: null,
-    period: null,
+    frameId: null,
     lessons: {},
     days: [],
   },
@@ -157,6 +160,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
         classRooms: { ...payload.classRooms },
         classes: { ...payload.classes },
         specialties: { ...payload.specialties },
+        frames: { ...payload.frames },
       },
     })),
   updateTenancyBasedData: (payload: Partial<TenancyBasedData>) =>

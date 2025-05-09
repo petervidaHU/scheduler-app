@@ -15,6 +15,7 @@ import {
   ID,
   Syllabus,
   Timeslots,
+  Frame,
 } from "@/types/databaseTypes";
 import { NormalizedSyllabus } from "@/app/[locale]/(tenancy)/_actions/createClass";
 import { LessonInput } from "@/types/FormActionType";
@@ -28,6 +29,7 @@ const tableNameMapping: Record<Entities, string> = {
   subject: "subjects",
   teacher: "teachers",
   class: "classes",
+  frame: "frames",
 } as Record<Entities, string>;
 
 interface ExtendedExecuteOptions extends ExecuteOptions {
@@ -925,7 +927,7 @@ END;
   }
 
   async createSchedule(
-    period: number,
+    frameId: number,
     description: string,
     owner: string,
     lessons: Record<string, LessonInput>,
@@ -941,15 +943,15 @@ END;
     try {
       // schedule 
       const querySchedule = `
-        INSERT INTO SCHEDULE (TENANCY_ID, PERIOD, DESCRIPTION, OWNER, CLASS_ID, NAME)
-        VALUES (:tenancyId, :period, :description, :owner, :classId, :name)
+        INSERT INTO SCHEDULE (TENANCY_ID, FRAME_ID, DESCRIPTION, OWNER, CLASS_ID, NAME)
+        VALUES (:tenancyId, :frameId, :description, :owner, :classId, :name)
         RETURNING ID INTO :scheduleId
       `;
       
       const tenancyId = this.getTenancy();
       const bindVariables = {
         tenancyId,
-        period,
+        frameId,
         description,
         owner,
         classId,
@@ -1029,6 +1031,58 @@ END;
       throw error;
     } finally {
       await conn.close();
+    }
+  }
+
+  // ----------------- FRAME -------------------
+
+  async createFrame(
+    name: string,
+    recurrence: number,
+    numberOfDays: number,
+    description: string = ""
+  ): Promise<void> {
+    const query = `INSERT INTO frames (name, recurrence, number_of_days, description, tenancy_id) VALUES (:name, :recurrence, :numberOfDays, :description, :tenancyId)`;
+    try {
+      const tenancyId = this.getTenancy();
+      const bindVariables = [
+        name,
+        recurrence,
+        numberOfDays,
+        description,
+        tenancyId,
+      ];
+      await this.executeCommand(query, bindVariables);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateFrame(
+    name: string,
+    recurrence: number,
+    numberOfDays: number,
+    description: string,
+    id: number
+  ): Promise<void> {
+    const query = `UPDATE frames SET name = :name, recurrence = :recurrence, number_of_days = :numberOfDays, description = :description WHERE id = :id`;
+    try {
+      const bindVariables = [name, recurrence, numberOfDays, description, id];
+      await this.executeCommand(query, bindVariables);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getFrameById(id: number): Promise<Frame> {
+    const query = `SELECT * FROM frames WHERE id = :id AND (tenancy_id = :tenancyId)`;
+    try {
+      const tenancyId = this.getTenancy();
+      const result = await this.executeQuery(query, [id, tenancyId]);
+      return (result as Frame[])[0];
+    } catch (error) {
+      console.error(`Error getting frame: ${error}`);
+      throw error;
     }
   }
 }

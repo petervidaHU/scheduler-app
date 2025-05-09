@@ -7,7 +7,7 @@ import { ID } from "@/types/databaseTypes";
 export interface ScheduleContext {
   name: string;
   description: string;
-  period: number;
+  frameId: ID;
   class: ID;
   lessons: Record<string, LessonInput>;
   days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID }> }>;
@@ -21,7 +21,7 @@ export async function createSchedule(state: FormActionType, context: ScheduleCon
     
     // Create schedule and lessons in a single transaction
     const scheduleId = await db.createSchedule(
-      context.period,
+      context.frameId,
       context.description,
       context.owner,
       context.lessons,

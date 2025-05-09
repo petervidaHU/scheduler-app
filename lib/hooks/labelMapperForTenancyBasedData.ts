@@ -6,4 +6,5 @@ export const labelMapper: Partial<Record<Entities, any>> = {
   [Entities.teacher]: "teachers",
   [Entities.classroom]: "classRooms",
   [Entities.class]: "classes",
+  [Entities.frame]: "frames",
 };

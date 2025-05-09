@@ -32,6 +32,7 @@ const SchedulePage = () => {
       classes: { data: classes },
       classRooms: { data: classRooms },
       subjects: { data: subjects },
+      frames: { data: frames },
     },
     addDay,
     updateSyllabus,
@@ -59,6 +60,11 @@ const SchedulePage = () => {
     label: `${classObj.NAME} / (${classObj.NUMBER_OF_STUDENTS} students)`,
   }));
 
+  const frameOptions = Object.entries(frames || {}).map(([id, frameObj]) => ({
+    value: id,
+    label: `${frameObj.NAME} (${frameObj.RECURRENCE === 1 ? 'Recurring' : 'Non-recurring'}, ${frameObj.NUMBER_OF_DAYS} days)`,
+  }));
+
   const form = useForm({
     initialValues: {
       [FormFields.name]: "",
@@ -66,10 +72,12 @@ const SchedulePage = () => {
       [FormFields.description]: "",
       [FormFields.owner]: "",
       [FormFields.status]: "",
+      frameId: "",
       variations: "",
     },
     validate: {
       class: (value) => (!value ? "Class is required" : null),
+      frameId: (value) => (!value ? "Frame is required" : null),
     },
     onValuesChange: async (values, previous) => {
       updateScheduleState(values, previous);
@@ -91,15 +99,20 @@ const SchedulePage = () => {
 
         updateSyllabus(newSyllabus);
       }
+
+      // Update frameId in store
+      if (values.frameId !== previous.frameId) {
+        updateSchedule({ frameId: values.frameId ? Number(values.frameId) : null });
+      }
     },
   });
 
   const handleScheduleFormSubmit = (values: typeof form.values) => {
-    if (!values.class) {
+    if (!values.class || !values.frameId) {
       return;
     }
     const scheduleContext: ScheduleContext = {
-      period: days.length,
+      frameId: Number(values.frameId),
       days: days,
       lessons: lessons,
       name: values.name,
@@ -143,7 +156,19 @@ const SchedulePage = () => {
           data={classOptions}
           value={form.values.class}
           onChange={(value) => form.setFieldValue(FormFields.class, value || "")}
+          required
         />
+        
+        <Select
+          label="Frame"
+          name="frameId"
+          data={frameOptions}
+          value={form.values.frameId}
+          onChange={(value) => form.setFieldValue("frameId", value || "")}
+          placeholder="Select a frame"
+          required
+        />
+        
         <TextInput
           label="Name"
           name={FormFields.name}

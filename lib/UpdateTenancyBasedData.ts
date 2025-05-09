@@ -3,7 +3,7 @@
 import { Entities } from "@/types/Entities";
 import { getDbInstance } from "./database/db-instance";
 import { dataObjectCreator } from "./dataObjectCreator";
-import { Classes, ClassRoom, Specialty, Subject, Teacher } from "@/types/databaseTypes";
+import { Classes, ClassRoom, Specialty, Subject, Teacher, Frame } from "@/types/databaseTypes";
 
 export const refetchTenancyBasedData = async (label: Entities) => {
   try {
@@ -14,6 +14,7 @@ export const refetchTenancyBasedData = async (label: Entities) => {
       subject: (db.getAllEntity<Subject>).bind(db),
       teacher: (db.getAllEntity<Teacher>).bind(db),
       class: (db.getAllEntity<Classes>).bind(db),
+      frame: (db.getAllEntity<Frame>).bind(db),
     };
     const result = await labelTypeMapping[label](label);
     const mapped = dataObjectCreator(result)

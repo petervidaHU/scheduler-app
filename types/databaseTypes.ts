@@ -46,6 +46,15 @@ export interface ClassRoom {
     DESCRIPTION: string;
 }
 
+export interface Frame {
+    ID: ID;
+    NAME: string;
+    TENANCY_ID: ID;
+    RECURRENCE: number;
+    NUMBER_OF_DAYS: number;
+    DESCRIPTION: string;
+}
+
 export interface Classes {
     ID: ID;
     NAME: string;
