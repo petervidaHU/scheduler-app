@@ -145,10 +145,52 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
     }
   };
 
+  // Get the currently selected tenancy name and status
+  const getTenancyStatus = () => {
+    if (!session || status !== "authenticated") {
+      return {
+        name: "Not logged in",
+        isLoaded: false
+      };
+    }
+    
+    if (!selectedTenancy) {
+      return {
+        name: "No tenancy loaded",
+        isLoaded: false
+      };
+    }
+    
+    const selectedTenancyObject = tenancies.find(t => t.ID === selectedTenancy);
+    return {
+      name: selectedTenancyObject ? selectedTenancyObject.NAME : "No tenancy loaded",
+      isLoaded: !!selectedTenancyObject
+    };
+  };
+
   return (
     <header className={classes.header}>
       <div className={classes.inner}>
-        <ColorModeSwitcher />
+        <Group>
+          <ColorModeSwitcher />
+          {status === "authenticated" && (
+            <div className={classes.tenancyInfo}>
+              <span className={classes.tenancyLabel}>Current tenancy:</span>
+              {(() => {
+                const { name, isLoaded } = getTenancyStatus();
+                return (
+                  <span 
+                    className={`${classes.tenancyName} ${!isLoaded ? classes.noTenancy : ''}`}
+                    title={name}
+                  >
+                    {name}
+                  </span>
+                );
+              })()}
+            </div>
+          )}
+        </Group>
+        
         <Group>
           {status === "authenticated" ? (
             <>
@@ -160,32 +202,31 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
                 placeholder="Select a tenancy"
                 clearable
               />
-              {loading && <span>Loading...</span>}
+              {loading && <span className={classes.loadingIndicator}>Loading...</span>}
+              <Button
+                variant="outline"
+                onClick={() => signOut()}
+              >
+                Log out
+              </Button>
+              <Group className={classes.userName}>{name && name}</Group>
             </>
-          ) : null}
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (status === "authenticated") {
-                signOut();
-              } else {
-                router.push("/auth/signin");
-              }
-            }}
-          >
-            {status === "authenticated" ? "Log out" : "Log in"}
-          </Button>
-          <Group>{status === "authenticated" && name && name}</Group>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => router.push("/auth/signin")}
+            >
+              Log in
+            </Button>
+          )}
         </Group>
 
         <Group>
           <Burger opened={opened} onClick={toggle} size="sm" hiddenFrom="sm" />
         </Group>
 
-        <Group>
-          <Group ml={50} gap={5} className={classes.links} visibleFrom="sm">
-            {items}
-          </Group>
+        <Group ml={50} gap={5} className={classes.links} visibleFrom="sm">
+          {items}
           <LocaleSwitcher />
         </Group>
       </div>
