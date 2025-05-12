@@ -32,12 +32,22 @@ interface ToastProps {
 
 const ToastComponent: React.FC<ToastProps> = ({ toast, removeToast }) => {
   const toastTypeDetails = toastIcons[toast.type as keyof typeof toastIcons];
+  // Default: autoClose true, closable true
+  const autoClose = toast.autoClose !== false;
+  const closable = toast.closable !== false;
+  React.useEffect(() => {
+    if (autoClose) {
+      const timer = setTimeout(() => removeToast(toast.id), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [autoClose, removeToast, toast.id]);
   return (
     <Notification
       icon={toastTypeDetails.icon || null}
       color={toastTypeDetails.color || "blue"}
       title={toast.title}
-      onClose={() => removeToast(toast.id)}
+      onClose={closable ? () => removeToast(toast.id) : undefined}
+      withCloseButton={closable}
     >
       {toast.message}
     </Notification>
