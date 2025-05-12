@@ -867,14 +867,20 @@ END;
 
     console.log("arrrrray::", values);
 
-    const rows = values.subjects.map((_, index) =>
-      `(${classId}, ${values.subjects[index]}, '${values.teachers[index]}', ${values.occurrence[index]}, ${tenancyId})`
-    ).join(",\n");
-
-    const query = `INSERT INTO syllabus (class_id, subject_id, teachers, occurrence, tenancy_id) VALUES ${rows}`;
-
     try {
-      await conn.execute(query);
+      // Only proceed with syllabus creation if there are subjects to add
+      if (values.subjects.length > 0) {
+        const rows = values.subjects.map((_, index) =>
+          `(${classId}, ${values.subjects[index]}, '${values.teachers[index]}', ${values.occurrence[index]}, ${tenancyId})`
+        ).join(",\n");
+
+        const query = `INSERT INTO syllabus (class_id, subject_id, teachers, occurrence, tenancy_id) VALUES ${rows}`;
+        
+        console.log("Executing syllabus insert query:", query);
+        await conn.execute(query);
+      } else {
+        console.log("No syllabus entries to insert");
+      }
       await conn.commit();
     } catch (error) {
       await conn.rollback();

@@ -56,6 +56,17 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, removeToast }) => {
 
 function ToastContainer() {
   const { toast, removeToast } = useStore();
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+
+  // Only render the portal on the client side
+  if (!isMounted) {
+    return null;
+  }
 
   return createPortal(
     <div style={overlayStyles}>

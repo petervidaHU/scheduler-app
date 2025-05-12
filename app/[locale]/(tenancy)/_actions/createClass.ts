@@ -22,11 +22,14 @@ export const createClass = async (
     };
   }
   try {
+    console.log("Creating class with:", { className, numberOfStudents, syllabus });
     const db = await getDbInstance();
     const result = await db.createClass(className, numberOfStudents, syllabus);
+    console.log("Class created successfully:", result);
     return { success: true, data: result, error: null };
   } catch (error) {
     console.error(`Error creating class: ${error}`);
+    console.error("SQL Error details:", { syllabus, className, numberOfStudents });
     return { success: false, data: null, error: error };
   }
 };

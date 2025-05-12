@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useState, useEffect } from "react";
+import React, { FC, useState, useEffect, useRef } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { Burger, Group } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -32,10 +32,9 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const [loading, setLoading] = useState(false);
   const { fillTenancyBasedData, addToast } = useStore();
   const { update } = useSession();
+  // Initialize with session.tenancyId only, and handle localStorage in useEffect
   const [selectedTenancy, setSelectedTenancy] = useState<number | null>(
-    typeof window !== "undefined" && localStorage.getItem("selectedTenancy")
-      ? Number(localStorage.getItem("selectedTenancy"))
-      : session.tenancyId || null
+    session.tenancyId || null
   );
   const { name, status } = session;
   const router = useRouter();
@@ -63,19 +62,32 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   };
   const tenancyOptions = getTenancies();
 
+  // Avoid reading localStorage during initial render
+  const initializedRef = useRef(false);
+  
   useEffect(() => {
-    // On mount, restore tenancy from localStorage if available
-    if (typeof window !== "undefined") {
+    // On mount, restore tenancy from localStorage if available, but only once
+    if (typeof window !== "undefined" && !initializedRef.current) {
+      initializedRef.current = true;
       const saved = localStorage.getItem("selectedTenancy");
-      if (saved && !selectedTenancy) {
-        setSelectedTenancy(Number(saved));
+      if (saved) {
+        const savedTenancyId = Number(saved);
+        if (!isNaN(savedTenancyId)) {
+          setSelectedTenancy(savedTenancyId);
+        }
       }
     }
   }, []);
 
   const tenancyChangeHandler = async (value: any) => {
+    // Prevent unnecessary updates if value is the same
+    const valueNum = value ? Number(value) : null;
+    if (valueNum === selectedTenancy) {
+      return; // Skip if already selected
+    }
+  
     // Prevent fetch if no valid tenancy is selected
-    if (!value || value === "0") {
+    if (!valueNum || valueNum === 0) {
       setSelectedTenancy(null);
       if (typeof window !== "undefined") {
         localStorage.removeItem("selectedTenancy");
@@ -91,6 +103,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
       });
       return;
     }
+
     setLoading(true);
     fillTenancyBasedData({
       specialties: { isLoading: true },
@@ -100,12 +113,13 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
       classes: { isLoading: true },
       frames: { isLoading: true },
     });
+    
     try {
-      await update({ tenancyId: value });
-      await setTenancyInServer(value);
-      setSelectedTenancy(value);
+      await update({ tenancyId: valueNum });
+      await setTenancyInServer(valueNum);
+      setSelectedTenancy(valueNum);
       if (typeof window !== "undefined") {
-        localStorage.setItem("selectedTenancy", value);
+        localStorage.setItem("selectedTenancy", String(valueNum));
       }
       const res = await getTenancyBasedData();
       fillTenancyBasedData(res);
@@ -139,6 +153,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
           {status === "authenticated" ? (
             <>
               <Select
+                key="tenancy-select" 
                 value={selectedTenancy ? selectedTenancy.toString() : "0"}
                 onChange={tenancyChangeHandler}
                 data={tenancyOptions}
