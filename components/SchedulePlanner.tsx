@@ -1,14 +1,25 @@
 "use client";
 
-import React, { FC, useMemo } from "react";
+import React, { FC, useEffect, useMemo } from "react";
 import { useStore } from "@/store/store";
-import { ActionIcon, Grid, Select, Stack, Text, Group, Badge, Box, Paper } from "@mantine/core";
+import {
+  ActionIcon,
+  Grid,
+  Select,
+  Stack,
+  Text,
+  Group,
+  Badge,
+  Box,
+  Paper,
+} from "@mantine/core";
 import { DayTemplates, Timeslots } from "@/types/databaseTypes";
 import HourGrid from "./day-planner/HourGrid";
 import { IconTrash } from "@tabler/icons-react";
 import DayPlanner from "./day-planner/DayPlanner";
 import GridContainer from "./day-planner/GridContainer";
 import { useModal } from "./modals/ModalManager";
+import { Schedule } from "@/types/ScheduleTypes";
 
 // Special value for custom frame
 const CUSTOM_FRAME = "CUSTOM";
@@ -17,67 +28,166 @@ interface props {
   dayTemplates: Array<DayTemplates>;
   timeslots: Array<Timeslots>;
   readOnly?: boolean;
+  scheduleData?: Schedule;
 }
 
-const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots, readOnly = false }) => {
+const SchedulePlanner: FC<props> = ({
+  dayTemplates,
+  timeslots,
+  scheduleData,
+  readOnly = false,
+}) => {
   const [openForNewSlot, setOpenForNewSlot] = React.useState(false);
   const [dayToDelete, setDayToDelete] = React.useState<string | null>(null);
   const { openConfirmModal } = useModal();
-  
+
   const {
     scheduleState: { days, frameId },
     windowHeight,
     addTimeslotToDay,
     deleteDay,
+    setDays,
     updateSchedule,
   } = useStore();
 
   // Create a map of template IDs to template names for quick lookup
   const templateNameMap = useMemo(() => {
-    return dayTemplates.reduce((acc, template) => {
-      acc[template.ID.toString()] = template.NAME;
-      return acc;
-    }, {} as Record<string, string>);
+    return dayTemplates.reduce(
+      (acc, template) => {
+        acc[template.ID.toString()] = template.NAME;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
   }, [dayTemplates]);
 
+  useEffect(() => {
+    if (scheduleData && scheduleData.days && scheduleData.days.length > 0) {
+      const currentScheduleId = scheduleData?.id;
+      const currentStoreScheduleId = days.length > 0 ? days[0].scheduleId : null;
+      if (days.length === 0 || (currentScheduleId && currentScheduleId !== currentStoreScheduleId)) {
+        // Add scheduleId to each day for reference
+        const daysWithScheduleId = scheduleData.days.map(day => {
+          // If day has templateId and empty timeSlots, fill from template
+          if (day.templateId && (!day.timeSlots || day.timeSlots.length === 0)) {
+            const template = dayTemplates.find(t => t.ID.toString() === day.templateId);
+            let timeslotIds: number[] = [];
+            if (template) {
+              if (typeof template.TIMESLOTS === 'string') {
+                let str = (template.TIMESLOTS as string).trim();
+                if (!str.startsWith('[')) str = `[${str}]`;
+                try {
+                  timeslotIds = JSON.parse(str);
+                } catch (e) {
+                  console.error('Failed to parse template.TIMESLOTS:', template.TIMESLOTS, e);
+                  timeslotIds = [];
+                }
+              } else if (Array.isArray(template.TIMESLOTS)) {
+                timeslotIds = template.TIMESLOTS;
+              }
+            }
+            return {
+              ...day,
+              scheduleId: currentScheduleId,
+              timeSlots: timeslotIds.map(id => ({ timeslotId: id }))
+            };
+          }
+          return {
+            ...day,
+            scheduleId: currentScheduleId
+          };
+        });
+        setDays(daysWithScheduleId);
+      }
+    }
+  }, [scheduleData, setDays, dayTemplates, days]);
+  
   const handleAddTimeslots = (dayId: string, templateId: string) => {
     const template = dayTemplates.find((t) => t.ID.toString() === templateId);
-    const timeslotId = template?.TIMESLOTS || [];
+    if (!template) {
+      console.error(`Template with ID ${templateId} not found`);
+      return;
+    }
+    // Defensive: parse TIMESLOTS if string, or set to [] if null
+    let timeslotIds: number[] = [];
+    if (typeof template.TIMESLOTS === 'string') {
+      const str = (template.TIMESLOTS as string).trim();
+      let jsonStr = str;
+      if (!jsonStr.startsWith('[')) jsonStr = `[${jsonStr}]`;
+      try {
+        timeslotIds = JSON.parse(jsonStr);
+      } catch (e) {
+        console.error('Failed to parse template.TIMESLOTS:', template.TIMESLOTS, e);
+        timeslotIds = [];
+      }
+    } else if (Array.isArray(template.TIMESLOTS)) {
+      timeslotIds = template.TIMESLOTS;
+    } else if (template.TIMESLOTS == null) {
+      timeslotIds = [];
+    } else {
+      console.error('Unexpected TIMESLOTS type:', typeof template.TIMESLOTS, template.TIMESLOTS);
+      timeslotIds = [];
+    }
     const day = days.find((d) => d.id === dayId);
-    if (!day) return;
+    if (!day) {
+      console.error(`Day with ID ${dayId} not found`);
+      return;
+    }
 
-    // Clear existing timeslots for this day
-    const existingTimeslots = day.timeSlots.filter(slot => slot.lessonId);
-    day.timeSlots = [...existingTimeslots];
-
-    // Add each timeslot from the template with the template ID
-    timeslotId.forEach((slot: number) => {
-      const timeslotsInDay = day.timeSlots.map((t) => t.timeslotId);
-      if (!timeslotsInDay.includes(slot)) {
-        addTimeslotToDay({ 
-          dayId, 
-          timeslotId: slot, 
-          templateId: template?.ID.toString() 
+    console.log(`Adding timeslots from template "${template.NAME}" to day ${dayId}`);
+    
+    // First, update the template ID for the day
+    // This is important as it establishes the relationship between the day and template
+    addTimeslotToDay({
+      dayId,
+      timeslotId: day.timeSlots.length > 0 ? day.timeSlots[0].timeslotId : 0,
+      templateId: template.ID.toString(),
+    });
+    
+    // Get existing timeslots with lessons that should be preserved
+    const existingTimeslotsWithLessons = day.timeSlots.filter(
+      (slot) => slot.lessonId
+    );
+    
+    // Get timeslot IDs already with lessons to avoid duplicating them
+    const lessonTimeslotIds = existingTimeslotsWithLessons.map(
+      (slot) => slot.timeslotId
+    );
+    
+    console.log(`Adding ${timeslotIds.length} timeslots from template to day ${dayId}`);
+    console.log(`Preserving ${existingTimeslotsWithLessons.length} existing timeslots with lessons`);
+    
+    // For each timeslot in the template
+    timeslotIds.forEach((slotId: number) => {
+      // Only add if not already associated with a lesson
+      if (!lessonTimeslotIds.includes(slotId)) {
+        addTimeslotToDay({
+          dayId,
+          timeslotId: slotId,
+          templateId: template.ID.toString(),
         });
+      } else {
+        console.log(`Skipping timeslot ${slotId} as it already has a lesson`);
       }
     });
   };
 
   const handleDeleteDayClick = (dayId: string) => {
     // Check if day has lessons
-    const day = days.find(d => d.id === dayId);
-    if (day && day.timeSlots.some(slot => slot.lessonId)) {
+    const day = days.find((d) => d.id === dayId);
+    if (day && day.timeSlots.some((slot) => slot.lessonId)) {
       return; // Do nothing if the day has lessons (already disabled in UI)
     }
-    
+
     // If a non-custom frame is selected, show confirmation modal
     if (frameId && frameId !== CUSTOM_FRAME) {
       openConfirmModal({
         title: "Confirm Day Deletion",
         children: (
           <Text size="sm">
-            Deleting this day will convert your schedule to use a custom frame, 
-            disconnecting it from the selected frame template. This cannot be undone.
+            Deleting this day will convert your schedule to use a custom frame,
+            disconnecting it from the selected frame template. This cannot be
+            undone.
           </Text>
         ),
         labels: { confirm: "Delete and Convert to Custom", cancel: "Cancel" },
@@ -86,7 +196,7 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots, readOnly = false 
           updateSchedule({ frameId: CUSTOM_FRAME });
           // Delete the day
           deleteDay(dayId);
-        }
+        },
       });
     } else {
       // For custom frame or no frame, delete immediately
@@ -115,10 +225,12 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots, readOnly = false 
         <Grid.Col span={1}>
           {/* Empty space for time column */}
           <Paper p="sm" withBorder>
-            <Text fw={500} ta="center">Time</Text>
+            <Text fw={500} ta="center">
+              Time
+            </Text>
           </Paper>
         </Grid.Col>
-        
+
         {days.map((day) => (
           <Grid.Col span={2} key={`day-header-${day.id}`}>
             <Paper p="sm" withBorder>
@@ -127,16 +239,19 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots, readOnly = false 
                   <Group>
                     {day.identifier || day.id}
                     {day.templateId && templateNameMap[day.templateId] && (
-                      <Badge size="sm" color="blue">
+                      <Badge size="sm" color="blue" title="Applied template">
                         {templateNameMap[day.templateId]}
                       </Badge>
+                    )}
+                    {!day.templateId && (
+                      <Badge size="sm" color="gray" title="No template applied">No Template</Badge>
                     )}
                   </Group>
                   {!readOnly && (
                     <ActionIcon
                       color="red"
                       onClick={() => handleDeleteDayClick(day.id)}
-                      disabled={day.timeSlots.some(slot => slot.lessonId)}
+                      disabled={day.timeSlots.some((slot) => slot.lessonId)}
                     >
                       <IconTrash
                         style={{ width: "70%", height: "70%" }}
@@ -150,7 +265,9 @@ const SchedulePlanner: FC<props> = ({ dayTemplates, timeslots, readOnly = false 
                     label="Choose timeslot template"
                     data={dayTemplateOptions}
                     value={day.templateId}
-                    onChange={(value) => value && handleAddTimeslots(day.id, value)}
+                    onChange={(value) =>
+                      value && handleAddTimeslots(day.id, value)
+                    }
                   />
                 )}
               </Stack>

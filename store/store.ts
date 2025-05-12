@@ -66,6 +66,7 @@ interface ScheduleState {
   ) => void;
   addTimeslotToDay: (payload: { dayId: string; timeslotId: number; templateId?: string }) => void;
   resetScheduleState: () => void;
+  setDays: (days: DayPlan[]) => void;
 
   addActiveTimeslot: (payload: TimeslotInput) => void;
   removeActiveTimeslot: (payload: ID) => void;
@@ -137,21 +138,38 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
     })), */
   addTimeslotToDay: (payload: { dayId: string; timeslotId: number; templateId?: string }) =>
     set((state: ScheduleState) => {
-      const oldDays =
-        state.scheduleState.days.find((day) => day.id === payload.dayId)
-          ?.timeSlots || [];
-      // const timeSlots = state.scheduleState.timeslots;
-      oldDays.push({ timeslotId: payload.timeslotId });
+      const day = state.scheduleState.days.find((d) => d.id === payload.dayId);
+      if (!day) {
+        console.error(`Day with ID ${payload.dayId} not found`);
+        return state;
+      }
+      
+      // If a template is provided, update the templateId first
+      const updatedTemplateId = payload.templateId || day.templateId;
+      
+      // Add the new timeslot if it doesn't exist already
+      const existingTimeslotIndex = day.timeSlots.findIndex(slot => 
+        slot.timeslotId === payload.timeslotId);
+      
+      // Only add timeslot if it doesn't exist yet
+      let updatedTimeSlots = [...day.timeSlots];
+      if (existingTimeslotIndex === -1) {
+        console.log(`Adding timeslot ${payload.timeslotId} to day ${payload.dayId}`);
+        updatedTimeSlots.push({ timeslotId: payload.timeslotId });
+      } else {
+        console.log(`Timeslot ${payload.timeslotId} already exists in day ${payload.dayId}, not adding duplicate`);
+      }
+      
       return {
         ...state,
         scheduleState: {
           ...state.scheduleState,
-          days: state.scheduleState.days.map((day) =>
-            day.id === payload.dayId ? { 
-              ...day, 
-              timeSlots: oldDays,
-              templateId: payload.templateId || day.templateId // Keep existing templateId if not provided
-            } : day
+          days: state.scheduleState.days.map((d) =>
+            d.id === payload.dayId ? { 
+              ...d, 
+              timeSlots: updatedTimeSlots,
+              templateId: updatedTemplateId
+            } : d
           ),
         },
       };
@@ -323,6 +341,14 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
       },
       syllabus: {} as SyllabusWithOptions,
       activeTimeslots: {},
+    })),
+  setDays: (days: DayPlan[]) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      scheduleState: {
+        ...state.scheduleState,
+        days: days,
+      },
     })),
 });
 

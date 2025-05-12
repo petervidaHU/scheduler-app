@@ -18,20 +18,22 @@ interface SchedulePageProps {
 export default async function EditSchedulePage({ params }: SchedulePageProps) {
   const scheduleId = params.id;
   const schedule = await getScheduleById(scheduleId);
-  
+
   if (!schedule) {
     notFound();
   }
-  
+
   const dayTemplates = await getDayTemplates();
   const timeslots = await getTimeslots();
+  console.log('timesots in server page', timeslots);
+  console.log('dayTemplates in server page', dayTemplates);
 
   // Pre-fetch syllabus if class is defined
   let syllabus = null;
   if (schedule.class) {
     syllabus = await getSyllabusAction(schedule.class);
   }
- 
+
   return (
     <div>
       <Group justify="space-between" mb="md">
@@ -40,13 +42,17 @@ export default async function EditSchedulePage({ params }: SchedulePageProps) {
           <Button variant="light">Back to List</Button>
         </Link>
       </Group>
-      <CreateSchedule 
+      <CreateSchedule
         scheduleId={scheduleId}
         scheduleData={schedule}
         syllabusData={syllabus}
       />
       <SyllabusTable />
-      <SchedulePlanner dayTemplates={dayTemplates} timeslots={timeslots} />
+      <SchedulePlanner
+        dayTemplates={dayTemplates}
+        timeslots={timeslots}
+        scheduleData={schedule}
+      />
     </div>
   );
-} 
+}

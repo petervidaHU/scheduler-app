@@ -69,6 +69,7 @@ const SchedulePage = ({
     updateSchedule: updateScheduleInStore,
     scheduleState: { days, lessons },
     resetScheduleState,
+    setDays
   } = useStore();
 
   // Initialize form with default values or scheduleData if available
@@ -245,13 +246,22 @@ const SchedulePage = ({
             
             // Use a Set to track day IDs for deduplication
             const dayIds = new Set();
-            fetchedScheduleData.days.forEach(day => {
-              if (!dayIds.has(day.id)) {
-                dayIds.add(day.id);
-                console.log(`Adding day ${day.id} to store`);
-                addDay(day);
+            
+            // Add scheduleId reference to each day for tracking purposes
+            const daysWithScheduleId = fetchedScheduleData.days.map(day => ({
+              ...day,
+              scheduleId: fetchedScheduleData.id
+            }));
+            
+            // Add all days at once using setDays for atomic update
+            setDays(daysWithScheduleId);
+            
+            // Log template information for debugging
+            daysWithScheduleId.forEach(day => {
+              if (day.templateId) {
+                console.log(`Day ${day.id} uses template ID: ${day.templateId}`);
               } else {
-                console.warn(`Duplicate day ID detected: ${day.id}. Skipping.`);
+                console.log(`Day ${day.id} has no template`);
               }
             });
 
@@ -399,6 +409,13 @@ const SchedulePage = ({
           withAsterisk
           mb="md"
           {...form.getInputProps("frameId")}
+        />
+        
+        <TextInput
+          label="Owner"
+          placeholder="Enter the owner of this schedule"
+          mb="md"
+          {...form.getInputProps(FormFields.owner)}
         />
         
         <Textarea

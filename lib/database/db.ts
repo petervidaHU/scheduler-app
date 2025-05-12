@@ -112,24 +112,36 @@ export class DatabaseService {
 
   async executeQuery(
     query: string,
-    bindVariables: BindParameters,
+    bindVariables: BindParameters | Array<any>,
     params: ExecuteOptions = { outFormat: OUT_FORMAT_OBJECT }
   ): Promise<unknown[]> {
     let result: oracledb.Result<unknown>;
 
+    let finalQuery = query;
+    let bindVars: BindParameters | Array<any> = bindVariables;
+
+    // Only convert array to named if the query uses positional placeholders
+    if (Array.isArray(bindVariables) && query.includes('?')) {
+      bindVars = bindVariables.reduce((acc, val, i) => ({ ...acc, [`b${i}`]: val }), {});
+      let idx = 0;
+      finalQuery = query.replace(/\?/g, () => `:b${idx++}`);
+    }
+
     const conn = await oracledb.getConnection();
     if (!conn) throw new Error("No connection available");
     try {
-      result = await conn!.execute(query, bindVariables, params);
+      result = await conn.execute(finalQuery, bindVars, params);
     } catch (error) {
-      console.error(`Error executing ${query} query: ${error}`);
+      console.error(`Error executing query: ${error}`);
+      console.error('Query was:', finalQuery);
+      console.error('Bind variables were:', bindVars);
       throw error;
     } finally {
       conn.release();
     }
 
     if (!result || !result["rows"]) {
-      throw new Error("The database query resulted no result");
+      return [];
     } else {
       return result.rows;
     }
@@ -1108,6 +1120,62 @@ END;
     `;
     const daysResult = await this.executeQuery(queryDays, [scheduleId, tenancyId]) as any[];
     
+    // Get day templates for days that use them
+    const dayTemplateIds = daysResult
+      .filter(day => day.DAY_TEMPLATE_ID !== null)
+      .map(day => day.DAY_TEMPLATE_ID);
+    
+    // For logging/debugging
+    console.log(`Found ${dayTemplateIds.length} unique day templates used in this schedule`);
+    
+    let templateTimeslots: Record<string, number[]> = {};
+    let templateNames: Record<string, string> = {};
+    
+    if (dayTemplateIds.length > 0) {
+      // Query the templates with their names for better UI display
+      const queryTemplates = `
+        SELECT ID, NAME, TIMESLOTS 
+        FROM DAY_TEMPLATES 
+        WHERE ID IN (${dayTemplateIds.map((_, i) => `:id${i}`).join(',')})
+      `;
+      
+      // Create bind variables object with numbered ids
+      const bindVars = dayTemplateIds.reduce((acc, id, i) => {
+        acc[`id${i}`] = id;
+        return acc;
+      }, {} as Record<string, any>);
+      
+      const templatesResult = await this.executeQuery(queryTemplates, bindVars) as any[];
+      
+      console.log(`Retrieved ${templatesResult.length} day templates from database`, templatesResult);
+      
+      templatesResult.forEach(template => {
+        let raw = template.TIMESLOTS;
+        if (typeof raw === 'string') {
+          let str = raw.trim();
+          if (!str.startsWith('[')) {
+            str = `[${str}]`;
+          }
+          try {
+            templateTimeslots[template.ID] = JSON.parse(str);
+            templateNames[template.ID] = template.NAME;
+            console.log(`Template ${template.ID} (${template.NAME}) has ${templateTimeslots[template.ID].length} timeslots`);
+          } catch (e) {
+            console.error(`Error parsing timeslots for template ${template.ID}:`, e, 'Raw value:', raw);
+            templateTimeslots[template.ID] = [];
+          }
+        } else if (raw == null) {
+          templateTimeslots[template.ID] = [];
+          templateNames[template.ID] = template.NAME;
+          console.warn(`Template ${template.ID} (${template.NAME}) has null TIMESLOTS, defaulting to []`);
+        } else {
+          // assuming Array
+          templateTimeslots[template.ID] = [];
+          templateNames[template.ID] = template.NAME;
+        }
+      });
+    }
+    
     // Get lessons
     const queryLessons = `
       SELECT L.*, D.DAY_IDENTIFIER
@@ -1117,25 +1185,57 @@ END;
     `;
     const lessonsResult = await this.executeQuery(queryLessons, [scheduleId, tenancyId]) as any[];
     
+    console.log(`Retrieved ${lessonsResult.length} lessons for this schedule`);
+    
     // Transform days to include timeslots and template ID
-    const days = daysResult.map(day => ({
-      id: day.DAY_IDENTIFIER,
-      order: day.SLOT_ORDER.toString(),
-      identifier: `Day ${day.SLOT_ORDER + 1}`,
-      templateId: day.DAY_TEMPLATE_ID?.toString() || undefined,
-      timeSlots: [] as Array<{timeslotId: number, lessonId?: string}>,
-      databaseId: day.ID,
-      lessons: []
-    }));
+    const days = daysResult.map(day => {
+      const dayObj = {
+        id: day.DAY_IDENTIFIER,
+        order: day.SLOT_ORDER.toString(),
+        identifier: `Day ${day.SLOT_ORDER + 1}`,
+        templateId: day.DAY_TEMPLATE_ID?.toString() || undefined,
+        timeSlots: [] as Array<{timeslotId: number, lessonId?: string}>,
+        databaseId: day.ID,
+        lessons: []
+      };
+      
+      // If day has a template, add template timeslots
+      if (day.DAY_TEMPLATE_ID && templateTimeslots[day.DAY_TEMPLATE_ID]) {
+        const templateId = day.DAY_TEMPLATE_ID;
+        console.log(`Adding ${templateTimeslots[templateId].length} timeslots from template ${templateId} to day ${dayObj.id}`);
+        
+        templateTimeslots[templateId].forEach(timeslotId => {
+          dayObj.timeSlots.push({ 
+            timeslotId,
+            // No lessonId at this point - will be added later if there's a lesson for this timeslot
+          });
+        });
+      } else if (day.DAY_TEMPLATE_ID) {
+        console.warn(`Day ${dayObj.id} references template ${day.DAY_TEMPLATE_ID} but no timeslots were found for it`);
+      }
+      
+      return dayObj;
+    });
     
     // Add lessons to days
     lessonsResult.forEach(lesson => {
       const day = days.find(d => d.databaseId === lesson.DAYS_ID);
       if (day) {
-        day.timeSlots.push({
-          timeslotId: lesson.TEMPLATE_ID,
-          lessonId: lesson.ID.toString()
-        });
+        // Check if this timeslot already exists (from template)
+        const existingSlot = day.timeSlots.find(slot => slot.timeslotId === lesson.TEMPLATE_ID);
+        if (existingSlot) {
+          existingSlot.lessonId = lesson.ID.toString();
+          console.log(`Adding lesson ${lesson.ID} to existing timeslot ${lesson.TEMPLATE_ID} in day ${day.id}`);
+        } else {
+          // This timeslot wasn't part of the template, so add it with the lesson
+          console.log(`Adding new timeslot ${lesson.TEMPLATE_ID} with lesson ${lesson.ID} to day ${day.id}`);
+          day.timeSlots.push({
+            timeslotId: lesson.TEMPLATE_ID,
+            lessonId: lesson.ID.toString()
+          });
+        }
+      } else {
+        console.warn(`Could not find day with database ID ${lesson.DAYS_ID} for lesson ${lesson.ID}`);
       }
     });
     
@@ -1183,7 +1283,7 @@ END;
     description: string,
     owner: string,
     lessons: Record<string, LessonInput>,
-    days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }>; templateId?: string }>,
+    days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }>; templateId?: string; databaseId?: number }>,
     classId: ID,
     name: string,
   ): Promise<void> {
@@ -1218,23 +1318,81 @@ END;
 
       await conn.execute(querySchedule, bindVariables);
       
-      // Delete existing days and lessons
-      await conn.execute(
-        `DELETE FROM LESSONS WHERE SCHEDULE_ID = :scheduleId AND TENANCY_ID = :tenancyId`,
-        { scheduleId: Number(scheduleId), tenancyId }
+      // Get existing days and lessons
+      const existingDaysResult = await conn.execute(
+        `SELECT ID, DAY_IDENTIFIER FROM DAYS WHERE SCHEDULE_ID = :scheduleId AND TENANCY_ID = :tenancyId`,
+        { scheduleId: Number(scheduleId), tenancyId },
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
       
-      await conn.execute(
-        `DELETE FROM DAYS WHERE SCHEDULE_ID = :scheduleId AND TENANCY_ID = :tenancyId`,
-        { scheduleId: Number(scheduleId), tenancyId }
+      const existingDays = (existingDaysResult.rows || []) as Array<{ ID: number, DAY_IDENTIFIER: string }>;
+      const existingDayIds = new Map(existingDays.map(day => [day.DAY_IDENTIFIER, day.ID]));
+      
+      const existingLessonsResult = await conn.execute(
+        `SELECT ID, DAYS_ID, TEMPLATE_ID, SUBJECT_ID, CLASSROOM_ID 
+         FROM LESSONS 
+         WHERE SCHEDULE_ID = :scheduleId AND TENANCY_ID = :tenancyId`,
+        { scheduleId: Number(scheduleId), tenancyId },
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
       
-      // Create new days
-      let dayIDs: any = {};
+      const existingLessons = (existingLessonsResult.rows || []) as Array<{ 
+        ID: number, 
+        DAYS_ID: number,
+        TEMPLATE_ID: number,
+        SUBJECT_ID: number,
+        CLASSROOM_ID: number
+      }>;
+      
+      // Track days to process
+      let dayIDs: Record<string, number> = {};
+      const daysToCreate: Array<any> = [];
+      const daysToDelete: Array<number> = [];
+      const daysToUpdate: Array<{ id: number, templateId: number | null }> = [];
+      
+      // Process days
+      console.log(`Processing ${days.length} days for update`);
       for (let i = 0; i < days.length; i++) {
         const day = days[i];
         if (!day) continue;
-
+        
+        const existingDayId = existingDayIds.get(day.id);
+        
+        if (existingDayId) {
+          // Update existing day
+          dayIDs[day.id] = existingDayId;
+          
+          // Check if template ID changed
+          const templateId = day.templateId ? Number(day.templateId) : null;
+          
+          if (templateId) {
+            console.log(`Day ${day.id} uses template ID ${templateId}`);
+          }
+          
+          daysToUpdate.push({ id: existingDayId, templateId });
+        } else {
+          // Create new day
+          console.log(`Creating new day ${day.id} with template ID ${day.templateId || 'none'}`);
+          
+          daysToCreate.push({
+            tenancyId: Number(tenancyId),
+            scheduleId: Number(scheduleId),
+            slotOrder: i,
+            dayIdentifier: day.id,
+            templateId: day.templateId ? Number(day.templateId) : null
+          });
+        }
+      }
+      
+      // Find days to delete (exist in DB but not in incoming data)
+      for (const existingDay of existingDays) {
+        if (!days.find(d => d.id === existingDay.DAY_IDENTIFIER)) {
+          daysToDelete.push(existingDay.ID);
+        }
+      }
+      
+      // Create new days
+      for (const dayToCreate of daysToCreate) {
         const queryDay = `
           INSERT INTO DAYS (
             TENANCY_ID, SCHEDULE_ID, 
@@ -1245,24 +1403,117 @@ END;
           RETURNING ID INTO :dayId
         `;
 
-        const lessonBindVars = {
-          tenancyId: Number(tenancyId),
-          scheduleId: Number(scheduleId),
-          slotOrder: i,
-          dayIdentifier: day.id,
-          templateId: day.templateId ? Number(day.templateId) : null,
+        const dayBindVars = {
+          ...dayToCreate,
           dayId: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
         };
 
-        const dayResult = await conn.execute(queryDay, lessonBindVars);
-        dayIDs[day.id] = (dayResult.outBinds as any)?.dayId[0];
+        const dayResult = await conn.execute(queryDay, dayBindVars);
+        dayIDs[dayToCreate.dayIdentifier] = (dayResult.outBinds as any)?.dayId[0];
       }
-
-      // Insert lessons
-      for (const [_, lesson] of Object.entries(lessons)) {
+      
+      // Update existing days
+      for (const dayToUpdate of daysToUpdate) {
+        console.log(`Updating day ID ${dayToUpdate.id} with template ID ${dayToUpdate.templateId || 'NULL'}`);
+        
+        await conn.execute(
+          `UPDATE DAYS SET DAY_TEMPLATE_ID = :templateId 
+           WHERE ID = :id AND TENANCY_ID = :tenancyId`,
+          { 
+            templateId: dayToUpdate.templateId,
+            id: dayToUpdate.id,
+            tenancyId
+          }
+        );
+      }
+      
+      // Delete removed days
+      if (daysToDelete.length > 0) {
+        // Delete associated lessons first
+        await conn.execute(
+          `DELETE FROM LESSONS 
+           WHERE DAYS_ID IN (${daysToDelete.join(',')}) 
+           AND TENANCY_ID = :tenancyId`,
+          { tenancyId }
+        );
+        
+        // Then delete the days
+        await conn.execute(
+          `DELETE FROM DAYS 
+           WHERE ID IN (${daysToDelete.join(',')}) 
+           AND TENANCY_ID = :tenancyId`,
+          { tenancyId }
+        );
+      }
+      
+      // Process lessons
+      const lessonsToCreate: Array<any> = [];
+      const lessonsToUpdate: Array<any> = [];
+      const existingLessonIds = new Set();
+      
+      for (const [lessonId, lesson] of Object.entries(lessons)) {
         const day = days.find(d => d.timeSlots.some(ts => ts.timeslotId === lesson.timeslot));
         if (!day) continue;
-
+        
+        const dayId = dayIDs[day.id];
+        if (!dayId) continue;
+        
+        // Check if this is an existing lesson
+        const existingLesson = existingLessons.find(el => 
+          String(el.ID) === lessonId && 
+          el.DAYS_ID === dayId && 
+          el.TEMPLATE_ID === Number(lesson.timeslot)
+        );
+        
+        if (existingLesson) {
+          // Update existing lesson
+          existingLessonIds.add(existingLesson.ID);
+          
+          // Check if anything changed
+          if (
+            existingLesson.SUBJECT_ID !== Number(lesson.subject) ||
+            existingLesson.CLASSROOM_ID !== Number(lesson.classRoom)
+          ) {
+            lessonsToUpdate.push({
+              id: existingLesson.ID,
+              subjectId: Number(lesson.subject),
+              classId: Number(lesson.classId),
+              teachers: JSON.stringify(this.collectLessonIds(day.timeSlots)),
+              classroomId: Number(lesson.classRoom),
+              tenancyId
+            });
+          }
+        } else {
+          // Create new lesson
+          lessonsToCreate.push({
+            tenancyId: Number(tenancyId),
+            scheduleId: Number(scheduleId),
+            templateId: Number(lesson.timeslot),
+            daysId: dayId,
+            subjectId: Number(lesson.subject),
+            classId: Number(lesson.classId),
+            teachers: JSON.stringify(this.collectLessonIds(day.timeSlots)),
+            classroomId: Number(lesson.classRoom)
+          });
+        }
+      }
+      
+      // Delete lessons that no longer exist
+      const lessonIdsToDelete = existingLessons
+        .filter(el => !existingLessonIds.has(el.ID))
+        .map(el => el.ID);
+      
+      if (lessonIdsToDelete.length > 0) {
+        await conn.execute(
+          `DELETE FROM LESSONS 
+           WHERE ID IN (${lessonIdsToDelete.join(',')}) 
+           AND TENANCY_ID = :tenancyId`,
+          { tenancyId }
+        );
+      }
+      
+      // Create new lessons
+      for (const lessonToCreate of lessonsToCreate) {
         const queryLesson = `
           INSERT INTO LESSONS (
             TENANCY_ID, SCHEDULE_ID, TEMPLATE_ID, DAYS_ID, 
@@ -1272,19 +1523,21 @@ END;
             :subjectId, :classId, :teachers, :classroomId
           )
         `;
-
-        const lessonBindVars = {
-          tenancyId: Number(tenancyId),
-          scheduleId: Number(scheduleId),
-          templateId: Number(lesson.timeslot),
-          daysId: dayIDs[day.id],
-          subjectId: Number(lesson.subject),
-          classId: Number(lesson.classId),
-          teachers: JSON.stringify(this.collectLessonIds(day.timeSlots)),
-          classroomId: Number(lesson.classRoom)
-        };
-
-        await conn.execute(queryLesson, lessonBindVars);
+        
+        await conn.execute(queryLesson, lessonToCreate);
+      }
+      
+      // Update existing lessons
+      for (const lessonToUpdate of lessonsToUpdate) {
+        await conn.execute(
+          `UPDATE LESSONS 
+           SET SUBJECT_ID = :subjectId, 
+               CLASS_ID = :classId, 
+               TEACHERS = :teachers, 
+               CLASSROOM_ID = :classroomId 
+           WHERE ID = :id AND TENANCY_ID = :tenancyId`,
+          lessonToUpdate
+        );
       }
 
       await conn.commit();
