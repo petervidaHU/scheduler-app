@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useState } from "react";
+import { FC, useState, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { Burger, Group } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -33,7 +33,9 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const { fillTenancyBasedData, addToast } = useStore();
   const { update } = useSession();
   const [selectedTenancy, setSelectedTenancy] = useState<number | null>(
-    session.tenancyId || null
+    typeof window !== "undefined" && localStorage.getItem("selectedTenancy")
+      ? Number(localStorage.getItem("selectedTenancy"))
+      : session.tenancyId || null
   );
   const { name, status } = session;
   const router = useRouter();
@@ -61,7 +63,34 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   };
   const tenancyOptions = getTenancies();
 
+  useEffect(() => {
+    // On mount, restore tenancy from localStorage if available
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("selectedTenancy");
+      if (saved && !selectedTenancy) {
+        setSelectedTenancy(Number(saved));
+      }
+    }
+  }, []);
+
   const tenancyChangeHandler = async (value: any) => {
+    // Prevent fetch if no valid tenancy is selected
+    if (!value || value === "0") {
+      setSelectedTenancy(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("selectedTenancy");
+      }
+      // Clear store data if tenancy is cleared
+      fillTenancyBasedData({
+        specialties: {},
+        subjects: {},
+        teachers: {},
+        classRooms: {},
+        classes: {},
+        frames: {},
+      });
+      return;
+    }
     setLoading(true);
     fillTenancyBasedData({
       specialties: { isLoading: true },
@@ -75,6 +104,9 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
       await update({ tenancyId: value });
       await setTenancyInServer(value);
       setSelectedTenancy(value);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("selectedTenancy", value);
+      }
       const res = await getTenancyBasedData();
       fillTenancyBasedData(res);
       router.refresh();
@@ -111,6 +143,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
                 onChange={tenancyChangeHandler}
                 data={tenancyOptions}
                 placeholder="Select a tenancy"
+                clearable
               />
               {loading && <span>Loading...</span>}
             </>
