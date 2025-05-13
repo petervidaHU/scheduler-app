@@ -41,12 +41,21 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots, readOnly = fals
     );
   };
   
-  const mappedTimeslots = day.timeSlots.map((t) => {
-    return {
-      timeslot: timeslots.find((ts) => ts.ID === t.timeslotId) || null,
-      lessonId: t.lessonId,
-    };
-  });
+  const mappedTimeslots = day.timeSlots
+    .filter(t => {
+      // Find the corresponding timeslot definition
+      const found = timeslots.find((ts) => ts.ID === t.timeslotId);
+      if (!found) {
+        console.warn(`Timeslot with ID ${t.timeslotId} not found in timeslots array`);
+      }
+      return found !== undefined;
+    })
+    .map((t) => {
+      return {
+        timeslot: timeslots.find((ts) => ts.ID === t.timeslotId) || null,
+        lessonId: t.lessonId,
+      };
+    });
 
   return (
     <TimeslotsList

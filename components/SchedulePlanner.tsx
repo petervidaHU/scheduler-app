@@ -61,42 +61,65 @@ const SchedulePlanner: FC<props> = ({
     );
   }, [dayTemplates]);
 
+  // Helper function to get timeslot IDs from a template
+  const getTimeslotIdsFromTemplate = (template: DayTemplates) => {
+    let timeslotIds: number[] = [];
+    
+    if (typeof template.TIMESLOTS === 'string') {
+      let str = (template.TIMESLOTS as string).trim();
+      if (!str.startsWith('[')) str = `[${str}]`;
+      try {
+        timeslotIds = JSON.parse(str);
+      } catch (e) {
+        console.error('Failed to parse template.TIMESLOTS:', template.TIMESLOTS, e);
+        timeslotIds = [];
+      }
+    } else if (Array.isArray(template.TIMESLOTS)) {
+      timeslotIds = template.TIMESLOTS;
+    }
+    
+    return timeslotIds;
+  };
+  
   useEffect(() => {
     if (scheduleData && scheduleData.days && scheduleData.days.length > 0) {
       const currentScheduleId = scheduleData?.id;
       const currentStoreScheduleId = days.length > 0 ? days[0].scheduleId : null;
+      
       if (days.length === 0 || (currentScheduleId && currentScheduleId !== currentStoreScheduleId)) {
-        // Add scheduleId to each day for reference
+        // Process all days and ensure they have all required timeslots from their templates
         const daysWithScheduleId = scheduleData.days.map(day => {
-          // If day has templateId and empty timeSlots, fill from template
-          if (day.templateId && (!day.timeSlots || day.timeSlots.length === 0)) {
+          // Start with the day's existing timeslots (if any)
+          let dayTimeSlots = [...(day.timeSlots || [])];
+          
+          // If the day has a template, ensure ALL timeslots from the template are included
+          if (day.templateId) {
             const template = dayTemplates.find(t => t.ID.toString() === day.templateId);
-            let timeslotIds: number[] = [];
+            
             if (template) {
-              if (typeof template.TIMESLOTS === 'string') {
-                let str = (template.TIMESLOTS as string).trim();
-                if (!str.startsWith('[')) str = `[${str}]`;
-                try {
-                  timeslotIds = JSON.parse(str);
-                } catch (e) {
-                  console.error('Failed to parse template.TIMESLOTS:', template.TIMESLOTS, e);
-                  timeslotIds = [];
+              // Get all timeslot IDs from the template
+              const templateTimeslotIds = getTimeslotIdsFromTemplate(template);
+              
+              // Create a set of existing timeslot IDs for quick lookup
+              const existingTimeslotIds = new Set(dayTimeSlots.map(slot => slot.timeslotId));
+              
+              // Add any missing timeslots from the template
+              templateTimeslotIds.forEach(timeslotId => {
+                if (!existingTimeslotIds.has(timeslotId)) {
+                  dayTimeSlots.push({ timeslotId });
                 }
-              } else if (Array.isArray(template.TIMESLOTS)) {
-                timeslotIds = template.TIMESLOTS;
-              }
+              });
             }
-            return {
-              ...day,
-              scheduleId: currentScheduleId,
-              timeSlots: timeslotIds.map(id => ({ timeslotId: id }))
-            };
           }
+          
+          // Return the updated day with all necessary timeslots
           return {
             ...day,
-            scheduleId: currentScheduleId
+            scheduleId: currentScheduleId,
+            timeSlots: dayTimeSlots
           };
         });
+        
         setDays(daysWithScheduleId);
       }
     }
@@ -108,26 +131,10 @@ const SchedulePlanner: FC<props> = ({
       console.error(`Template with ID ${templateId} not found`);
       return;
     }
-    // Defensive: parse TIMESLOTS if string, or set to [] if null
-    let timeslotIds: number[] = [];
-    if (typeof template.TIMESLOTS === 'string') {
-      const str = (template.TIMESLOTS as string).trim();
-      let jsonStr = str;
-      if (!jsonStr.startsWith('[')) jsonStr = `[${jsonStr}]`;
-      try {
-        timeslotIds = JSON.parse(jsonStr);
-      } catch (e) {
-        console.error('Failed to parse template.TIMESLOTS:', template.TIMESLOTS, e);
-        timeslotIds = [];
-      }
-    } else if (Array.isArray(template.TIMESLOTS)) {
-      timeslotIds = template.TIMESLOTS;
-    } else if (template.TIMESLOTS == null) {
-      timeslotIds = [];
-    } else {
-      console.error('Unexpected TIMESLOTS type:', typeof template.TIMESLOTS, template.TIMESLOTS);
-      timeslotIds = [];
-    }
+    
+    // Use the helper function to get timeslot IDs
+    const timeslotIds = getTimeslotIdsFromTemplate(template);
+    
     const day = days.find((d) => d.id === dayId);
     if (!day) {
       console.error(`Day with ID ${dayId} not found`);
@@ -144,30 +151,24 @@ const SchedulePlanner: FC<props> = ({
       templateId: template.ID.toString(),
     });
     
-    // Get existing timeslots with lessons that should be preserved
-    const existingTimeslotsWithLessons = day.timeSlots.filter(
-      (slot) => slot.lessonId
-    );
-    
-    // Get timeslot IDs already with lessons to avoid duplicating them
-    const lessonTimeslotIds = existingTimeslotsWithLessons.map(
-      (slot) => slot.timeslotId
-    );
+    // Get all existing timeslot IDs for quick lookup to avoid duplicates
+    const existingTimeslotIds = new Set(day.timeSlots.map(slot => slot.timeslotId));
     
     console.log(`Adding ${timeslotIds.length} timeslots from template to day ${dayId}`);
-    console.log(`Preserving ${existingTimeslotsWithLessons.length} existing timeslots with lessons`);
+    console.log(`Day already has ${existingTimeslotIds.size} timeslots`);
     
     // For each timeslot in the template
     timeslotIds.forEach((slotId: number) => {
-      // Only add if not already associated with a lesson
-      if (!lessonTimeslotIds.includes(slotId)) {
+      // Only add if it doesn't already exist
+      if (!existingTimeslotIds.has(slotId)) {
+        console.log(`Adding timeslot ${slotId} to day ${dayId}`);
         addTimeslotToDay({
           dayId,
           timeslotId: slotId,
           templateId: template.ID.toString(),
         });
       } else {
-        console.log(`Skipping timeslot ${slotId} as it already has a lesson`);
+        console.log(`Timeslot ${slotId} already exists in day ${dayId}, not adding duplicate`);
       }
     });
   };

@@ -5,7 +5,6 @@ import {
   Select,
   Textarea,
   Button,
-  Checkbox,
   TextInput,
   LoadingOverlay,
   Paper,
@@ -21,12 +20,13 @@ import { nanoid } from "nanoid";
 import { getSyllabusAction } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getSyllabusAction";
 import { FormFields } from "@/types/ScheduleTypes";
 import { DayPlan, Schedule } from "@/types/ScheduleTypes";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ID, Syllabus } from "@/types/databaseTypes";
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
 import { DataWithOptions } from "@/types/ScheduleTypes";
+import React from "react";
 
 const formFields = Object.values(FormFields);
 
@@ -51,9 +51,9 @@ const SchedulePage = ({
   syllabusData
 }: SchedulePageProps) => {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(scheduleId && !scheduleData ? true : false);
+  const [isLoading, setIsLoading] = useState(false);
   const isEditMode = !!scheduleId;
-  const isInitialized = useRef(false);
+  const [isStoreInitialized, setIsStoreInitialized] = useState(false);
 
   const {
     tenancyBasedData: {
@@ -88,7 +88,10 @@ const SchedulePage = ({
       frameId: (value) => (!value ? "Frame is required" : null),
     },
     onValuesChange: async (values, previous) => {
-      updateScheduleState(values, previous);
+      // Only update if store is already initialized
+      if (isStoreInitialized) {
+        updateScheduleState(values, previous);
+      }
 
       // If class changed and name is empty, populate it
       if (values.class !== previous.class && values.class) {
@@ -131,55 +134,63 @@ const SchedulePage = ({
     },
   });
 
-  // Initialize data once on component mount
-  useEffect(() => {
-    if (isInitialized.current) return;
+  /**
+   * Synchronously initializes the store with schedule data
+   */
+  const initializeStore = useCallback(() => {
+    if (!scheduleData) return;
     
-    // Reset state before initializing with new data
+    console.log('Initializing store with schedule data');
+    
+    // Reset state before initializing
     resetScheduleState();
     
-    // Initialize with server-provided data if available
-    if (scheduleData) {
-      // Update schedule state in store
-      updateScheduleInStore({
-        id: scheduleData.id,
-        name: scheduleData.name,
-        class: scheduleData.class,
-        description: scheduleData.description,
-        owner: scheduleData.owner,
-        status: scheduleData.status,
-        frameId: scheduleData.frameId,
-      });
+    // Update schedule basic metadata
+    updateScheduleInStore({
+      id: scheduleData.id,
+      name: scheduleData.name,
+      class: scheduleData.class,
+      description: scheduleData.description,
+      owner: scheduleData.owner,
+      status: scheduleData.status,
+      frameId: scheduleData.frameId,
+    });
+    
+    // Update syllabus if provided
+    if (syllabusData) {
+      updateSyllabus(syllabusData);
+    }
+    
+    // Initialize days all at once (already deduplicated from server)
+    if (scheduleData.days && scheduleData.days.length > 0) {
+      setDays(scheduleData.days);
+    }
+    
+    // Initialize lessons directly into store state
+    if (scheduleData.lessons && Object.keys(scheduleData.lessons).length > 0) {
+      console.log(`Initializing ${Object.keys(scheduleData.lessons).length} lessons`);
       
-      // Update syllabus if provided
-      if (syllabusData) {
-        updateSyllabus(syllabusData);
-      }
-      
-      // Use a Set to track day IDs for deduplication
-      const dayIds = new Set();
-      
-      // Add days to state one by one to avoid duplicates
-      scheduleData.days.forEach(day => {
-        if (!dayIds.has(day.id)) {
-          dayIds.add(day.id);
-          addDay(day);
+      // Set lessons directly into store
+      const currentState = useStore.getState();
+      useStore.setState({
+        ...currentState,
+        scheduleState: {
+          ...currentState.scheduleState,
+          lessons: { ...scheduleData.lessons }
         }
-      });
-      
-      // Add lessons to state
-      Object.entries(scheduleData.lessons).forEach(([id, lesson]) => {
-        updateScheduleInStore({
-          lessons: {
-            ...lessons,
-            [id]: lesson
-          }
-        } as any); // Type cast to any to bypass type check temporarily
       });
     }
     
-    isInitialized.current = true;
-  }, []);
+    // Mark as initialized
+    setIsStoreInitialized(true);
+  }, [scheduleData, syllabusData, resetScheduleState, updateScheduleInStore, updateSyllabus, setDays]);
+
+  // Initialize store on mount
+  useEffect(() => {
+    if (!isStoreInitialized) {
+      initializeStore();
+    }
+  }, [initializeStore, isStoreInitialized]);
 
   const [isPending, startTransition] = useTransition();
   const [createState, createAction] = useActionState(createSchedule, init);
@@ -201,15 +212,12 @@ const SchedulePage = ({
     handleSuccess
   );
 
-  // Legacy data loading (remove this useEffect once server-side data loading is fully implemented)
+  // Fallback data loading if server data isn't available
   useEffect(() => {
-    if (scheduleId && !scheduleData && !isInitialized.current) {
+    if (scheduleId && !scheduleData && !isStoreInitialized) {
       const loadSchedule = async () => {
         setIsLoading(true);
         try {
-          // Reset the state before loading new schedule to avoid any stale data
-          resetScheduleState();
-          
           const fetchedScheduleData = await getScheduleById(scheduleId);
           console.log("Loading schedule data:", fetchedScheduleData);
 
@@ -225,61 +233,58 @@ const SchedulePage = ({
               variations: "",
             });
 
-            // Update syllabus if class is set
+            // Fetch syllabus if needed
+            let syllabus = null;
             if (fetchedScheduleData.class) {
-              const syllabus = await getSyllabusAction(fetchedScheduleData.class);
-              if (syllabus) {
-                updateSyllabus(syllabus);
-              }
+              syllabus = await getSyllabusAction(fetchedScheduleData.class);
             }
 
+            // Store the fetched data in temporary variables
+            const tempScheduleData = fetchedScheduleData;
+            const tempSyllabusData = syllabus;
+
+            // Reset and initialize the store with the fetched data
+            resetScheduleState();
+            
             // Update schedule state
             updateScheduleInStore({
-              id: fetchedScheduleData.id,
-              name: fetchedScheduleData.name,
-              class: fetchedScheduleData.class,
-              description: fetchedScheduleData.description,
-              owner: fetchedScheduleData.owner,
-              status: fetchedScheduleData.status,
-              frameId: fetchedScheduleData.frameId,
+              id: tempScheduleData.id,
+              name: tempScheduleData.name,
+              class: tempScheduleData.class,
+              description: tempScheduleData.description,
+              owner: tempScheduleData.owner,
+              status: tempScheduleData.status,
+              frameId: tempScheduleData.frameId,
             });
-
-            // Add days to state one by one to avoid duplicates
-            console.log(`Adding ${fetchedScheduleData.days.length} days to store`);
             
-            // Use a Set to track day IDs for deduplication
-            const dayIds = new Set();
+            // Update syllabus if available
+            if (tempSyllabusData) {
+              updateSyllabus(tempSyllabusData);
+            }
             
             // Add scheduleId reference to each day for tracking purposes
-            const daysWithScheduleId = fetchedScheduleData.days.map(day => ({
+            const daysWithScheduleId = tempScheduleData.days.map(day => ({
               ...day,
-              scheduleId: fetchedScheduleData.id
+              scheduleId: tempScheduleData.id
             }));
             
-            // Add all days at once using setDays for atomic update
+            // Add all days at once
             setDays(daysWithScheduleId);
             
-            // Log template information for debugging
-            daysWithScheduleId.forEach(day => {
-              if (day.templateId) {
-                console.log(`Day ${day.id} uses template ID: ${day.templateId}`);
-              } else {
-                console.log(`Day ${day.id} has no template`);
-              }
-            });
-
-            // Add lessons to state
-            const lessonCount = Object.keys(fetchedScheduleData.lessons).length;
-            console.log(`Adding ${lessonCount} lessons to store`);
-            
-            Object.entries(fetchedScheduleData.lessons).forEach(([id, lesson]) => {
-              updateScheduleInStore({
-                lessons: {
-                  ...lessons,
-                  [id]: lesson
+            // Set lessons directly into store
+            if (tempScheduleData.lessons && Object.keys(tempScheduleData.lessons).length > 0) {
+              const currentState = useStore.getState();
+              useStore.setState({
+                ...currentState,
+                scheduleState: {
+                  ...currentState.scheduleState,
+                  lessons: { ...tempScheduleData.lessons }
                 }
-              } as any); // Type cast to any to bypass type check temporarily
-            });
+              });
+            }
+            
+            // Mark as initialized
+            setIsStoreInitialized(true);
           }
         } catch (error) {
           console.error("Error loading schedule:", error);
@@ -290,17 +295,28 @@ const SchedulePage = ({
 
       loadSchedule();
     }
-  }, [scheduleId]);
+  }, [scheduleId, scheduleData, isStoreInitialized, form, resetScheduleState, updateScheduleInStore, updateSyllabus, setDays]);
 
+  /**
+   * Efficiently updates schedule state when form values change
+   */
   const updateScheduleState = (
     values: Record<FormFields, any>,
     previous: Record<FormFields, any>
   ) => {
+    // Collect all changes to make a single store update
+    const changes: Record<string, any> = {};
+    
     formFields.forEach((element) => {
       if (values[element] !== previous[element]) {
-        updateScheduleInStore({ [element]: values[element] });
+        changes[element] = values[element];
       }
     });
+    
+    // Only update store if there are changes
+    if (Object.keys(changes).length > 0) {
+      updateScheduleInStore(changes);
+    }
   };
 
   const classOptions = Object.entries(classes || {}).map(([id, classObj]) => ({
@@ -317,41 +333,50 @@ const SchedulePage = ({
     }))
   ];
 
-  // Function to update days based on the frame's NUMBER_OF_DAYS property
-  const updateDaysBasedOnFrame = (numberOfDays: number) => {
-    // First, clear existing days
-    days.forEach(day => {
-      deleteDay(day.id);
-    });
+  /**
+   * Updates days based on a frame's NUMBER_OF_DAYS property
+   * Creates a fresh set of days instead of modifying existing ones
+   */
+  const updateDaysBasedOnFrame = useCallback((numberOfDays: number) => {
+    // Create all days in a single array
+    const newDays: DayPlan[] = [];
     
-    // Then, create the required number of days
     for (let i = 0; i < numberOfDays; i++) {
-      const newDay: DayPlan = {
+      newDays.push({
         id: nanoid(),
         order: String(i + 1),
         identifier: `Day ${i + 1}`,
         timeSlots: [],
         lessons: [],
         templateId: undefined,
-      };
-      addDay(newDay);
+      });
     }
-  };
+    
+    // Update all days at once for better performance and consistency
+    setDays(newDays);
+  }, [setDays]);
 
   // Update days if frameId is already set when component mounts
   useEffect(() => {
-    const frameId = form.values.frameId;
-    if (frameId && frameId !== CUSTOM_FRAME && frames?.[frameId]) {
-      updateDaysBasedOnFrame(frames[frameId].NUMBER_OF_DAYS);
+    // Only update days based on frame after store is initialized
+    if (isStoreInitialized) {
+      const frameId = form.values.frameId;
+      if (frameId && frameId !== CUSTOM_FRAME && frames?.[frameId]) {
+        updateDaysBasedOnFrame(frames[frameId].NUMBER_OF_DAYS);
+      }
     }
-  }, [frames, form.values.frameId]);
+  }, [frames, form.values.frameId, updateDaysBasedOnFrame, isStoreInitialized]);
 
-  const handleScheduleFormSubmit = (values: typeof form.values) => {
+  /**
+   * Handles form submission with proper state capture
+   */
+  const handleScheduleFormSubmit = useCallback((values: typeof form.values) => {
     console.log("Submitting schedule values:", values);
     
     // Create a snapshot of the current state to prevent stale data
-    const currentLessons = {...lessons};
-    const currentDays = [...days];
+    const currentState = useStore.getState().scheduleState;
+    const currentLessons = {...currentState.lessons};
+    const currentDays = [...currentState.days];
     
     startTransition(() => {
       // Build the context for submission
@@ -380,7 +405,7 @@ const SchedulePage = ({
         createAction(context);
       }
     });
-  };
+  }, [updateAction, createAction, isEditMode, scheduleId]);
 
   // Add cleanup on component unmount to prevent stale state
   useEffect(() => {
@@ -388,8 +413,71 @@ const SchedulePage = ({
     return () => {
       // Reset the schedule state when navigating away from the component
       resetScheduleState();
+      setIsStoreInitialized(false);
     };
+  }, [resetScheduleState]);
+
+  /**
+   * Helper function to update lessons in the store
+   * This will only be used for individual lesson updates, not for initialization
+   */
+  const updateLessonsInStore = useCallback((lessons: Record<string, any>) => {
+    if (!lessons || Object.keys(lessons).length === 0) {
+      console.log('No lessons to update');
+      return;
+    }
+
+    console.log(`Updating ${Object.keys(lessons).length} lessons in store`);
+    
+    // Update lessons directly in the store
+    const currentState = useStore.getState();
+    useStore.setState({
+      ...currentState,
+      scheduleState: {
+        ...currentState.scheduleState,
+        lessons: { ...currentState.scheduleState.lessons, ...lessons }
+      }
+    });
+    
+    console.log(`Store updated: ${Object.keys(useStore.getState().scheduleState.lessons).length} lessons now in store`);
   }, []);
+
+  /**
+   * Effect to validate schedule state integrity
+   * This serves as a safety check to ensure lessons remain consistent
+   */
+  useEffect(() => {
+    // Only run this check if we're in edit mode and store is initialized
+    if (!isEditMode || !isStoreInitialized || !scheduleData || !scheduleData.lessons) return;
+
+    const expectedLessonCount = Object.keys(scheduleData.lessons).length;
+    if (expectedLessonCount === 0) return;
+
+    const actualLessonCount = Object.keys(lessons).length;
+    
+    // If lessons count doesn't match what we expect from scheduleData
+    if (actualLessonCount !== expectedLessonCount) {
+      console.log(`Validating lesson state: ${actualLessonCount}/${expectedLessonCount} lessons found`);
+      
+      // Get list of lesson IDs from both sources
+      const expectedLessonIds = new Set(Object.keys(scheduleData.lessons));
+      const actualLessonIds = new Set(Object.keys(lessons));
+      
+      // Find missing lessons
+      const missingLessons: Record<string, any> = {};
+      expectedLessonIds.forEach(id => {
+        if (!actualLessonIds.has(id)) {
+          missingLessons[id] = scheduleData.lessons[id];
+        }
+      });
+      
+      // Only update if we found missing lessons
+      if (Object.keys(missingLessons).length > 0) {
+        console.log(`Restoring ${Object.keys(missingLessons).length} missing lessons`);
+        updateLessonsInStore(missingLessons);
+      }
+    }
+  }, [isEditMode, isStoreInitialized, scheduleData, lessons, updateLessonsInStore]);
 
   return (
     <Paper p="xl" withBorder mb="xl">

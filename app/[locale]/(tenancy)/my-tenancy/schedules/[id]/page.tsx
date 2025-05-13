@@ -25,14 +25,18 @@ export default async function EditSchedulePage({ params }: SchedulePageProps) {
 
   const dayTemplates = await getDayTemplates();
   const timeslots = await getTimeslots();
+  console.log('-----------------------------------------------')
   console.log('timesots in server page', timeslots);
   console.log('dayTemplates in server page', dayTemplates);
-
+  console.log('schedule in server page', schedule);
+  
   // Pre-fetch syllabus if class is defined
   let syllabus = null;
   if (schedule.class) {
     syllabus = await getSyllabusAction(schedule.class);
   }
+  console.log('syllabus in server page', syllabus);
+  console.log('-----------------------------------------------')
 
   return (
     <div>
