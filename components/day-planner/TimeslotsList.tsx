@@ -6,28 +6,39 @@ import { ActionIcon, Text } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
 
 interface props {
-  timeSlots: Array<{ timeslot: TimeslotInput | null; lessonId?: TimeslotLessonInput }>;
+  timeSlots: Array<{
+    timeslot: TimeslotInput | null;
+    lessonId?: TimeslotLessonInput;
+  }>;
   onClickHandler: (timeslotId: number, lessonId?: string) => void;
   readOnly?: boolean;
 }
 
 // Helper function to calculate position based on time
-const calculatePosition = (time: number, totalMinutes: number, totalHeight: number): number => {
+const calculatePosition = (
+  time: number,
+  totalMinutes: number,
+  totalHeight: number
+): number => {
   // Convert time (in minutes) to a fraction of the day
   const fraction = time / totalMinutes;
   // Convert the fraction to pixels
   return fraction * totalHeight;
 };
 
-const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler, readOnly = false }) => {
-  const { 
-    windowHeight, 
-    removeActiveTimeslot, 
-    scheduleState: { lessons }, 
-    tenancyBasedData: { subjects } 
+const TimeslotsList: FC<props> = ({
+  timeSlots,
+  onClickHandler,
+  readOnly = false,
+}) => {
+  const {
+    windowHeight,
+    removeActiveTimeslot,
+    scheduleState: { lessons },
+    tenancyBasedData: { subjects },
   } = useStore();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
-  
+
   // Total minutes in a day (24 hours * 60 minutes)
   const TOTAL_MINUTES = 24 * 60;
 
@@ -41,17 +52,29 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler, readOnly = false 
           ID,
           NAME,
         } = slot.timeslot;
-        
+
         // Calculate position and height based on start and end times
         const top = calculatePosition(start, TOTAL_MINUTES, windowHeight);
-        const height = calculatePosition(end - start, TOTAL_MINUTES, windowHeight);
-        
-        const backgroundColor = typeof slot.lessonId === "string" ? subjects.data?.[lessons[slot.lessonId || '']?.subject]?.HELPER_COLOR : 'rgba(255, 208, 235, .5)';
+        const height = calculatePosition(
+          end - start,
+          TOTAL_MINUTES,
+          windowHeight
+        );
+
+        const backgroundColor =
+          typeof slot.lessonId === "string"
+            ? subjects.data?.[lessons[slot.lessonId || ""]?.subject]
+                ?.HELPER_COLOR
+            : "rgba(255, 208, 235, .5)";
 
         return (
           <div
             key={ID}
-            onClick={readOnly ? undefined : () => onClickHandler(ID, slot.lessonId as string)}
+            onClick={
+              readOnly
+                ? undefined
+                : () => onClickHandler(ID, slot.lessonId as string)
+            }
             onMouseEnter={readOnly ? undefined : () => setHoveredId(ID)}
             onMouseLeave={readOnly ? undefined : () => setHoveredId(null)}
             style={{
@@ -70,7 +93,7 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler, readOnly = false 
               justifyContent: "space-between",
               alignItems: "center",
               overflow: "hidden",
-              cursor: readOnly ? "default" : "pointer"
+              cursor: readOnly ? "default" : "pointer",
             }}
           >
             {slot.lessonId ? (
