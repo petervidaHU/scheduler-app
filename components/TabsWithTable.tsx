@@ -195,7 +195,6 @@ const TabsWithTable = () => {
       });
     }
     if (resultOfRefetch?.success) {
-      console.log("res success:", resultOfRefetch);
       updateTenancyBasedData({ [labelMapper[label]]: { data: resultOfRefetch?.data } });
     }
   };

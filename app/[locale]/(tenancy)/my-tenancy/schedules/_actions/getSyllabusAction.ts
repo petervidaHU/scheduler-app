@@ -8,7 +8,6 @@ export const getSyllabusAction = async (classId: ID): Promise<DataWithOptions<Sy
   try {
     const db = await getDbInstance();
     const syllabus = await db.getSyllabus(classId);
-    console.log('------------------------------------------------------------------', syllabus)
     return syllabus.reduce(
       (acc, item) => {
         acc[item.SUBJECT_ID] = {

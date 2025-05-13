@@ -65,7 +65,6 @@ export const CreateSubject: FC<SubjectInput> = ({
 
   // Define a success handler callback
   const handleSuccess = React.useCallback(() => {
-    console.log('Subject created successfully');
     // Any additional cleanup can be done here
   }, []);
 
@@ -78,8 +77,6 @@ export const CreateSubject: FC<SubjectInput> = ({
   );
 
   const handleSubjectSubmit = (values: typeof subjectForm.values) => {
-    console.log("Submitting subject values:", values);
-    
     // Create a copy to avoid direct mutation
     const submissionValues = {
       ...values,
@@ -88,7 +85,6 @@ export const CreateSubject: FC<SubjectInput> = ({
     
     // Use transition to avoid re-renders during form submission
     startTransition(() => {
-      console.log('Submitting form with values:', submissionValues);
       subjectAction(submissionValues);
     });
   };

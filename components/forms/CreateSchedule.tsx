@@ -140,8 +140,6 @@ const SchedulePage = ({
   const initializeStore = useCallback(() => {
     if (!scheduleData) return;
     
-    console.log('Initializing store with schedule data');
-    
     // Reset state before initializing
     resetScheduleState();
     
@@ -168,7 +166,6 @@ const SchedulePage = ({
     
     // Initialize lessons directly into store state
     if (scheduleData.lessons && Object.keys(scheduleData.lessons).length > 0) {
-      console.log(`Initializing ${Object.keys(scheduleData.lessons).length} lessons`);
       
       // Set lessons directly into store
       const currentState = useStore.getState();
@@ -198,7 +195,6 @@ const SchedulePage = ({
 
   // Define a success handler callback using useCallback to prevent unnecessary re-renders
   const handleSuccess = React.useCallback(() => {
-    console.log('Schedule created/updated successfully');
     // Navigation will trigger component unmount which will reset the state
     router.push('/en/my-tenancy/schedules');
   }, [router]);
@@ -219,7 +215,6 @@ const SchedulePage = ({
         setIsLoading(true);
         try {
           const fetchedScheduleData = await getScheduleById(scheduleId);
-          console.log("Loading schedule data:", fetchedScheduleData);
 
           if (fetchedScheduleData) {
             // Update form values with schedule data
@@ -371,7 +366,6 @@ const SchedulePage = ({
    * Handles form submission with proper state capture
    */
   const handleScheduleFormSubmit = useCallback((values: typeof form.values) => {
-    console.log("Submitting schedule values:", values);
     
     // Create a snapshot of the current state to prevent stale data
     const currentState = useStore.getState().scheduleState;
@@ -397,8 +391,6 @@ const SchedulePage = ({
         owner: values.owner,
       };
 
-      console.log('Submitting form with values:', context);
-      
       if (isEditMode && scheduleId) {
         updateAction({ ...context, id: scheduleId });
       } else {
@@ -423,12 +415,9 @@ const SchedulePage = ({
    */
   const updateLessonsInStore = useCallback((lessons: Record<string, any>) => {
     if (!lessons || Object.keys(lessons).length === 0) {
-      console.log('No lessons to update');
       return;
     }
 
-    console.log(`Updating ${Object.keys(lessons).length} lessons in store`);
-    
     // Update lessons directly in the store
     const currentState = useStore.getState();
     useStore.setState({
@@ -438,8 +427,6 @@ const SchedulePage = ({
         lessons: { ...currentState.scheduleState.lessons, ...lessons }
       }
     });
-    
-    console.log(`Store updated: ${Object.keys(useStore.getState().scheduleState.lessons).length} lessons now in store`);
   }, []);
 
   /**
@@ -457,8 +444,6 @@ const SchedulePage = ({
     
     // If lessons count doesn't match what we expect from scheduleData
     if (actualLessonCount !== expectedLessonCount) {
-      console.log(`Validating lesson state: ${actualLessonCount}/${expectedLessonCount} lessons found`);
-      
       // Get list of lesson IDs from both sources
       const expectedLessonIds = new Set(Object.keys(scheduleData.lessons));
       const actualLessonIds = new Set(Object.keys(lessons));
@@ -473,7 +458,6 @@ const SchedulePage = ({
       
       // Only update if we found missing lessons
       if (Object.keys(missingLessons).length > 0) {
-        console.log(`Restoring ${Object.keys(missingLessons).length} missing lessons`);
         updateLessonsInStore(missingLessons);
       }
     }

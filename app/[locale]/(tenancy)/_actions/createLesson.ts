@@ -4,7 +4,6 @@ import { getDbInstance } from "@/lib/database/db-instance";
 import { FormActionType, LessonInput } from "@/types/FormActionType";
 
 export const createLesson = async (state: FormActionType, props: LessonInput): Promise<FormActionType>  => {
-    console.log("props", props);
     const {
         timeslot,
         teacher,
