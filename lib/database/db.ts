@@ -23,6 +23,7 @@ import { LessonInput } from "@/types/FormActionType";
 import { Entities } from "@/types/Entities";
 import { labelMapper } from "../hooks/labelMapperForTenancyBasedData";
 import { SyllabusForm, SyllabusFormProperties } from "@/types/ScheduleTypes";
+import { OccupiedTimeslot } from "@/components/forms/CreateClassRoom";
 
 const tableNameMapping: Record<Entities, string> = {
   specialty: "specialties",
@@ -830,7 +831,7 @@ END;
   async getOccupiedTimeslotsByFrame(
     frameId: string,
     classRoomId: number | null | undefined
-  ): Promise<Lesson[]> {
+  ): Promise<OccupiedTimeslot[]> {
     const query = `
       SELECT L.*, D.SLOT_ORDER, T.PERIOD_START, T.PERIOD_END, T.NAME as TIMESLOT_NAME, C.NAME as CLASS_NAME
       FROM lessons L
@@ -847,7 +848,7 @@ END;
         tenancyId,
       };
       const result = await this.executeQuery(query, bindVariables);
-      return result as Lesson[];
+      return result as OccupiedTimeslot[];
     } catch (error) {
       console.error(`Error getting occupied timeslots: ${error}`);
       throw error;

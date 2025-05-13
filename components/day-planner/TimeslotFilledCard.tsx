@@ -3,15 +3,22 @@ import React, { FC, useState } from "react";
 import ActionIconX from "../UI-elements/ActionIcons/X";
 import { useStore } from "@/store/store";
 
+export type TimeslotLessonInput = string
+    | {
+        classId?: number;
+        subjectId?: number;
+        teacherId?: string;
+        classRoomId?: number;
+      }
 interface props {
-  lessonId: string;
+  lessonId: TimeslotLessonInput;
 }
 
 const TimeslotFilledCard: FC<props> = ({ lessonId }) => {
   const {
-    tenancyBasedData: { subjects, teachers, classRooms },
+    tenancyBasedData: { subjects, teachers, classRooms, classes },
     scheduleState: { lessons },
-    deleteOneLesson
+    deleteOneLesson,
   } = useStore();
   const [isHovered, setIsHovered] = useState(false);
 
@@ -19,39 +26,86 @@ const TimeslotFilledCard: FC<props> = ({ lessonId }) => {
     event.stopPropagation();
     deleteOneLesson(id);
   };
+  let lesson: any = null;
+  if (typeof lessonId === "string") {
+    lesson = lessons[lessonId];
+    if (!lesson) return null;
+  }
 
-  const lesson = lessons[lessonId];
-  if (!lesson) return null;
-
-  const subjectName = subjects.data?.[lesson.subject]?.NAME || 'Unknown Subject';
-  const teacherName = lesson.teacher && teachers.data?.[lesson.teacher]?.NAME || 'Unknown Teacher';
-  const roomName = lesson.classRoom && classRooms.data?.[lesson.classRoom]?.NAME || 'Unknown Room';
+  const subjectName =
+    subjects.data?.[
+      lesson
+        ? lesson.subject
+        : typeof lessonId === "object" && lessonId.subjectId !== undefined
+          ? lessonId.subjectId
+          : undefined
+    ]?.NAME || "Unknown Subject";
+  const teacherName =
+    teachers.data?.[
+      lesson
+        ? lesson.teacher
+        : typeof lessonId === "object" && lessonId.teacherId !== undefined
+          ? lessonId.teacherId
+          : undefined
+    ]?.NAME || "Unknown Teacher";
+  const roomName =
+    classRooms.data?.[
+      lesson
+        ? lesson.classRoom
+        : typeof lessonId === "object" && lessonId.classRoomId !== undefined
+          ? lessonId.classRoomId
+          : undefined
+    ]?.NAME || "Unknown Room";
+  const className = lesson
+    ? classes.data?.[lesson.class as keyof typeof classes.data]?.NAME ||
+      "Unknown Class"
+    : typeof lessonId === "object" && lessonId.classId !== undefined
+      ? classes.data?.[lessonId.classId as keyof typeof classes.data]?.NAME ||
+        "Unknown Class"
+      : "Unknown Class";
 
   return (
-    <Group 
-      style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}
+    <Group
+      style={{
+        width: "100%",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <Tooltip
         label={
           <Stack gap="xs">
-            <Text size="sm" fw={500}>{subjectName}</Text>
-            <Text size="xs">Teacher: {teacherName}</Text>
-            <Text size="xs">Room: {roomName}</Text>
+            {subjectName !== undefined && (
+              <Text size="sm" fw={500}>
+                {subjectName}
+              </Text>
+            )}
+            {teacherName !== undefined && (
+              <Text size="xs">Teacher: {teacherName}</Text>
+            )}
+            {lesson ||
+              (typeof lessonId === "object" && lessonId.classRoomId && (
+                <Text size="xs">Room: {roomName}</Text>
+              ))}
+            {lesson ||
+              (typeof lessonId === "object" && lessonId.classId && (
+                <Text size="xs">Class: {className}</Text>
+              ))}
           </Stack>
         }
         position="right"
         withArrow
-        transitionProps={{ transition: 'fade', duration: 200 }}
+        transitionProps={{ transition: "fade", duration: 200 }}
       >
-        <Text 
-          size="s" 
-          style={{ 
-            whiteSpace: 'nowrap', 
-            overflow: 'hidden', 
-            textOverflow: 'ellipsis',
-            flex: 1
+        <Text
+          size="s"
+          style={{
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            flex: 1,
           }}
         >
           {subjectName}

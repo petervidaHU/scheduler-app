@@ -1,12 +1,12 @@
 import React, { FC, useState } from "react";
-import TimeslotFilledCard from "./TimeslotFilledCard";
+import TimeslotFilledCard, { TimeslotLessonInput } from "./TimeslotFilledCard";
 import { useStore } from "@/store/store";
 import { TimeslotInput } from "@/types/databaseTypes";
 import { ActionIcon, Text } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
 
 interface props {
-  timeSlots: Array<{ timeslot: TimeslotInput | null; lessonId?: string }>;
+  timeSlots: Array<{ timeslot: TimeslotInput | null; lessonId?: TimeslotLessonInput }>;
   onClickHandler: (timeslotId: number, lessonId?: string) => void;
   readOnly?: boolean;
 }
@@ -46,12 +46,12 @@ const TimeslotsList: FC<props> = ({ timeSlots, onClickHandler, readOnly = false 
         const top = calculatePosition(start, TOTAL_MINUTES, windowHeight);
         const height = calculatePosition(end - start, TOTAL_MINUTES, windowHeight);
         
-        const backgroundColor = subjects.data?.[lessons[slot.lessonId || '']?.subject]?.HELPER_COLOR || 'rgba(255, 208, 235, .5)';
+        const backgroundColor = typeof slot.lessonId === "string" ? subjects.data?.[lessons[slot.lessonId || '']?.subject]?.HELPER_COLOR : 'rgba(255, 208, 235, .5)';
 
         return (
           <div
             key={ID}
-            onClick={readOnly ? undefined : () => onClickHandler(ID, slot.lessonId)}
+            onClick={readOnly ? undefined : () => onClickHandler(ID, slot.lessonId as string)}
             onMouseEnter={readOnly ? undefined : () => setHoveredId(ID)}
             onMouseLeave={readOnly ? undefined : () => setHoveredId(null)}
             style={{

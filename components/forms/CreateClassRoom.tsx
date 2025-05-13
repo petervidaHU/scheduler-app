@@ -28,6 +28,25 @@ import { getOccupiedTimeslotsByFrame } from "@/app/[locale]/(tenancy)/_actions/g
 
 
 
+// Interface for occupiedTimeslots state
+export interface OccupiedTimeslot {
+  CLASSROOM_ID: number;
+  CLASS_ID: number;
+  CLASS_NAME: string;
+  DAYS_ID: number;
+  FRAME_ID: number;
+  ID: number;
+  PERIOD_END: number;
+  PERIOD_START: number;
+  SCHEDULE_ID: number;
+  SLOT_ORDER: number;
+  SUBJECT_ID: number;
+  TEACHERS: string;
+  TEMPLATE_ID: number;
+  TENANCY_ID: number;
+  TIMESLOT_NAME: string | null;
+}
+
 const init: FormActionType = {
   error: null,
   data: null,
@@ -57,7 +76,7 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
   });
   // Frame selection state
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
-  const [occupiedTimeslots, setOccupiedTimeslots] = useState<any[]>([]);
+  const [occupiedTimeslots, setOccupiedTimeslots] = useState<OccupiedTimeslot[]>([]);
   const isEditMode = !!entity?.ID;
 
   // Local days state for timetable grid
@@ -75,14 +94,11 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
       return;
     }
     const numberOfDays = frame.NUMBER_OF_DAYS;
-    const daysArr: DayPlan[] = [];
+    const daysArr: any[] = [];
     for (let i = 0; i < numberOfDays; i++) {
       daysArr.push({
         id: nanoid(),
-        order: String(i + 1),
         identifier: `Day ${i + 1}`,
-        timeSlots: [],
-        lessons: [],
       });
     }
     setLocalDays(daysArr);
@@ -149,13 +165,20 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
     });
   };
 
-  // Helper for TimeslotsList: get timeslot objects for display (mocked for now)
+  // Helper for TimeslotsList: map OccupiedTimeslot to TimeslotInput for display
   const timeslotObjects = useMemo(() => {
-    // Add dayId to each object for filtering by day
     return occupiedTimeslots.map((occ) => ({
-      timeslot: { ID: occ.timeslotId, NAME: `Slot ${occ.timeslotId}`, PERIOD_START: 0, PERIOD_END: 60, DESCRIPTION: "" },
-      lessonId: occ.lessonId,
-      dayId: occ.dayId,
+      timeslot: {
+        ID: occ.ID,
+        NAME: occ.TIMESLOT_NAME ?? "",
+        DESCRIPTION: "", // or map from occ if available
+        PERIOD_START: occ.PERIOD_START,
+        PERIOD_END: occ.PERIOD_END,
+        SLOT_ORDER: occ.SLOT_ORDER,
+        FRAME_ID: occ.FRAME_ID,
+        // Add other TimeslotInput fields as needed
+      },
+      lessonId: { classId: occ.CLASS_ID, subjectId: occ.SUBJECT_ID },
     }));
   }, [occupiedTimeslots]);
 
@@ -166,6 +189,7 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
   );
 console.log('occupied timeslots:', occupiedTimeslots);
   console.log('frame options:', frameOptions);
+  console.log('local days:', localDays);
   return (
     <Container size="md" my="xl">
       {specialties.error && <p>{specialties.error}</p>}
@@ -237,9 +261,8 @@ console.log('occupied timeslots:', occupiedTimeslots);
           <div style={{ display: 'flex', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
             {localDays.map((day, idx) => (
               <div key={day.id} style={{ flex: 1, borderLeft: idx === 0 ? 'none' : '1px solid #eee', position: 'relative', height: '100%' }}>
-                {/* TimeslotsList for this day: filter occupiedTimeslots for this day.id */}
                 <TimeslotsList
-                  timeSlots={isEditMode ? timeslotObjects.filter(t => t.dayId === day.id) : []}
+                  timeSlots={isEditMode ? timeslotObjects.filter(t => t.timeslot.SLOT_ORDER == idx) : []}
                   onClickHandler={() => {}}
                   readOnly={true}
                 />
