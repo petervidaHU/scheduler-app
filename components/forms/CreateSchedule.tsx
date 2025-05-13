@@ -89,8 +89,6 @@ const SchedulePage = ({
     },
     onValuesChange: async (values, previous) => {
       // Only update if store is already initialized
-      console.log('isStoreInitialized', isStoreInitialized)
-      console.log('values', values)
       if (!isEditMode || (isEditMode && isStoreInitialized)) {
         updateScheduleState(values, previous);
       }
@@ -106,12 +104,9 @@ const SchedulePage = ({
       if (values.class !== previous.class && values.class !== "") {
         // Use server-loaded syllabus if available, otherwise fetch it
         if (values.class === scheduleData?.class?.toString()) {
-          console.log('++1++')
           updateSyllabus(syllabusData);
         } else {
-          console.log('++2++')
           const newSyllabus = await getSyllabusAction(Number(values.class));
-          console.log('++2++syllabus++', newSyllabus)
           if (!newSyllabus) {
             return;
           }

@@ -32,7 +32,7 @@ export interface LessonInput {
     subject: ID;
     classId: ID;
     tempId: string;
-    frameId: ID;
+    frameId: ID | 'CUSTOM';
     dayId: ID | string;
 }
 

@@ -807,6 +807,7 @@ END;
   // ----------------- LESSON -------------------
 
   async createLesson(lesson: LessonInput): Promise<void> {
+    console.log('create lesson db', lesson);
     const query = `INSERT INTO lessons (template_id, teacher_id, classroom_id, subject_id, class_id, tenancy_id, frame_id) VALUES (:templateId, :teacherId, :classroomId, :subjectId, :classId, :tenancyId, :frameId)`;
     try {
       const tenancyId = this.getTenancy();
@@ -1010,21 +1011,20 @@ END;
         dayIDs[day.id] = (dayResult.outBinds as any)?.dayId[0];
 
         const lessonsInDay = this.collectLessonIds(day.timeSlots);
-        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++lessonsInDay", lessonsInDay);
       }
 
       // lessons
       for (const [_, lesson] of Object.entries(lessons)) {
         const day = days.find(d => d.timeSlots.some(ts => ts.timeslotId === lesson.timeslot));
         if (!day) continue;
-
+console.log('lesson in creation ', lesson);
         const queryLesson = `
           INSERT INTO LESSONS (
             TENANCY_ID, SCHEDULE_ID, TEMPLATE_ID, DAYS_ID, 
-            SUBJECT_ID, CLASS_ID, TEACHERS, CLASSROOM_ID
+            SUBJECT_ID, CLASS_ID, TEACHERS, CLASSROOM_ID, FRAME_ID
           ) VALUES (
             :tenancyId, :scheduleId, :templateId, :daysId,
-            :subjectId, :classId, :teachers, :classroomId
+            :subjectId, :classId, :teachers, :classroomId, :frameId
           )
         `;
 
@@ -1035,8 +1035,9 @@ END;
           daysId: dayIDs[day.id],
           subjectId: Number(lesson.subject),
           classId: Number(lesson.classId),
-          teachers: JSON.stringify(this.collectLessonIds(day.timeSlots)),
-          classroomId: Number(lesson.classRoom)
+          teachers: `[${JSON.stringify(lesson.teacher)}]`,
+          classroomId: Number(lesson.classRoom),
+          frameId: Number(frameId),
         };
 
         await conn.execute(queryLesson, lessonBindVars);
@@ -1493,8 +1494,9 @@ END;
             daysId: dayId,
             subjectId: Number(lesson.subject),
             classId: Number(lesson.classId),
-            teachers: JSON.stringify(this.collectLessonIds(day.timeSlots)),
-            classroomId: Number(lesson.classRoom)
+            teachers: JSON.stringify(lesson.teacher ? [lesson.teacher] : []),
+            classroomId: Number(lesson.classRoom),
+            frameId,
           });
         }
       }
@@ -1518,10 +1520,10 @@ END;
         const queryLesson = `
           INSERT INTO LESSONS (
             TENANCY_ID, SCHEDULE_ID, TEMPLATE_ID, DAYS_ID, 
-            SUBJECT_ID, CLASS_ID, TEACHERS, CLASSROOM_ID
+            SUBJECT_ID, CLASS_ID, TEACHERS, CLASSROOM_ID, FRAME_ID
           ) VALUES (
             :tenancyId, :scheduleId, :templateId, :daysId,
-            :subjectId, :classId, :teachers, :classroomId
+            :subjectId, :classId, :teachers, :classroomId, :frameId
           )
         `;
         
