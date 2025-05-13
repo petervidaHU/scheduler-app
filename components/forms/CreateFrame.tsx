@@ -61,23 +61,39 @@ export const CreateFrame: FC<FrameInput> = ({
     },
   });
 
+  // Define a success handler callback
+  const handleSuccess = React.useCallback(() => {
+    console.log('Frame created successfully');
+    // Any additional cleanup can be done here
+  }, []);
+
   useTenancyBasedFormResponse(
     frameState,
     entity?.ID ? null : frameForm, // reset form only on create
     toastMessage,
-    Entities.frame
+    Entities.frame,
+    handleSuccess
   );
 
   const handleFrameSubmit = (values: typeof frameForm.values) => {
+    console.log("Submitting frame values:", values);
+    
+    // Use destructuring to prepare data
     const { name, recurrence, numberOfDays, description, id } = values;
+    
+    // Create a copy to avoid direct mutation and transform data as needed
+    const submissionValues = {
+      name,
+      recurrence: recurrence ? 1 : 0,
+      numberOfDays,
+      description,
+      id
+    };
+    
+    // Use transition to avoid re-renders during form submission
     startTransition(() => {
-      frameAction({
-        name,
-        recurrence: recurrence ? 1 : 0,
-        numberOfDays,
-        description,
-        id
-      });
+      console.log('Submitting form with values:', submissionValues);
+      frameAction(submissionValues);
     });
   };
 
@@ -117,12 +133,24 @@ export const CreateFrame: FC<FrameInput> = ({
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              {submitBtnText}
+              {submitBtnText || "Create Frame"}
+            </Button>
+            <Button 
+              onClick={() => {
+                if (backBtnUrl) {
+                  window.location.href = backBtnUrl;
+                } else {
+                  window.location.href = "/my-tenancy/admin";
+                }
+              }} 
+              variant="outline"
+              color="gray"
+            >
+              {backBtnText || "Cancel"}
             </Button>
           </Group>
         </Stack>
       </form>
-      <Button onClick={() => redirect(backBtnUrl)}>{backBtnText}</Button>
     </Container>
   );
 }; 

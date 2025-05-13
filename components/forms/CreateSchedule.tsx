@@ -185,17 +185,20 @@ const SchedulePage = ({
   const [createState, createAction] = useActionState(createSchedule, init);
   const [updateState, updateAction] = useActionState(updateSchedule, init);
 
+  // Define a success handler callback using useCallback to prevent unnecessary re-renders
+  const handleSuccess = React.useCallback(() => {
+    console.log('Schedule created/updated successfully');
+    // Navigation will trigger component unmount which will reset the state
+    router.push('/en/my-tenancy/schedules');
+  }, [router]);
+
   // Call the hook directly. Its useEffect will handle the logic.
   useTenancyBasedFormResponse(
     isEditMode ? updateState : createState,
     isEditMode ? null : form, // Pass form only for create mode to reset it
     isEditMode ? 'Schedule updated successfully' : 'Schedule created successfully',
     Entities.class, // Still using Entities.class as placeholder for now
-    () => {
-      // We only get here on success, so we can assume success is true
-      // Navigation will trigger component unmount which will reset the state
-      router.push('/en/my-tenancy/schedules');
-    }
+    handleSuccess
   );
 
   // Legacy data loading (remove this useEffect once server-side data loading is fully implemented)
@@ -344,14 +347,21 @@ const SchedulePage = ({
   }, [frames, form.values.frameId]);
 
   const handleScheduleFormSubmit = (values: typeof form.values) => {
+    console.log("Submitting schedule values:", values);
+    
+    // Create a snapshot of the current state to prevent stale data
+    const currentLessons = {...lessons};
+    const currentDays = [...days];
+    
     startTransition(() => {
+      // Build the context for submission
       const context: ScheduleContext = {
         name: values.name,
         description: values.description,
         frameId: values.frameId === CUSTOM_FRAME ? CUSTOM_FRAME : Number(values.frameId),
         class: Number(values.class),
-        lessons,
-        days: days.map(day => ({
+        lessons: currentLessons,
+        days: currentDays.map(day => ({
           id: day.id,
           timeSlots: day.timeSlots.map(slot => ({
             timeslotId: slot.timeslotId,
@@ -362,6 +372,8 @@ const SchedulePage = ({
         owner: values.owner,
       };
 
+      console.log('Submitting form with values:', context);
+      
       if (isEditMode && scheduleId) {
         updateAction({ ...context, id: scheduleId });
       } else {

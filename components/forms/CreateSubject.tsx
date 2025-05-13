@@ -63,19 +63,32 @@ export const CreateSubject: FC<SubjectInput> = ({
     },
   });
 
+  // Define a success handler callback
+  const handleSuccess = React.useCallback(() => {
+    console.log('Subject created successfully');
+    // Any additional cleanup can be done here
+  }, []);
+
   useTenancyBasedFormResponse(
     subjectState,
     entity?.ID ? null : subjectForm,
     toastMessage || 'Subject action successful',
-    Entities.subject
+    Entities.subject,
+    handleSuccess
   );
 
   const handleSubjectSubmit = (values: typeof subjectForm.values) => {
+    console.log("Submitting subject values:", values);
+    
+    // Create a copy to avoid direct mutation
+    const submissionValues = {
+      ...values,
+      helperColor: values.helperColor || defaultHelperColor,
+    };
+    
+    // Use transition to avoid re-renders during form submission
     startTransition(() => {
-      const submissionValues = {
-        ...values,
-        helperColor: values.helperColor || defaultHelperColor,
-      };
+      console.log('Submitting form with values:', submissionValues);
       subjectAction(submissionValues);
     });
   };
@@ -118,12 +131,24 @@ export const CreateSubject: FC<SubjectInput> = ({
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              {submitBtnText}
+              {submitBtnText || "Create Subject"}
+            </Button>
+            <Button 
+              onClick={() => {
+                if (backBtnUrl) {
+                  window.location.href = backBtnUrl;
+                } else {
+                  window.location.href = "/my-tenancy/admin";
+                }
+              }} 
+              variant="outline"
+              color="gray"
+            >
+              {backBtnText || "Cancel"}
             </Button>
           </Group>
         </Stack>
       </form>
-      <Button onClick={() => redirect(backBtnUrl)}>{backBtnText}</Button>
     </Container>
   );
 };

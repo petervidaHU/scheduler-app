@@ -37,8 +37,19 @@ interface ClassesInput extends ManageFormServerProps {
   error?: string;
 }
 
+interface SyllabusInput {
+  occurrence: number;
+  teachers: ID[];
+}
+
 interface SyllabusData {
-  [subject: ID]: SyllabusInputForm;
+  [subject: ID]: SyllabusInput;
+}
+
+interface SyllabusApiResponse {
+  SUBJECT_ID: ID;
+  TEACHERS: ID[];
+  OCCURRENCE: number;
 }
 
 export const CreateClass: React.FC<ClassesInput> = ({
@@ -64,7 +75,7 @@ export const CreateClass: React.FC<ClassesInput> = ({
   const handleSubjectChange = (
     subject: ID,
     value: unknown,
-    field: keyof SyllabusInputForm
+    field: keyof SyllabusInput
   ) => {
     setSyllabus((prev) => ({
       ...prev,
@@ -77,17 +88,46 @@ export const CreateClass: React.FC<ClassesInput> = ({
 
   const classForm = useForm({
     initialValues: {
-      className: "",
-      numberOfStudents: "",
-      syllabus: {},
+      className: entity?.NAME || "",
+      numberOfStudents: entity?.NUMBER_OF_STUDENTS?.toString() || "",
+      id: entity?.ID || null,
+      syllabus: {} // This will be managed by the syllabus state
     },
     validate: {
       className: (value) =>
         value.trim().length === 0 ? "Class name is required" : null,
       numberOfStudents: (value) =>
-        value.trim().length === 0 ? "Class name is required" : null,
+        value.trim().length === 0 ? "Number of students is required" : null,
     },
   });
+
+  // Initialize syllabus state with entity data if in edit mode
+  useEffect(() => {
+    if (entity?.ID && subjects) {
+      // Fetch syllabus data for this class
+      const loadSyllabusData = async () => {
+        try {
+          const res = await fetch(`/api/syllabus/${entity.ID}`);
+          const syllabusData: SyllabusApiResponse[] = await res.json();
+          
+          // Transform the data into our SyllabusData format
+          const initialSyllabus: SyllabusData = {};
+          syllabusData.forEach((item: SyllabusApiResponse) => {
+            initialSyllabus[item.SUBJECT_ID] = {
+              teachers: item.TEACHERS || [],
+              occurrence: item.OCCURRENCE || 0
+            };
+          });
+          
+          setSyllabus(initialSyllabus);
+        } catch (error) {
+          console.error("Failed to load syllabus data:", error);
+        }
+      };
+
+      loadSyllabusData();
+    }
+  }, [entity?.ID, subjects]);
 
   useTenancyBasedFormResponse(
     state,
@@ -100,7 +140,14 @@ export const CreateClass: React.FC<ClassesInput> = ({
   const handleClassSubmit = (values: typeof classForm.values) => {
     const filteredSyllabus = Object.entries(syllabus)
       .filter(([_subject, { occurrence }]) => occurrence > 0)
-      .reduce((acc, [subject, syll]) => ({ ...acc, [subject]: syll }), {});
+      .reduce((acc, [subject, syll]) => ({
+        ...acc,
+        [subject]: {
+          ...syll,
+          subject: Number(subject) // Add the subject ID here
+        }
+      }), {});
+
     values.syllabus = filteredSyllabus;
     console.log("VALUES::", values);
 
@@ -114,7 +161,7 @@ export const CreateClass: React.FC<ClassesInput> = ({
       ...prev,
       [subject]: {
         teachers: [],
-        occurrence: 0,
+        occurrence: 0
       },
     }));
   };
@@ -131,10 +178,10 @@ export const CreateClass: React.FC<ClassesInput> = ({
           />
           <TextInput
             label="Number of students"
-            placeholder="how many students there?"
+            placeholder="How many students?"
             {...classForm.getInputProps("numberOfStudents")}
+            required
           />
-          add syllabus
           <Select
             label="Choose subject"
             placeholder="Select a subject here"
@@ -146,53 +193,64 @@ export const CreateClass: React.FC<ClassesInput> = ({
               inputValue && handleAddSubject(inputValue)
             }
           />
-          <Group mt="md">
-            {Object.entries(syllabus).map(([keyString, value]) => {
-              const key = Number(keyString);
-              return (
-                <Group key={key} mt="md">
-                  <div> {subjects?.[key]?.NAME}</div>
-                  <NumberInput
-                    label="Occurrence per week"
-                    placeholder="Occurrence per week"
-                    value={value.occurrence || 0}
+          {Object.entries(syllabus).map(([keyString, value]) => {
+            const key = Number(keyString);
+            return (
+              <Group key={key} mt="md">
+                <div>{subjects?.[key]?.NAME}</div>
+                <NumberInput
+                  label="Occurrence per week"
+                  placeholder="Occurrence per week"
+                  value={value.occurrence || 0}
+                  onChange={(inputValue) =>
+                    handleSubjectChange(key, inputValue, "occurrence")
+                  }
+                />
+                {teachers && (
+                  <MultiSelect
+                    searchable
+                    clearable
+                    data={Object.values(teachers)}
+                    label="Teacher"
+                    placeholder="Select teacher(s)"
+                    value={value.teachers}
                     onChange={(inputValue) =>
-                      handleSubjectChange(key, inputValue, "occurrence")
+                      handleSubjectChange(key, inputValue, "teachers")
                     }
                   />
-                  {teachers && (
-                    <MultiSelect
-                      searchable
-                      clearable
-                      data={Object.values(teachers)}
-                      label="Teacher"
-                      placeholder="Select teacher(s)"
-                      onChange={(inputValue) =>
-                        handleSubjectChange(key, inputValue, "teachers")
-                      }
-                    />
-                  )}
-                  <ActionIcon
-                    onClick={() => {
-                      const newSyllabus = { ...syllabus };
-                      delete newSyllabus[key];
-                      setSyllabus(newSyllabus);
-                    }}
-                  >
-                    <IconTrash />
-                  </ActionIcon>
-                </Group>
-              );
-            })}
-          </Group>
+                )}
+                <ActionIcon
+                  onClick={() => {
+                    const newSyllabus = { ...syllabus };
+                    delete newSyllabus[key];
+                    setSyllabus(newSyllabus);
+                  }}
+                >
+                  <IconTrash />
+                </ActionIcon>
+              </Group>
+            );
+          })}
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              Create Class
+              {submitBtnText || "Create Class"}
+            </Button>
+            <Button 
+              onClick={() => {
+                if (backBtnUrl) {
+                  window.location.href = backBtnUrl;
+                } else {
+                  window.location.href = "/my-tenancy/admin";
+                }
+              }} 
+              variant="outline"
+              color="gray"
+            >
+              {backBtnText || "Cancel"}
             </Button>
           </Group>
         </Stack>
       </form>
-      <Button onClick={() => redirect("/my-tenancy/admin")}>Cancel</Button>
     </Container>
   );
 };

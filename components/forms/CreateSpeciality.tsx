@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useTransition, useActionState, FC } from "react";
-import {
-  Container,
-  TextInput,
-  Button,
-  Group,
-  Stack,
-} from "@mantine/core";
+import { Container, TextInput, Button, Group, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { Specialty } from "@/types/databaseTypes";
@@ -25,7 +19,7 @@ const init: FormActionType = {
 
 interface SpecialtyInput extends ManageFormServerProps {
   entity?: Specialty;
-  error?: string,
+  error?: string;
 }
 
 export const CreateSpeciality: FC<SpecialtyInput> = ({
@@ -53,26 +47,41 @@ export const CreateSpeciality: FC<SpecialtyInput> = ({
     },
   });
 
-  const { manageState } = useTenancyBasedFormResponse(
+  // Define a success handler callback
+  const handleSuccess = React.useCallback(() => {
+    console.log("Specialty created successfully");
+    // Any additional cleanup can be done here
+  }, []);
+
+  useTenancyBasedFormResponse(
     specialityState,
     entity?.ID ? null : specialityForm,
     toastMessage,
-    Entities.specialty
+    Entities.specialty,
+    handleSuccess
   );
-  manageState();
 
   const handleSpecialityFormSubmit = (values: typeof specialityForm.values) => {
+    console.log("Submitting specialty values:", values);
+
+    // Create a copy to avoid direct mutation
+    const submissionValues = { ...values };
+
+    // Use transition to avoid re-renders during form submission
     startTransition(() => {
-      specialityAction(values);
+      console.log("Submitting form with values:", submissionValues);
+      specialityAction(submissionValues);
     });
   };
 
-    if (error) return (
+  if (error)
+    return (
       <Container size="md" my="xl">
         <p>{error}</p>
       </Container>
     );
-
+console.log('back button url:', backBtnUrl);
+  console.log('back button text:', backBtnText);
   return (
     <Container size="md" my="xl">
       <form onSubmit={specialityForm.onSubmit(handleSpecialityFormSubmit)}>
@@ -91,13 +100,19 @@ export const CreateSpeciality: FC<SpecialtyInput> = ({
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              {submitBtnText}
+              {submitBtnText || "Create Specialty"}
+            </Button>
+            <Button
+              variant="outline"
+              color="gray"
+              onClick={() => redirect(backBtnUrl)}
+            >
+              {backBtnText || "Cancel"}
             </Button>
           </Group>
         </Stack>
       </form>
-      <Button onClick={() => redirect(backBtnUrl)}>{backBtnText}</Button>
-      <AddBasicEntities entityType={Entities.specialty}/>
+      <AddBasicEntities entityType={Entities.specialty} />
     </Container>
   );
 };

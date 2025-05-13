@@ -61,16 +61,30 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
     },
   });
 
+  // Define a success handler callback
+  const handleSuccess = React.useCallback(() => {
+    console.log('Classroom created successfully');
+    // Any additional cleanup can be done here
+  }, []);
+
   useTenancyBasedFormResponse(
     crState,
     entity?.ID ? null : classRoomForm,
     toastMessage,
-    Entities.classroom
+    Entities.classroom,
+    handleSuccess
   );
 
   const handleClassRoomSubmit = (values: typeof classRoomForm.values) => {
+    console.log("Submitting classroom values:", values);
+    
+    // Create a copy to avoid direct mutation
+    const submissionValues = { ...values };
+    
+    // Use transition to avoid re-renders during form submission
     startTransition(() => {
-      crAction(values);
+      console.log('Submitting form with values:', submissionValues);
+      crAction(submissionValues);
     });
   };
 
@@ -113,12 +127,24 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              {submitBtnText}
+              {submitBtnText || "Create Classroom"}
+            </Button>
+            <Button 
+              onClick={() => {
+                if (backBtnUrl) {
+                  window.location.href = backBtnUrl;
+                } else {
+                  window.location.href = "/my-tenancy/admin";
+                }
+              }} 
+              variant="outline"
+              color="gray"
+            >
+              {backBtnText || "Cancel"}
             </Button>
           </Group>
         </Stack>
       </form>
-      <Button onClick={() => redirect(backBtnUrl)}>{backBtnText}</Button>
     </Container>
   );
 };

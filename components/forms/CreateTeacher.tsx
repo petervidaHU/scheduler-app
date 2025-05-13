@@ -47,16 +47,30 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
     },
   });
 
+  // Define a success handler callback
+  const handleSuccess = React.useCallback(() => {
+    console.log('Teacher created successfully');
+    // Any additional cleanup can be done here
+  }, []);
+
   useTenancyBasedFormResponse(
     state,
     entity?.ID ? null : teacherForm,
     toastMessage,
-    Entities.teacher
+    Entities.teacher,
+    handleSuccess
   );
 
   const handleTeacherFormSubmit = (values: typeof teacherForm.values) => {
+    console.log("Submitting teacher values:", values);
+    
+    // Create a copy to avoid direct mutation
+    const submissionValues = { ...values };
+    
+    // Use transition to avoid re-renders during form submission
     startTransition(() => {
-      action(values);
+      console.log('Submitting form with values:', submissionValues);
+      action(submissionValues);
     });
   };
 
@@ -87,12 +101,24 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              Create teacher
+              {submitBtnText || "Create Teacher"}
+            </Button>
+            <Button 
+              onClick={() => {
+                if (backBtnUrl) {
+                  window.location.href = backBtnUrl;
+                } else {
+                  window.location.href = "/my-tenancy/admin";
+                }
+              }} 
+              variant="outline"
+              color="gray"
+            >
+              {backBtnText || "Cancel"}
             </Button>
           </Group>
         </Stack>
       </form>
-      <Button onClick={() => redirect("/my-tenancy/admin")}>Cancel</Button>
     </Container>
   );
 };

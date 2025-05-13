@@ -55,7 +55,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         );
 
         const serverProps: ManageFormServerProps = {
-          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy/",
+          backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update classroom" : "Create classroom",
           toastMessage: id
@@ -82,7 +82,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         );
 
         const serverProps: ManageFormServerProps = {
-          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
+          backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update class" : "Create class",
           toastMessage: id
@@ -109,7 +109,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         );
 
         const serverProps: ManageFormServerProps = {
-          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
+          backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update speciality" : "Create speciality",
           toastMessage: id
@@ -136,7 +136,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         );
 
         const serverProps: ManageFormServerProps = {
-          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
+          backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update subject" : "Create subject",
           toastMessage: id
@@ -162,7 +162,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         );
 
         const serverProps: ManageFormServerProps = {
-          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
+          backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update teacher" : "Create teacher",
           toastMessage: id
@@ -188,7 +188,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         );
 
         const serverProps: ManageFormServerProps = {
-          backBtnUrl: id ? "/my-tenancy/admin" : "/my-tenancy",
+          backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update frame" : "Create frame",
           toastMessage: id

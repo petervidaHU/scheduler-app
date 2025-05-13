@@ -67,16 +67,35 @@ const CreateTimeslotTemplate: FC<props> = ({
     validate: {},
   });
 
-  const { manageState } = useTenancyBasedFormResponse(
+  // Define a success handler callback
+  const handleSuccess = React.useCallback(() => {
+    console.log('Timeslot template created successfully');
+    // Any additional cleanup can be done here
+  }, []);
+
+  useTenancyBasedFormResponse(
     timeslotTemplateState,
     entity?.ID ? null : templateForm, // reset form only on create
-    toastMessage
+    toastMessage,
+    undefined, // No specific entity to refetch
+    handleSuccess
   );
-  manageState();
 
   const handleSubmit = (values: typeof templateForm.values) => {
-    const context = { ...values, timeslots: Object.values(activeTimeslots) };
+    console.log("Submitting timeslot template values:", values);
+    
+    // Create a snapshot of the current state
+    const currentTimeslots = {...activeTimeslots};
+    
+    // Create a copy to avoid direct mutation
+    const context = { 
+      ...values, 
+      timeslots: Object.values(currentTimeslots) 
+    };
+    
+    // Use transition to avoid re-renders during form submission
     startTransition(() => {
+      console.log('Submitting form with values:', context);
       tstAction(context);
     });
   };
@@ -134,9 +153,21 @@ const CreateTimeslotTemplate: FC<props> = ({
               label="Overlapping accepted"
             />
             <Button disabled={isPending} type="submit">
-              {submitBtnText}
+              {submitBtnText || "Create Template"}
             </Button>
-            <Button onClick={() => redirect(backBtnUrl)}>{backBtnText}</Button>
+            <Button 
+              onClick={() => {
+                if (backBtnUrl) {
+                  window.location.href = backBtnUrl;
+                } else {
+                  window.location.href = "/my-tenancy/admin";
+                }
+              }} 
+              variant="outline"
+              color="gray"
+            >
+              {backBtnText || "Cancel"}
+            </Button>
           </Group>
         </Stack>
       </form>
