@@ -155,10 +155,8 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
       // Only add timeslot if it doesn't exist yet
       let updatedTimeSlots = [...day.timeSlots];
       if (existingTimeslotIndex === -1) {
-        console.log(`Adding timeslot ${payload.timeslotId} to day ${payload.dayId}`);
         updatedTimeSlots.push({ timeslotId: payload.timeslotId });
       } else {
-        console.log(`Timeslot ${payload.timeslotId} already exists in day ${payload.dayId}, not adding duplicate`);
       }
       
       return {
