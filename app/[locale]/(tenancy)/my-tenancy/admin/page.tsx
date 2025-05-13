@@ -53,7 +53,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           id,
           Entities.classroom
         );
-
         const serverProps: ManageFormServerProps = {
           backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",

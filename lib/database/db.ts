@@ -16,6 +16,7 @@ import {
   Syllabus,
   Timeslots,
   Frame,
+  Lesson,
 } from "@/types/databaseTypes";
 import { NormalizedSyllabus } from "@/app/[locale]/(tenancy)/_actions/createClass";
 import { LessonInput } from "@/types/FormActionType";
@@ -822,6 +823,33 @@ END;
       };
       await this.executeCommand(query, bindVariables);
     } catch (error) {
+      throw error;
+    }
+  }
+
+  async getOccupiedTimeslotsByFrame(
+    frameId: string,
+    classRoomId: number | null | undefined
+  ): Promise<Lesson[]> {
+    const query = `
+      SELECT L.*, D.SLOT_ORDER, T.PERIOD_START, T.PERIOD_END, T.NAME as TIMESLOT_NAME, C.NAME as CLASS_NAME
+      FROM lessons L
+      JOIN days D ON L.DAYS_ID = D.ID
+      JOIN timeslots T ON L.TEMPLATE_ID = T.ID
+      JOIN classes C ON L.CLASS_ID = C.ID
+      WHERE L.frame_id = :frameId AND L.classroom_id = :classRoomId AND L.tenancy_id = :tenancyId
+    `;
+    try {
+      const tenancyId = this.getTenancy();
+      const bindVariables = {
+        frameId,
+        classRoomId,
+        tenancyId,
+      };
+      const result = await this.executeQuery(query, bindVariables);
+      return result as Lesson[];
+    } catch (error) {
+      console.error(`Error getting occupied timeslots: ${error}`);
       throw error;
     }
   }
