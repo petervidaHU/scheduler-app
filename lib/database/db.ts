@@ -807,7 +807,7 @@ END;
   // ----------------- LESSON -------------------
 
   async createLesson(lesson: LessonInput): Promise<void> {
-    const query = `INSERT INTO lessons (template_id, teacher_id, classroom_id, subject_id, class_id, tenancy_id) VALUES (:templateId, :teacherId, :classroomId, :subjectId, :classId, :tenancyId)`;
+    const query = `INSERT INTO lessons (template_id, teacher_id, classroom_id, subject_id, class_id, tenancy_id, frame_id) VALUES (:templateId, :teacherId, :classroomId, :subjectId, :classId, :tenancyId, :frameId)`;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = {
@@ -817,6 +817,7 @@ END;
         subjectId: lesson.subject,
         classId: lesson.classId,
         tenancyId,
+        frameId: lesson.frameId,
       };
       await this.executeCommand(query, bindVariables);
     } catch (error) {

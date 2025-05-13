@@ -2,7 +2,7 @@
 
 import { createLesson } from "@/app/[locale]/(tenancy)/_actions/createLesson";
 import { useStore } from "@/store/store";
-import { ID, Timeslots, ClassRoom, Subject, Teacher } from "@/types/databaseTypes";
+import { Timeslots, ClassRoom, Subject, Teacher } from "@/types/databaseTypes";
 import {
   FormActionType,
   LessonInput,
@@ -14,8 +14,6 @@ import { useActionState, useTransition, useState } from "react";
 import NotificationCard, {
   NotificationContexts,
 } from "../UI-elements/NotificationBadges";
-import { useRouter } from "@/lib/i18n/navigation";
-import { DataWithOptions, SyllabusWithOptions } from "@/types/ScheduleTypes";
 
 interface CreateLessonProps {
   slot: Timeslots;
@@ -49,7 +47,7 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
       subjects: { data: subjects },
     },
     createOneLesson,
-    scheduleState: { days, lessons },
+    scheduleState: { days, lessons, frameId },
   } = useStore();
   const [warnings, setWarnings] = useState<
     Partial<Record<NotificationContexts, string>>
@@ -186,6 +184,8 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
       teacher: Number(form.values.teacher),
       timeslot: slot.ID,
       tempId: lessonId || Date.now().toString(),
+      frameId: scheduleState.frameId,
+      dayId: day.toString(),
     };
     console.log("newLesson", day)
     createOneLesson({

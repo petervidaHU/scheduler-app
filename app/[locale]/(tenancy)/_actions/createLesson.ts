@@ -10,7 +10,8 @@ export const createLesson = async (state: FormActionType, props: LessonInput): P
         classRoom,
         subject,
         classId,
-        day, 
+        dayId: day,
+        frameId 
     } = props;
     if (!timeslot || !classId || !day) {
         return {

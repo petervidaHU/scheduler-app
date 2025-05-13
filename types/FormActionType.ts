@@ -32,6 +32,8 @@ export interface LessonInput {
     subject: ID;
     classId: ID;
     tempId: string;
+    frameId: ID;
+    dayId: ID | string;
 }
 
 export interface ManageFormServerProps {
