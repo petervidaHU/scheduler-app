@@ -1131,8 +1131,6 @@ END;
       .filter(day => day.DAY_TEMPLATE_ID !== null)
       .map(day => day.DAY_TEMPLATE_ID);
     
-    // For logging/debugging
-    console.log(`Found ${dayTemplateIds.length} unique day templates used in this schedule`);
     
     let templateTimeslots: Record<string, number[]> = {};
     let templateNames: Record<string, string> = {};
@@ -1165,7 +1163,6 @@ END;
           try {
             templateTimeslots[template.ID] = JSON.parse(str);
             templateNames[template.ID] = template.NAME;
-            console.log(`Template ${template.ID} (${template.NAME}) has ${templateTimeslots[template.ID].length} timeslots`);
           } catch (e) {
             console.error(`Error parsing timeslots for template ${template.ID}:`, e, 'Raw value:', raw);
             templateTimeslots[template.ID] = [];
@@ -1191,7 +1188,6 @@ END;
     `;
     const lessonsResult = await this.executeQuery(queryLessons, [scheduleId, tenancyId]) as any[];
     
-    console.log(`Retrieved ${lessonsResult.length} lessons for this schedule`);
     
     // Transform days to include timeslots and template ID
     const days = daysResult.map(day => {
@@ -1208,7 +1204,6 @@ END;
       // If day has a template, add template timeslots
       if (day.DAY_TEMPLATE_ID && templateTimeslots[day.DAY_TEMPLATE_ID]) {
         const templateId = day.DAY_TEMPLATE_ID;
-        console.log(`Adding ${templateTimeslots[templateId].length} timeslots from template ${templateId} to day ${dayObj.id}`);
         
         templateTimeslots[templateId].forEach(timeslotId => {
           dayObj.timeSlots.push({ 
@@ -1234,7 +1229,6 @@ END;
           console.log(`Adding lesson ${lesson.ID} to existing timeslot ${lesson.TEMPLATE_ID} in day ${day.id}`);
         } else {
           // This timeslot wasn't part of the template, so add it with the lesson
-          console.log(`Adding new timeslot ${lesson.TEMPLATE_ID} with lesson ${lesson.ID} to day ${day.id}`);
           day.timeSlots.push({
             timeslotId: lesson.TEMPLATE_ID,
             lessonId: lesson.ID.toString()
@@ -1553,5 +1547,22 @@ END;
     } finally {
       await conn.close();
     }
+  }
+
+  // Get all schedules for a given frame in the current tenancy
+  async getSchedulesByFrame(frameId: string | number) {
+    const tenancyId = this.getTenancy();
+    const query = `
+      SELECT * FROM SCHEDULE WHERE TENANCY_ID = :tenancyId AND FRAME_ID = :frameId
+    `;
+    const schedulesResult = await this.executeQuery(query, [tenancyId, frameId === "CUSTOM" ? null : Number(frameId)]);
+    // For each schedule, fetch full details (days, lessons, etc.)
+    const schedules = await Promise.all(
+      (schedulesResult as any[]).map(async (row) => {
+        return this.getScheduleById(row.ID);
+      })
+    );
+    // Filter out nulls (in case getScheduleById fails)
+    return schedules.filter(Boolean);
   }
 }
