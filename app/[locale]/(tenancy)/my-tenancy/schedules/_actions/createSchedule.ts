@@ -15,7 +15,6 @@ export interface ScheduleContext {
 }
 
 export async function createSchedule(state: FormActionType, context: ScheduleContext): Promise<FormActionType> {
-  console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++context", context);
   try {
     const db = await getDbInstance();
     

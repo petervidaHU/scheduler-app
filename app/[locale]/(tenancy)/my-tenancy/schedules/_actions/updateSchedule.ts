@@ -9,7 +9,6 @@ export async function updateSchedule(
   state: FormActionType, 
   context: ScheduleContext & { id: string }
 ): Promise<FormActionType> {
-  console.log("Updating schedule:", context);
   try {
     const db = await getDbInstance();
     

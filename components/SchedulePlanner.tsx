@@ -141,8 +141,6 @@ const SchedulePlanner: FC<props> = ({
       return;
     }
 
-    console.log(`Adding timeslots from template "${template.NAME}" to day ${dayId}`);
-    
     // First, update the template ID for the day
     // This is important as it establishes the relationship between the day and template
     addTimeslotToDay({
@@ -154,21 +152,16 @@ const SchedulePlanner: FC<props> = ({
     // Get all existing timeslot IDs for quick lookup to avoid duplicates
     const existingTimeslotIds = new Set(day.timeSlots.map(slot => slot.timeslotId));
     
-    console.log(`Adding ${timeslotIds.length} timeslots from template to day ${dayId}`);
-    console.log(`Day already has ${existingTimeslotIds.size} timeslots`);
-    
     // For each timeslot in the template
     timeslotIds.forEach((slotId: number) => {
       // Only add if it doesn't already exist
       if (!existingTimeslotIds.has(slotId)) {
-        console.log(`Adding timeslot ${slotId} to day ${dayId}`);
         addTimeslotToDay({
           dayId,
           timeslotId: slotId,
           templateId: template.ID.toString(),
         });
       } else {
-        console.log(`Timeslot ${slotId} already exists in day ${dayId}, not adding duplicate`);
       }
     });
   };
