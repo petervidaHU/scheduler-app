@@ -71,6 +71,7 @@ interface ScheduleState {
   addActiveTimeslot: (payload: TimeslotInput) => void;
   removeActiveTimeslot: (payload: ID) => void;
   selectActiveTimeslot: (payload: ID) => TimeslotInput;
+  updateDayTemplateId: (dayId: string, templateId: string) => void;
 }
 
 const createScheduleSlice = (set: any, get: any): ScheduleState => ({
@@ -348,6 +349,15 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
       scheduleState: {
         ...state.scheduleState,
         days: days,
+      },
+    })),
+  updateDayTemplateId: (dayId: string, templateId: string) =>
+    set((state: ScheduleState) => ({
+      scheduleState: {
+        ...state.scheduleState,
+        days: state.scheduleState.days.map((day) =>
+          day.id === dayId ? { ...day, templateId } : day
+        ),
       },
     })),
 });

@@ -48,6 +48,7 @@ const SchedulePlanner: FC<props> = ({
     deleteDay,
     setDays,
     updateSchedule,
+    updateDayTemplateId,
   } = useStore();
 
   // Create a map of template IDs to template names for quick lookup
@@ -133,7 +134,9 @@ const SchedulePlanner: FC<props> = ({
     }
     
     // Use the helper function to get timeslot IDs
+    console.log('timeslot in dddding template', template);
     const timeslotIds = getTimeslotIdsFromTemplate(template);
+    console.log('timeslotIds dddddddding', timeslotIds);
     
     const day = days.find((d) => d.id === dayId);
     if (!day) {
@@ -141,13 +144,7 @@ const SchedulePlanner: FC<props> = ({
       return;
     }
 
-    // First, update the template ID for the day
-    // This is important as it establishes the relationship between the day and template
-    addTimeslotToDay({
-      dayId,
-      timeslotId: day.timeSlots.length > 0 ? day.timeSlots[0].timeslotId : 0,
-      templateId: template.ID.toString(),
-    });
+    updateDayTemplateId(dayId, templateId);
     
     // Get all existing timeslot IDs for quick lookup to avoid duplicates
     const existingTimeslotIds = new Set(day.timeSlots.map(slot => slot.timeslotId));

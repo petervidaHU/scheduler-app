@@ -19,6 +19,9 @@ const SyllabusTable = () => {
     },
   } = useStore();
 
+  const { class: selectedClass } = scheduleState;
+  console.log('schedule state in syllabustable', scheduleState,selectedClass);
+
   const validatorFn = useSubjectValidation(
     scheduleState.lessons,
     subjects || {},

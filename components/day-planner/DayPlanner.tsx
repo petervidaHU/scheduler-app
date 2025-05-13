@@ -19,7 +19,6 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots, readOnly = fals
 
   const handleOpenModal = (slot: number, lessonId?: string) => {
     if (readOnly) return;
-    
     const timeslot = timeslots.find((t) => t.ID === slot);
     if (!timeslot) {
       console.error('Timeslot not found');
