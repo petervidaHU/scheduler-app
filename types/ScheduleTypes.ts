@@ -82,3 +82,29 @@ export interface TenancyBasedData {
   classes: PreloadDataObject<DataWithOptions<Classes>>;
   frames: PreloadDataObject<DataWithOptions<Frame>>;
 }
+
+export type TimeslotLessonInput = {
+  classId?: number;
+  subjectId?: number;
+  teacherId?: Array<number> | null;
+  classRoomId?: number | null;
+  id?: number;
+};
+
+export interface OccupiedTimeslot {
+  CLASSROOM_ID: number;
+  CLASS_ID: number;
+  CLASS_NAME: string;
+  DAYS_ID: number;
+  FRAME_ID: number;
+  ID: number;
+  PERIOD_END: number;
+  PERIOD_START: number;
+  SCHEDULE_ID: number;
+  SLOT_ORDER: number;
+  SUBJECT_ID: number;
+  TEACHERS: string;
+  TEMPLATE_ID: number;
+  TENANCY_ID: number;
+  TIMESLOT_NAME: string | null;
+}

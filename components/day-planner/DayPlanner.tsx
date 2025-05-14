@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { DayPlan } from "@/types/ScheduleTypes";
+import { DayPlan, TimeslotLessonInput } from "@/types/ScheduleTypes";
 import { useStore } from "@/store/store";
 import { useModal } from "../modals/ModalManager";
 import CreateLessonModal from "../modals/CreateLessonModal";
 import TimeslotsList from "./TimeslotsList";
 import { Timeslots } from "@/types/databaseTypes";
-import TimeslotFilledCard, { TimeslotLessonInput } from "./TimeslotFilledCard";
+import TimeslotFilledCard from "./TimeslotFilledCard";
 
 interface DayPlannerProps {
   day: DayPlan;

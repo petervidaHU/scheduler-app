@@ -2,17 +2,11 @@ import { Group, Text, Tooltip, Stack } from "@mantine/core";
 import React, { FC, useState } from "react";
 import ActionIconX from "../UI-elements/ActionIcons/X";
 import { useStore } from "@/store/store";
+import { TimeslotLessonInput } from "@/types/ScheduleTypes";
 
-export type TimeslotLessonInput = {
-  classId?: number;
-  subjectId?: number;
-  teacherId?: Array<number> | null;
-  classRoomId?: number | null;
-  id?: number;
-};
 interface props {
   lesson: TimeslotLessonInput;
-  }
+}
 
 const TimeslotFilledCard: FC<props> = ({ lesson }) => {
   console.log('in TimeslotFilledCard', lesson);

@@ -29,28 +29,11 @@ import GridContainer from "../day-planner/GridContainer";
 import HourGrid from "../day-planner/HourGrid";
 import TimeslotsList from "../day-planner/TimeslotsList";
 import { getSchedulesByFrame } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getSchedulesByFrame";
-import { DayPlan, Schedule } from "@/types/ScheduleTypes";
+import { DayPlan, Schedule, OccupiedTimeslot } from "@/types/ScheduleTypes";
 import { nanoid } from "nanoid";
 import { getOccupiedTimeslotsByFrame } from "@/app/[locale]/(tenancy)/_actions/getOccupiedTimeslots";
 
 // Interface for occupiedTimeslots state
-export interface OccupiedTimeslot {
-  CLASSROOM_ID: number;
-  CLASS_ID: number;
-  CLASS_NAME: string;
-  DAYS_ID: number;
-  FRAME_ID: number;
-  ID: number;
-  PERIOD_END: number;
-  PERIOD_START: number;
-  SCHEDULE_ID: number;
-  SLOT_ORDER: number;
-  SUBJECT_ID: number;
-  TEACHERS: string;
-  TEMPLATE_ID: number;
-  TENANCY_ID: number;
-  TIMESLOT_NAME: string | null;
-}
 
 const init: FormActionType = {
   error: null,
