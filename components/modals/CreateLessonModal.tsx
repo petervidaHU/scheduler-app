@@ -2,7 +2,7 @@
 
 import { createLesson } from "@/app/[locale]/(tenancy)/_actions/createLesson";
 import { useStore } from "@/store/store";
-import { Timeslots, ClassRoom, Subject, Teacher } from "@/types/databaseTypes";
+import { Timeslots, ClassRoom, Subject, Teacher, ID } from "@/types/databaseTypes";
 import {
   FormActionType,
   LessonInput,
@@ -19,7 +19,7 @@ interface CreateLessonProps {
   slot: Timeslots;
   day: string;
   closeModal: () => void;
-  lessonId?: string;
+  lessonId?: ID;
 }
 
 type classRoomsGroupedOptions = [
@@ -183,7 +183,7 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
       classRoomId: Number(form.values.classRoom),
       teacherId: [Number(form.values.teacher)],
       timeslotId: slot.ID,
-      id: lessonId || Date.now().toString(),
+      id: lessonId || Date.now(),
       frameId: frameId || "CUSTOM",
       dayId: day.toString(),
     };

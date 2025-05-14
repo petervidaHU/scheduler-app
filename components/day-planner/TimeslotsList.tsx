@@ -1,9 +1,10 @@
 import React, { FC, useState } from "react";
-import TimeslotFilledCard, { TimeslotLessonInput } from "./TimeslotFilledCard";
+import TimeslotFilledCard from "./TimeslotFilledCard";
 import { useStore } from "@/store/store";
 import { TimeslotInput } from "@/types/databaseTypes";
 import { ActionIcon, Text } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
+import { TimeslotLessonInput } from "@/types/ScheduleTypes";
 
 interface TimeslotsListProps {
   timeSlots: Array<{

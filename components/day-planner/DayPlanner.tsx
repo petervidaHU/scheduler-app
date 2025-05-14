@@ -6,7 +6,7 @@ import { useStore } from "@/store/store";
 import { useModal } from "../modals/ModalManager";
 import CreateLessonModal from "../modals/CreateLessonModal";
 import TimeslotsList from "./TimeslotsList";
-import { Timeslots } from "@/types/databaseTypes";
+import { ID, Timeslots } from "@/types/databaseTypes";
 import TimeslotFilledCard from "./TimeslotFilledCard";
 
 interface DayPlannerProps {
@@ -27,9 +27,9 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots, readOnly = fals
       return;
     }
     // If lesson is present and has a tempId, pass it as lessonId, else undefined
-    let lessonId: string | undefined = undefined;
+    let lessonId: ID | undefined = undefined;
     if (lesson && typeof lesson === 'object' && 'tempId' in lesson && typeof lesson.tempId === 'string') {
-      lessonId = lesson.tempId;
+      lessonId = lesson.id;
     } else if (typeof lesson === 'string') {
       lessonId = lesson;
     }
