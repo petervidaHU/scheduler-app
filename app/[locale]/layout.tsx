@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import "@mantine/core/styles.css";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import "../globals.css";
-import { theme } from "../theme";
 import HeaderWithSession from "@/components/HeaderWithSession";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import routing from "@/lib/i18n/routing";
@@ -38,26 +36,14 @@ export default async function RootLayout({
     notFound();
   }
   return (
-    <html lang={locale}>
-      <head>
-          <ColorSchemeScript defaultColorScheme="light" />
-        <link rel="shortcut icon" href="/favicon.svg" />
-        <meta
-          name="viewport"
-          content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
-        />
-      </head>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <MantineProvider defaultColorScheme="auto" theme={theme}>
-          <NextIntlClientProvider>
-          <ModalProvider>
-            <HeaderWithSession />
-            {children}
-            <ToastContainer />
-          </ModalProvider>
-          </NextIntlClientProvider>
-        </MantineProvider>
-      </body>
-    </html>
+    <>
+      <NextIntlClientProvider>
+        <ModalProvider>
+          <HeaderWithSession />
+          {children}
+          <ToastContainer />
+        </ModalProvider>
+      </NextIntlClientProvider>
+    </>
   );
 }

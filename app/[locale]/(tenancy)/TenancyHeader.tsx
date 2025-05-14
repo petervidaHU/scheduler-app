@@ -20,23 +20,23 @@ export const TenancyHeader = () => {
     <div className={classes.secondaryHeader}>
       <Container fluid>
         <Group style={{ height: 56 }}>
-          <a
+          <Link
             href="/my-tenancy"
             className={classes.link}
             style={{ color: 'hsla(25, 19%, 26%, 1)' }}
           >
             Dashboard
-          </a>
+          </Link>
           <Group>
             {secondaryLinks.map((link) => (
-              <a
+              <Link
                 key={link.label}
                 href={link.link}
                 className={classes.link}
                 style={{ color: 'hsla(25, 19%, 26%, 1)' }}
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </Group>
         </Group>
