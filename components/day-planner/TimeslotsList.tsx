@@ -2,8 +2,8 @@ import React, { FC, useState } from "react";
 import TimeslotFilledCard from "./TimeslotFilledCard";
 import { useStore } from "@/store/store";
 import { TimeslotInput } from "@/types/databaseTypes";
-import { ActionIcon, Text } from "@mantine/core";
-import { IconTrash } from "@tabler/icons-react";
+import { ActionIcon, Badge, Card, Group, Text, Tooltip } from "@mantine/core";
+import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
 import { TimeslotLessonInput } from "@/types/ScheduleTypes";
 
 interface TimeslotsListProps {
@@ -11,7 +11,10 @@ interface TimeslotsListProps {
     timeslot: TimeslotInput | null;
     lesson?: TimeslotLessonInput | null;
   }>;
-   onClickHandler: (timeslotId: number, lesson?: TimeslotLessonInput | null) => void;
+  onClickHandler: (
+    timeslotId: number,
+    lesson?: TimeslotLessonInput | null
+  ) => void;
   readOnly?: boolean;
 }
 
@@ -32,10 +35,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
   onClickHandler,
   readOnly = false,
 }) => {
-  const {
-    windowHeight,
-    removeActiveTimeslot,
-  } = useStore();
+  const { windowHeight, removeActiveTimeslot } = useStore();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   // Total minutes in a day (24 hours * 60 minutes)
@@ -52,6 +52,8 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
           NAME,
         } = slot.timeslot;
 
+        const lesson = slot.lesson;
+
         // Calculate position and height based on start and end times
         const top = calculatePosition(start, TOTAL_MINUTES, windowHeight);
         const height = calculatePosition(
@@ -64,8 +66,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
         const backgroundColor = "rgba(255, 208, 235, .5)";
 
         return (
-          <div
-            key={ID}
+          <Card
             onClick={
               readOnly
                 ? undefined
@@ -73,45 +74,68 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
             }
             onMouseEnter={readOnly ? undefined : () => setHoveredId(ID)}
             onMouseLeave={readOnly ? undefined : () => setHoveredId(null)}
+            key={ID}
+            radius="md"
+            withBorder
             style={{
+              borderLeft: lesson
+                ? "4px solid var(--mantine-color-green-6)"
+                : "4px solid var(--mantine-color-gray-4)",
+              marginBottom: 8,
+              padding: 8,
+              display: "flex",
+              alignItems: "center",
               position: "absolute",
               top: `${top}px`,
               height: `${height}px`,
-              left: "5%",
-              width: "90%",
+              width: "100%",
               background: backgroundColor,
               border: "1px solid #8cbce6",
-              borderRadius: "4px",
-              padding: "4px 8px",
               boxSizing: "border-box",
               zIndex: 100,
-              display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
               overflow: "hidden",
               cursor: readOnly ? "default" : "pointer",
             }}
           >
-            {slot.lesson ? (
-              <TimeslotFilledCard lesson={slot.lesson} />
-            ) : (
-              <>
-                <Text size="xs">{NAME}</Text>
-                {!readOnly && hoveredId === ID && (
-                  <ActionIcon
-                    variant="light"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent triggering the onClickHandler for timeslots
-                      removeActiveTimeslot(ID);
-                    }}
-                  >
-                    <IconTrash size={16} />
-                  </ActionIcon>
-                )}
-              </>
-            )}
-          </div>
+            <Group
+              justify="space-between"
+              align="center"
+              style={{ width: "100%" }}
+            >
+              {!lesson && (
+                <>
+                  <Text>Free Slot</Text>
+                  <Text size="xs" c="dimmed">
+                    {typeof start === "number" && typeof end === "number"
+                      ? `${end - start} min`
+                      : null}
+                  </Text>
+                </>
+              )}
+              {slot.lesson && <TimeslotFilledCard lesson={slot.lesson} />}
+              {!readOnly && !lesson && (
+                <Group>
+                  <Tooltip label="Add lesson">
+                    <ActionIcon color="cambridge" variant="light">
+                      <IconPlus size={18} />
+                    </ActionIcon>
+                  </Tooltip>
+                  {lesson && (
+                    <Tooltip label="Remove lesson">
+                      <ActionIcon
+                        color="red"
+                        variant="light"
+                        // onClick={...} // Implement remove logic if needed
+                      >
+                        <IconTrash size={18} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                </Group>
+              )}
+            </Group>
+          </Card>
         );
       })}
     </>

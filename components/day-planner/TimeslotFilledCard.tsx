@@ -9,7 +9,7 @@ interface props {
 }
 
 const TimeslotFilledCard: FC<props> = ({ lesson }) => {
-  console.log('in TimeslotFilledCard', lesson);
+  console.log("in TimeslotFilledCard", lesson);
   const {
     tenancyBasedData: { subjects, teachers, classRooms, classes },
     deleteOneLesson,
@@ -45,7 +45,8 @@ const TimeslotFilledCard: FC<props> = ({ lesson }) => {
 
   // --- Room Name ---
   const roomName =
-    lesson?.classRoomId != undefined && classRooms.data?.[lesson.classRoomId]?.NAME
+    lesson?.classRoomId != undefined &&
+    classRooms.data?.[lesson.classRoomId]?.NAME
       ? classRooms.data[lesson.classRoomId].NAME
       : "Unknown Room";
 
@@ -76,12 +77,8 @@ const TimeslotFilledCard: FC<props> = ({ lesson }) => {
             {teacherName !== undefined && (
               <Text size="xs">Teacher: {teacherName}</Text>
             )}
-            {lesson?.classRoomId && (
-              <Text size="xs">Room: {roomName}</Text>
-            )}
-            {lesson?.classId && (
-              <Text size="xs">Class: {className}</Text>
-            )}
+            {lesson?.classRoomId && <Text size="xs">Room: {roomName}</Text>}
+            {lesson?.classId && <Text size="xs">Class: {className}</Text>}
           </Stack>
         }
         position="right"
@@ -89,7 +86,8 @@ const TimeslotFilledCard: FC<props> = ({ lesson }) => {
         transitionProps={{ transition: "fade", duration: 200 }}
       >
         <Text
-          size="s"
+          size="sm"
+          fw={600}
           style={{
             whiteSpace: "nowrap",
             overflow: "hidden",
