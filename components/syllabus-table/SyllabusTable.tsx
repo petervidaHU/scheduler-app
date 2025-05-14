@@ -19,9 +19,6 @@ const SyllabusTable = () => {
     },
   } = useStore();
 
-  const { class: selectedClass } = scheduleState;
-  console.log('schedule state in syllabustable', scheduleState,selectedClass);
-
   const validatorFn = useSubjectValidation(
     scheduleState.lessons,
     subjects || {},
@@ -31,7 +28,7 @@ const SyllabusTable = () => {
 
   const subjectOccurrences = Object.values(scheduleState.lessons).reduce(
     (acc, lesson) => {
-      const subjectId = lesson.subject;
+      const subjectId = lesson.subjectId;
       acc[subjectId] = (acc[subjectId] || 0) + 1;
       return acc;
     },

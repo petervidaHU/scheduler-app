@@ -92,7 +92,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
             }}
           >
             {slot.lesson ? (
-              <TimeslotFilledCard lessonId={slot.lesson} />
+              <TimeslotFilledCard lesson={slot.lesson} />
             ) : (
               <>
                 <Text size="xs">{NAME}</Text>

@@ -814,10 +814,10 @@ END;
     try {
       const tenancyId = this.getTenancy();
       const bindVariables = {
-        templateId: lesson.timeslot,
-        teacherId: lesson.teacher,
-        classroomId: lesson.classRoom,
-        subjectId: lesson.subject,
+        templateId: lesson.timeslotId,
+        teacherId: lesson.teacherId,
+        classroomId: lesson.classRoomId,
+        subjectId: lesson.subjectId,
         classId: lesson.classId,
         tenancyId,
         frameId: lesson.frameId,
@@ -1083,7 +1083,7 @@ END;
 
       // lessons
       for (const [_, lesson] of Object.entries(lessons)) {
-        const day = days.find(d => d.timeSlots.some(ts => ts.timeslotId === lesson.timeslot));
+        const day = days.find(d => d.timeSlots.some(ts => ts.timeslotId === lesson.timeslotId));
         if (!day) continue;
 console.log('lesson in creation ', lesson);
         const queryLesson = `
@@ -1099,12 +1099,12 @@ console.log('lesson in creation ', lesson);
         const lessonBindVars = {
           tenancyId: Number(tenancyId),
           scheduleId: Number(scheduleId),
-          templateId: Number(lesson.timeslot),
+          templateId: Number(lesson.timeslotId),
           daysId: dayIDs[day.id],
-          subjectId: Number(lesson.subject),
+          subjectId: Number(lesson.subjectId),
           classId: Number(lesson.classId),
-          teachers: `[${JSON.stringify(lesson.teacher)}]`,
-          classroomId: Number(lesson.classRoom),
+          teachers: `[${JSON.stringify(lesson.teacherId)}]`,
+          classroomId: Number(lesson.classRoomId),
           frameId: Number(frameId),
         };
 
@@ -1522,7 +1522,7 @@ console.log('lesson in creation ', lesson);
       const existingLessonIds = new Set();
       
       for (const [lessonId, lesson] of Object.entries(lessons)) {
-        const day = days.find(d => d.timeSlots.some(ts => ts.timeslotId === lesson.timeslot));
+        const day = days.find(d => d.timeSlots.some(ts => ts.timeslotId === lesson.timeslotId));
         if (!day) continue;
         
         const dayId = dayIDs[day.id];
@@ -1532,7 +1532,7 @@ console.log('lesson in creation ', lesson);
         const existingLesson = existingLessons.find(el => 
           String(el.ID) === lessonId && 
           el.DAYS_ID === dayId && 
-          el.TEMPLATE_ID === Number(lesson.timeslot)
+          el.TEMPLATE_ID === Number(lesson.timeslotId)
         );
         
         if (existingLesson) {
@@ -1541,15 +1541,15 @@ console.log('lesson in creation ', lesson);
           
           // Check if anything changed
           if (
-            existingLesson.SUBJECT_ID !== Number(lesson.subject) ||
-            existingLesson.CLASSROOM_ID !== Number(lesson.classRoom)
+            existingLesson.SUBJECT_ID !== Number(lesson.subjectId) ||
+            existingLesson.CLASSROOM_ID !== Number(lesson.classRoomId)
           ) {
             lessonsToUpdate.push({
               id: existingLesson.ID,
-              subjectId: Number(lesson.subject),
+              subjectId: Number(lesson.subjectId),
               classId: Number(lesson.classId),
               teachers: JSON.stringify(this.collectLessonIds(day.timeSlots)),
-              classroomId: Number(lesson.classRoom),
+              classroomId: Number(lesson.classRoomId),
               tenancyId
             });
           }
@@ -1558,12 +1558,12 @@ console.log('lesson in creation ', lesson);
           lessonsToCreate.push({
             tenancyId: Number(tenancyId),
             scheduleId: Number(scheduleId),
-            templateId: Number(lesson.timeslot),
+            templateId: Number(lesson.timeslotId),
             daysId: dayId,
-            subjectId: Number(lesson.subject),
+            subjectId: Number(lesson.subjectId),
             classId: Number(lesson.classId),
-            teachers: JSON.stringify(lesson.teacher ? [lesson.teacher] : []),
-            classroomId: Number(lesson.classRoom),
+            teachers: JSON.stringify(lesson.teacherId ? [lesson.teacherId] : []),
+            classroomId: Number(lesson.classRoomId),
             frameId,
           });
         }

@@ -81,9 +81,9 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
 
   const form = useForm<FormValues>({
     initialValues: {
-      subject: currentLesson?.subject?.toString() || '',
-      classRoom: currentLesson?.classRoom?.toString() || '',
-      teacher: currentLesson?.teacher?.toString() || '',
+      subject: currentLesson?.subjectId?.toString() || '',
+      classRoom: currentLesson?.classRoomId?.toString() || '',
+      teacher: currentLesson?.teacherId?.toString() || '',
     },
     validateInputOnChange: ["classRoom"],
     validate: {
@@ -179,15 +179,15 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
     console.log("handleLessonCreate", slot);
     const newLesson: LessonInput = {
       classId: syllabus[form.values.subject]?.CLASS_ID || 0,
-      subject: Number(form.values.subject),
-      classRoom: Number(form.values.classRoom),
-      teacher: Number(form.values.teacher),
-      timeslot: slot.ID,
+      subjectId: Number(form.values.subject),
+      classRoomId: Number(form.values.classRoom),
+      teacherId: [Number(form.values.teacher)],
+      timeslotId: slot.ID,
       tempId: lessonId || Date.now().toString(),
       frameId: frameId || "CUSTOM",
       dayId: day.toString(),
     };
-    console.log("newLesson ", day)
+
     createOneLesson({
       dayId: day.toString(),
       newLesson,

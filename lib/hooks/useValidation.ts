@@ -58,7 +58,7 @@ const validationFunctionWithLessonsBinder = (
     if (preferredTeachers.length === 0) return null;
 
     const result = lessonsFilteredBySubjects.filter(
-      (l) => l.teacher && !preferredTeachers.map(Number).includes(Number(l.teacher))
+      (l) => l.teacherId && !preferredTeachers.map(Number).includes(Number(l.teacherId))
     );
     if (result.length === 0) return null;
 
@@ -75,8 +75,8 @@ const validationFunctionWithLessonsBinder = (
 
     const result = lessonsFilteredBySubjects.filter((l) => {
       // Make sure we have a valid classroom ID and it exists in our classRooms collection
-      if (!l.classRoom) return false;
-      const classroom = classRooms[l.classRoom?.toString() as string];
+      if (!l.classRoomId) return false;
+      const classroom = classRooms[l.classRoomId?.toString() as string];
       if (!classroom) return false;
       
       return classroom.SPECIALITY_ID?.toString() !== preferredSpeciality;
@@ -99,7 +99,7 @@ export const useSubjectValidation = (
   return (s: SyllabusSubjectWithOptions): ScheduleValidationResult => {
     const result: ScheduleValidationResult = {};
     const lessonsForSubject = Object.values(scheduleLessons).filter(
-      (l) => l.subject == s.SUBJECT_ID
+      (l) => l.subjectId == s.SUBJECT_ID
     );
     if (lessonsForSubject.length === 0) return result;
 

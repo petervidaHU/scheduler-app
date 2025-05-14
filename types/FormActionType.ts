@@ -26,10 +26,10 @@ export interface SyllabusInputForm {
 }
 
 export interface LessonInput {
-    timeslot: ID;
-    teacher: ID | null;
-    classRoom: ID | null;
-    subject: ID;
+    timeslotId: ID;
+    teacherId: Array<number> | null;
+    classRoomId: ID | null;
+    subjectId: ID;
     classId: ID;
     tempId: string;
     frameId: ID | 'CUSTOM';

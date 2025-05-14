@@ -5,10 +5,10 @@ import { FormActionType, LessonInput } from "@/types/FormActionType";
 
 export const createLesson = async (state: FormActionType, props: LessonInput): Promise<FormActionType>  => {
     const {
-        timeslot,
-        teacher,
-        classRoom,
-        subject,
+        timeslotId: timeslot,
+        teacherId: teacher,
+        classRoomId: classRoom,
+        subjectId: subject,
         classId,
         dayId: day,
         frameId 

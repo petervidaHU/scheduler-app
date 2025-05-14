@@ -3,8 +3,6 @@ This is a timetable app for schools. The user can log in, select an entity (in t
 From these, the user can create a timetable, specifying the time, subject, classroom, teacher of a lesson within a given frame. The purpose of the app is to allow you to select only the teachers and classrooms that are available at the time when you create the timetable.
 All entities can be managed with CRUD operations, all timetables can be queried, modified.
 
-Translated with DeepL.com (free version)
-
 ## Project Overview
 This is a frontend application built with Next.js and Mantine UI v7. The project follows SOLID principles where appropriate and uses Zustand for client-side state management.
 

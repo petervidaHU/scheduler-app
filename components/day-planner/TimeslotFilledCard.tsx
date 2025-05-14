@@ -3,65 +3,62 @@ import React, { FC, useState } from "react";
 import ActionIconX from "../UI-elements/ActionIcons/X";
 import { useStore } from "@/store/store";
 
-export type TimeslotLessonInput = string
-    | {
-        classId?: number;
-        subjectId?: number;
-        teacherId?: string;
-        classRoomId?: number;
-      }
+export type TimeslotLessonInput = {
+  classId?: number;
+  subjectId?: number;
+  teacherId?: Array<number> | null;
+  classRoomId?: number | null;
+  id?: number;
+};
 interface props {
-  lessonId: TimeslotLessonInput;
-}
+  lesson: TimeslotLessonInput;
+  }
 
-const TimeslotFilledCard: FC<props> = ({ lessonId }) => {
+const TimeslotFilledCard: FC<props> = ({ lesson }) => {
+  console.log('in TimeslotFilledCard', lesson);
   const {
     tenancyBasedData: { subjects, teachers, classRooms, classes },
-    scheduleState: { lessons },
     deleteOneLesson,
   } = useStore();
   const [isHovered, setIsHovered] = useState(false);
 
-  const handleDeleteLesson = (event: any, id: string) => {
-    event.stopPropagation();
-    deleteOneLesson(id);
-  };
-  let lesson: any = null;
-  if (typeof lessonId === "string") {
-    lesson = lessons[lessonId];
-    if (!lesson) return null;
-  }
-
+  // --- Subject Name ---
   const subjectName =
-    subjects.data?.[
-      lesson
-        ? lesson.subject
-        : typeof lessonId === "object" && lessonId.subjectId !== undefined
-          ? lessonId.subjectId
-          : undefined
-    ]?.NAME || "Unknown Subject";
+    lesson?.subjectId !== undefined && subjects.data?.[lesson.subjectId]?.NAME
+      ? subjects.data[lesson.subjectId].NAME
+      : "Unknown Subject";
+
+  // --- Teacher Name(s) ---
+  let teacherIds: any = lesson?.teacherId;
+  // If teacherIds is a stringified array, parse it
+  if (typeof teacherIds === "string" && teacherIds.startsWith("[")) {
+    try {
+      teacherIds = JSON.parse(teacherIds);
+    } catch {
+      teacherIds = [];
+    }
+  }
+  // If single value, make it array
+  if (teacherIds !== undefined && !Array.isArray(teacherIds)) {
+    teacherIds = [teacherIds];
+  }
   const teacherName =
-    teachers.data?.[
-      lesson
-        ? lesson.teacher
-        : typeof lessonId === "object" && lessonId.teacherId !== undefined
-          ? lessonId.teacherId
-          : undefined
-    ]?.NAME || "Unknown Teacher";
+    teacherIds && Array.isArray(teacherIds) && teacherIds.length > 0
+      ? teacherIds
+          .map((id: any) => teachers.data?.[id]?.NAME || "Unknown Teacher")
+          .join(", ")
+      : "Unknown Teacher";
+
+  // --- Room Name ---
   const roomName =
-    classRooms.data?.[
-      lesson
-        ? lesson.classRoom
-        : typeof lessonId === "object" && lessonId.classRoomId !== undefined
-          ? lessonId.classRoomId
-          : undefined
-    ]?.NAME || "Unknown Room";
-  const className = lesson
-    ? classes.data?.[lesson.class as keyof typeof classes.data]?.NAME ||
-      "Unknown Class"
-    : typeof lessonId === "object" && lessonId.classId !== undefined
-      ? classes.data?.[lessonId.classId as keyof typeof classes.data]?.NAME ||
-        "Unknown Class"
+    lesson?.classRoomId != undefined && classRooms.data?.[lesson.classRoomId]?.NAME
+      ? classRooms.data[lesson.classRoomId].NAME
+      : "Unknown Room";
+
+  // --- Class Name ---
+  const className =
+    lesson?.classId !== undefined && classes.data?.[lesson.classId]?.NAME
+      ? classes.data[lesson.classId].NAME
       : "Unknown Class";
 
   return (
@@ -85,14 +82,12 @@ const TimeslotFilledCard: FC<props> = ({ lessonId }) => {
             {teacherName !== undefined && (
               <Text size="xs">Teacher: {teacherName}</Text>
             )}
-            {lesson ||
-              (typeof lessonId === "object" && lessonId.classRoomId && (
-                <Text size="xs">Room: {roomName}</Text>
-              ))}
-            {lesson ||
-              (typeof lessonId === "object" && lessonId.classId && (
-                <Text size="xs">Class: {className}</Text>
-              ))}
+            {lesson?.classRoomId && (
+              <Text size="xs">Room: {roomName}</Text>
+            )}
+            {lesson?.classId && (
+              <Text size="xs">Class: {className}</Text>
+            )}
           </Stack>
         }
         position="right"
@@ -111,10 +106,15 @@ const TimeslotFilledCard: FC<props> = ({ lessonId }) => {
           {subjectName}
         </Text>
       </Tooltip>
-      {isHovered && (
+      {lesson?.id && isHovered && (
         <ActionIconX
           label="delete"
-          onClickCallback={(e) => handleDeleteLesson(e, lesson.tempId)}
+          onClickCallback={(e) => {
+            e.stopPropagation();
+            if (lesson?.id !== undefined) {
+              deleteOneLesson(lesson.id.toString());
+            }
+          }}
           style={{ flexShrink: 0, opacity: 0.8 }}
         />
       )}
