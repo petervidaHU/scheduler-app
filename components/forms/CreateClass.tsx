@@ -15,6 +15,7 @@ import {
   Title,
   Text,
   Divider,
+  SimpleGrid,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
@@ -175,7 +176,7 @@ export const CreateClass: React.FC<ClassesInput> = ({
   };
 
   return (
-    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}>
       <Group mb="md" align="center">
         <IconUsers size={32} color="var(--mantine-color-cambridge-6)" />
         <div>
@@ -185,7 +186,7 @@ export const CreateClass: React.FC<ClassesInput> = ({
       </Group>
       <Divider mb="md" />
       <form onSubmit={classForm.onSubmit(handleClassSubmit)}>
-        <Stack>
+        <SimpleGrid cols={2} spacing="md" visibleFrom="lg">
           <TextInput
             label="Class Name"
             placeholder="Enter class name"
@@ -209,63 +210,63 @@ export const CreateClass: React.FC<ClassesInput> = ({
               inputValue && handleAddSubject(inputValue)
             }
           />
-          {Object.entries(syllabus).map(([keyString, value]) => {
-            const key = Number(keyString);
-            return (
-              <Group key={key} mt="md">
-                <div>{subjects?.[key]?.NAME}</div>
-                <NumberInput
-                  label="Occurrence per week"
-                  placeholder="Occurrence per week"
-                  value={value.occurrence || 0}
+        </SimpleGrid>
+        {Object.entries(syllabus).map(([keyString, value]) => {
+          const key = Number(keyString);
+          return (
+            <Group key={key} mt="md">
+              <div>{subjects?.[key]?.NAME}</div>
+              <NumberInput
+                label="Occurrence per week"
+                placeholder="Occurrence per week"
+                value={value.occurrence || 0}
+                onChange={(inputValue) =>
+                  handleSubjectChange(key, inputValue, "occurrence")
+                }
+              />
+              {teachers && (
+                <MultiSelect
+                  searchable
+                  clearable
+                  data={Object.values(teachers)}
+                  label="Teacher"
+                  placeholder="Select teacher(s)"
+                  value={value.teachers}
                   onChange={(inputValue) =>
-                    handleSubjectChange(key, inputValue, "occurrence")
+                    handleSubjectChange(key, inputValue, "teachers")
                   }
                 />
-                {teachers && (
-                  <MultiSelect
-                    searchable
-                    clearable
-                    data={Object.values(teachers)}
-                    label="Teacher"
-                    placeholder="Select teacher(s)"
-                    value={value.teachers}
-                    onChange={(inputValue) =>
-                      handleSubjectChange(key, inputValue, "teachers")
-                    }
-                  />
-                )}
-                <ActionIcon
-                  onClick={() => {
-                    const newSyllabus = { ...syllabus };
-                    delete newSyllabus[key];
-                    setSyllabus(newSyllabus);
-                  }}
-                >
-                  <IconTrash />
-                </ActionIcon>
-              </Group>
-            );
-          })}
-          <Group mt="md">
-            <Button disabled={isPending} type="submit">
-              {submitBtnText}
-            </Button>
-            <Button 
-              onClick={() => {
-                if (backBtnUrl) {
-                  window.location.href = backBtnUrl;
-                } else {
-                  window.location.href = "/my-tenancy/admin";
-                }
-              }} 
-              variant="outline"
-              color="gray"
-            >
-              {backBtnText}
-            </Button>
-          </Group>
-        </Stack>
+              )}
+              <ActionIcon
+                onClick={() => {
+                  const newSyllabus = { ...syllabus };
+                  delete newSyllabus[key];
+                  setSyllabus(newSyllabus);
+                }}
+              >
+                <IconTrash />
+              </ActionIcon>
+            </Group>
+          );
+        })}
+        <Group mt="md">
+          <Button disabled={isPending} type="submit">
+            {submitBtnText}
+          </Button>
+          <Button 
+            onClick={() => {
+              if (backBtnUrl) {
+                window.location.href = backBtnUrl;
+              } else {
+                window.location.href = "/my-tenancy/admin";
+              }
+            }} 
+            variant="outline"
+            color="gray"
+          >
+            {backBtnText}
+          </Button>
+        </Group>
       </form>
     </Card>
   );

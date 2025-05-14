@@ -13,6 +13,7 @@ import {
   Title,
   Text,
   Divider,
+  SimpleGrid,
 } from "@mantine/core";
 import { IconBook } from "@tabler/icons-react";
 import { useForm } from "@mantine/form";
@@ -104,7 +105,7 @@ export const CreateSubject: FC<SubjectInput> = ({
     );
 
   return (
-    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}>
       <Group mb="md" align="center">
         <IconBook size={32} color="var(--mantine-color-cambridge-6)" />
         <div>
@@ -115,7 +116,7 @@ export const CreateSubject: FC<SubjectInput> = ({
       <Divider mb="md" />
       {specialties.isLoading && (<p>loading specialities</p>)}
       <form onSubmit={subjectForm.onSubmit(handleSubjectSubmit)}>
-        <Stack>
+        <SimpleGrid cols={2} spacing="md" visibleFrom="lg">
           <TextInput
             label="Subject Name"
             placeholder="Enter subject name"
@@ -136,30 +137,25 @@ export const CreateSubject: FC<SubjectInput> = ({
             }))}
             {...subjectForm.getInputProps("specialtyId")}
           />
-          <ColorPicker
-            format="hsl"
-            value={subjectForm.values.helperColor}
-            onChange={(color) => subjectForm.setFieldValue('helperColor', color)}
-          />
-          <Group mt="md">
-            <Button disabled={isPending} type="submit">
-              {submitBtnText}
-            </Button>
-            <Button 
-              onClick={() => {
-                if (backBtnUrl) {
-                  window.location.href = backBtnUrl;
-                } else {
-                  window.location.href = "/my-tenancy/admin";
-                }
-              }} 
-              variant="outline"
-              color="gray"
-            >
-              {backBtnText}
-            </Button>
-          </Group>
-        </Stack>
+        </SimpleGrid>
+        <Group mt="md">
+          <Button disabled={isPending} type="submit">
+            {submitBtnText}
+          </Button>
+          <Button 
+            onClick={() => {
+              if (backBtnUrl) {
+                window.location.href = backBtnUrl;
+              } else {
+                window.location.href = "/my-tenancy/admin";
+              }
+            }} 
+            variant="outline"
+            color="gray"
+          >
+            {backBtnText}
+          </Button>
+        </Group>
       </form>
     </Card>
   );

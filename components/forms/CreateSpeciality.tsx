@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useTransition, useActionState, FC } from "react";
-import { Container, TextInput, Button, Group, Stack, Card, Title, Text, Divider } from "@mantine/core";
+import { Container, TextInput, Button, Group, Stack, Card, Title, Text, Divider, SimpleGrid } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { Specialty } from "@/types/databaseTypes";
@@ -88,7 +88,7 @@ export const CreateSpeciality: FC<SpecialtyInput> = ({
 console.log('back button url:', backBtnUrl);
   console.log('back button text:', backBtnText);
   return (
-    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}>
       <Group mb="md" align="center">
         <IconStar size={32} color="var(--mantine-color-cambridge-6)" />
         <div>
@@ -98,7 +98,7 @@ console.log('back button url:', backBtnUrl);
       </Group>
       <Divider mb="md" />
       <form onSubmit={specialityForm.onSubmit(handleSpecialityFormSubmit)}>
-        <Stack>
+        <SimpleGrid cols={2} spacing="md" visibleFrom="lg">
           <TextInput
             label="Speciality Name"
             placeholder="Enter speciality name"
@@ -111,21 +111,22 @@ console.log('back button url:', backBtnUrl);
             {...specialityForm.getInputProps("description")}
             required
           />
-          <Group mt="md">
-            <Button disabled={isPending} type="submit">
-              {submitBtnText}
-            </Button>
-            <Button
-              variant="outline"
-              color="gray"
-              onClick={() => redirect(backBtnUrl)}
-            >
-              {backBtnText}
-            </Button>
-          </Group>
-        </Stack>
+          {/* Add more fields here if needed */}
+        </SimpleGrid>
+        <Group mt="md">
+          <Button disabled={isPending} type="submit">
+            {submitBtnText}
+          </Button>
+          <Button
+            variant="outline"
+            color="gray"
+            onClick={() => redirect(backBtnUrl)}
+          >
+            {backBtnText}
+          </Button>
+        </Group>
+        <AddBasicEntities entityType={Entities.specialty} />
       </form>
-      <AddBasicEntities entityType={Entities.specialty} />
     </Card>
   );
 };

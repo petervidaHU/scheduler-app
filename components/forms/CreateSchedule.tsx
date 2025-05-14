@@ -14,6 +14,7 @@ import {
   Group,
   Stack,
   Text,
+  SimpleGrid,
 } from "@mantine/core";
 import { createSchedule, ScheduleContext } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
 import { updateSchedule } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/updateSchedule";
@@ -471,7 +472,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   }, [isEditMode, isStoreInitialized, scheduleData, lessons, updateLessonsInStore]);
 
   return (
-    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 700, margin: "32px auto" }}>
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}>
       <LoadingOverlay visible={isLoading} />
       <Group mb="md" align="center" justify="space-between">
         <div>
@@ -496,7 +497,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       </Group>
       <Divider mb="md" />
       <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
-        <Stack>
+        <SimpleGrid cols={2} spacing="md" visibleFrom="lg">
           <TextInput
             label="Schedule Name"
             placeholder="Enter a descriptive name for this schedule"
@@ -532,12 +533,12 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             mb="md"
             {...form.getInputProps(FormFields.description)}
           />
-          <Group mt="md">
-            <Button type="submit" loading={isPending} color="cambridge">
-              {submitBtnText}
-            </Button>
-          </Group>
-        </Stack>
+        </SimpleGrid>
+        <Group mt="md">
+          <Button type="submit" loading={isPending} color="cambridge">
+            {submitBtnText}
+          </Button>
+        </Group>
       </form>
     </Card>
   );

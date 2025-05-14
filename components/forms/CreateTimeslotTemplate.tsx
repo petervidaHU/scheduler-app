@@ -18,6 +18,7 @@ import {
   Card,
   Title,
   Text,
+  SimpleGrid,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { redirect } from "next/navigation";
@@ -127,7 +128,7 @@ const CreateTimeslotTemplate: FC<TimeslotTemplateInput> = ({
     );
 
   return (
-    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}>
       <Group mb="md" align="center">
         {/* You can add an icon here if desired */}
         <div>
@@ -149,7 +150,7 @@ const CreateTimeslotTemplate: FC<TimeslotTemplateInput> = ({
       <Divider />
       <div>Create new template:</div>
       <form onSubmit={templateForm.onSubmit(handleSubmit)}>
-        <Stack>
+        <SimpleGrid cols={2} spacing="md" visibleFrom="lg">
           <TextInput
             label="Template Name"
             placeholder="Enter template name"
@@ -161,31 +162,30 @@ const CreateTimeslotTemplate: FC<TimeslotTemplateInput> = ({
             placeholder="Short description of the template"
             {...templateForm.getInputProps("description")}
           />
-
-          <Group mt="md">
-            <Switch
-              checked={checked}
-              onChange={(event) => setChecked(event.currentTarget.checked)}
-              label="Overlapping accepted"
-            />
-            <Button disabled={isPending} type="submit">
-              {submitBtnText || "Create Template"}
-            </Button>
-            <Button 
-              onClick={() => {
-                if (backBtnUrl) {
-                  window.location.href = backBtnUrl;
-                } else {
-                  window.location.href = "/my-tenancy/admin";
-                }
-              }} 
-              variant="outline"
-              color="gray"
-            >
-              {backBtnText || "Cancel"}
-            </Button>
-          </Group>
-        </Stack>
+        </SimpleGrid>
+        <Group mt="md">
+          <Switch
+            checked={checked}
+            onChange={(event) => setChecked(event.currentTarget.checked)}
+            label="Overlapping accepted"
+          />
+          <Button disabled={isPending} type="submit">
+            {submitBtnText || "Create Template"}
+          </Button>
+          <Button 
+            onClick={() => {
+              if (backBtnUrl) {
+                window.location.href = backBtnUrl;
+              } else {
+                window.location.href = "/my-tenancy/admin";
+              }
+            }} 
+            variant="outline"
+            color="gray"
+          >
+            {backBtnText || "Cancel"}
+          </Button>
+        </Group>
       </form>
 
       <CreateTimeslot

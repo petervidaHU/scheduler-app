@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useTransition, useActionState, FC, useEffect, useMemo, useState } from "react";
-import { Container, TextInput, Button, Group, Stack, Select, NumberInput, Card, Title, Text, Divider } from "@mantine/core";
+import { Container, TextInput, Button, Group, Stack, Select, NumberInput, Card, Title, Text, Divider, SimpleGrid } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
@@ -153,7 +153,7 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
   }, [occupiedTimeslots]);
 
   return (
-    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}>
       <Group mb="md" align="center">
         <IconChalkboard size={32} color="var(--mantine-color-cambridge-6)" />
         <div>
@@ -162,9 +162,8 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
         </div>
       </Group>
       <Divider mb="md" />
-      <div>{JSON.stringify(state)}</div>
       <form onSubmit={teacherForm.onSubmit(handleTeacherFormSubmit)}>
-        <Stack>
+        <SimpleGrid cols={2} spacing="md" visibleFrom="lg">
           <TextInput
             key={teacherForm.key("teacherName")}
             label="Teacher Name"
@@ -185,99 +184,28 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
             placeholder="description, not mandatory"
             {...teacherForm.getInputProps("description")}
           />
-          <Group mt="md">
-            <Button disabled={isPending} type="submit">
-              {submitBtnText}
-            </Button>
-            <Button 
-              onClick={() => {
-                if (backBtnUrl) {
-                  window.location.href = backBtnUrl;
-                } else {
-                  window.location.href = "/my-tenancy/admin";
-                }
-              }} 
-              variant="outline"
-              color="gray"
-            >
-              {backBtnText}
-            </Button>
-          </Group>
-        </Stack>
+          {/* Add more fields here if needed */}
+        </SimpleGrid>
+        <Group mt="md">
+          <Button disabled={isPending} type="submit">
+            {submitBtnText}
+          </Button>
+          <Button 
+            onClick={() => {
+              if (backBtnUrl) {
+                window.location.href = backBtnUrl;
+              } else {
+                window.location.href = "/my-tenancy/admin";
+              }
+            }} 
+            variant="outline"
+            color="gray"
+          >
+            {backBtnText}
+          </Button>
+        </Group>
+        {/* Frame selector and timetable remain outside the grid */}
       </form>
-      {/* Frame Selector - visually separated from form */}
-      <div
-        style={{
-          margin: "32px 0 16px 0",
-          padding: "16px 0",
-          borderTop: "1px solid #eee",
-        }}
-      >
-        <Select
-          label="Frame Template"
-          placeholder="Select a frame template"
-          data={frameOptions}
-          value={selectedFrameId}
-          onChange={setSelectedFrameId}
-          clearable
-        />
-      </div>
-      {localDays.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <h4>Teacher Timetable</h4>
-          <GridContainer windowHeight={windowHeight}>
-            <HourGrid />
-            {/* Render a column for each local day */}
-            <div
-              style={{
-                display: "flex",
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-              }}
-            >
-              {localDays.map((day, idx) => (
-                <div
-                  key={day.id}
-                  style={{
-                    flex: 1,
-                    borderLeft: idx === 0 ? "none" : "1px solid #eee",
-                    position: "relative",
-                    height: "100%",
-                  }}
-                >
-                  <TimeslotsList
-                    timeSlots={
-                      isEditMode
-                        ? timeslotObjects.filter(
-                            (t) => t.timeslot.SLOT_ORDER == idx
-                          )
-                        : []
-                    }
-                    onClickHandler={() => {}}
-                    readOnly={true}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      background: "rgba(240,240,245,0.1)",
-                      textAlign: "center",
-                      fontSize: 12,
-                    }}
-                  >
-                    {day.identifier}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </GridContainer>
-        </div>
-      )}
     </Card>
   );
 };

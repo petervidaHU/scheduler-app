@@ -14,6 +14,7 @@ import {
   Title,
   Text,
   Divider,
+  SimpleGrid,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
@@ -113,7 +114,7 @@ export const CreateFrame: FC<FrameInput> = ({
   );
 
   return (
-    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}>
       <Group mb="md" align="center">
         <IconCalendar size={32} color="var(--mantine-color-cambridge-6)" />
         <div>
@@ -125,7 +126,7 @@ export const CreateFrame: FC<FrameInput> = ({
       {specialties.error && <p>{specialties.error}</p>}
       {specialties.isLoading && <p>Loading specialties</p>}
       <form onSubmit={frameForm.onSubmit(handleFrameSubmit)}>
-        <Stack>
+        <SimpleGrid cols={2} spacing="md" visibleFrom="lg">
           <TextInput
             label="Frame Name"
             placeholder="Enter frame name"
@@ -148,25 +149,25 @@ export const CreateFrame: FC<FrameInput> = ({
             {...frameForm.getInputProps("numberOfDays")}
             required
           />
-          <Group mt="md">
-            <Button disabled={isPending} type="submit">
-              {submitBtnText}
-            </Button>
-            <Button 
-              onClick={() => {
-                if (backBtnUrl) {
-                  window.location.href = backBtnUrl;
-                } else {
-                  window.location.href = "/my-tenancy/admin";
-                }
-              }} 
-              variant="outline"
-              color="gray"
-            >
-              {backBtnText}
-            </Button>
-          </Group>
-        </Stack>
+        </SimpleGrid>
+        <Group mt="md">
+          <Button disabled={isPending} type="submit">
+            {submitBtnText}
+          </Button>
+          <Button 
+            onClick={() => {
+              if (backBtnUrl) {
+                window.location.href = backBtnUrl;
+              } else {
+                window.location.href = "/my-tenancy/admin";
+              }
+            }} 
+            variant="outline"
+            color="gray"
+          >
+            {backBtnText}
+          </Button>
+        </Group>
       </form>
     </Card>
   );

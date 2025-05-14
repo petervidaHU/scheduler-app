@@ -20,6 +20,7 @@ import {
   Title,
   Text,
   Divider,
+  SimpleGrid,
 } from "@mantine/core";
 import { IconHome } from "@tabler/icons-react";
 import { useForm } from "@mantine/form";
@@ -198,7 +199,7 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
   console.log("frame options:", frameOptions);
   console.log("local days:", localDays);
   return (
-    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}>
       <Group mb="md" align="center">
         <IconHome size={32} color="var(--mantine-color-cambridge-6)" />
         <div>
@@ -208,7 +209,7 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
       </Group>
       <Divider mb="md" />
       <form onSubmit={classRoomForm.onSubmit(handleClassRoomSubmit)}>
-        <Stack>
+        <SimpleGrid cols={2} spacing="md" visibleFrom="lg">
           <TextInput
             label="Room Name"
             placeholder="Enter class name"
@@ -234,25 +235,27 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
             {...classRoomForm.getInputProps("specialityId")}
             value={classRoomForm.values.specialityId?.toString()}
           />
-          <Group mt="md">
-            <Button disabled={isPending} type="submit">
-              {submitBtnText}
-            </Button>
-            <Button
-              onClick={() => {
-                if (backBtnUrl) {
-                  window.location.href = backBtnUrl;
-                } else {
-                  window.location.href = "/my-tenancy/admin";
-                }
-              }}
-              variant="outline"
-              color="gray"
-            >
-              {backBtnText}
-            </Button>
-          </Group>
-        </Stack>
+        </SimpleGrid>
+        {/* Custom timetable/grid sections remain outside the grid */}
+        <Group mt="md">
+          <Button disabled={isPending} type="submit">
+            {submitBtnText}
+          </Button>
+          <Button
+            onClick={() => {
+              if (backBtnUrl) {
+                window.location.href = backBtnUrl;
+              } else {
+                window.location.href = "/my-tenancy/admin";
+              }
+            }}
+            variant="outline"
+            color="gray"
+          >
+            {backBtnText}
+          </Button>
+        </Group>
+        {/* ...rest of the component (frame selector, timetable, etc.)... */}
       </form>
       {/* Frame Selector - visually separated from form */}
       <div
