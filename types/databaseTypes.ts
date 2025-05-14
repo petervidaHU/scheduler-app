@@ -99,6 +99,13 @@ export interface Syllabus {
     OCCURRENCE: number;
 }
 
+export interface SyllabusSubject {
+  SUBJECT_ID: ID;
+  TEACHERS: ID[];
+  OCCURRENCE: number;
+  [key: string]: any;
+}
+
 export type GlobalTimeslot= 'HUN1';
 
 export interface ErrorResponse {

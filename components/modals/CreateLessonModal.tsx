@@ -2,7 +2,7 @@
 
 import { createLesson } from "@/app/[locale]/(tenancy)/_actions/createLesson";
 import { useStore } from "@/store/store";
-import { Timeslots, ClassRoom, Subject, Teacher, ID } from "@/types/databaseTypes";
+import { Timeslots, ClassRoom, Subject, Teacher, ID, SyllabusSubject } from "@/types/databaseTypes";
 import {
   FormActionType,
   LessonInput,
@@ -16,6 +16,8 @@ import NotificationCard, {
 } from "../UI-elements/NotificationBadges";
 import { getAvailableClassroomsByFrameAndTimeslot } from "@/app/[locale]/(tenancy)/_actions/getAvailableClassroomsByFrameAndTimeslot";
 import { getAvailableTeachersByFrameAndTimeslot } from "@/app/[locale]/(tenancy)/_actions/getAvailableTeachersByFrameAndTimeslot";
+import { groupClassroomsBySpecialty } from "@/lib/resourceAvailability/groupClassroomsBySpecialty";
+import { getPreferredTeacher } from "@/lib/resourceAvailability/getPreferredTeacher";
 
 interface CreateLessonProps {
   slot: Timeslots;
@@ -156,60 +158,31 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
       }
 
       if (values.subject !== previous.subject) {
-        const newSubject = syllabus[values.subject];
-        let preferredTeacherId: string | undefined = undefined;
-        let preferredTeacherName: string | undefined = undefined;
-        if (newSubject?.TEACHERS?.length > 0) {
-          preferredTeacherId = newSubject.TEACHERS[0].toString();
-          preferredTeacherName = (teachers as Record<string, Teacher & SelectOptions>)?.[preferredTeacherId]?.NAME || '??';
-        }
-        // Check if preferred teacher is available
-        const preferredAvailable = preferredTeacherId && availableTeachers.some((t) => t.ID.toString() === preferredTeacherId);
-        if (preferredTeacherId && preferredAvailable) {
-          setPreferredTeacher({
-            value: preferredTeacherId,
-            label: preferredTeacherName || '??',
-          });
-          setWarnings((prev) => ({ ...prev, teacher: undefined }));
-          form.setFieldValue("teacher", preferredTeacherId);
-        } else if (preferredTeacherId && !preferredAvailable) {
-          setPreferredTeacher(null);
-          setWarnings((prev) => ({ ...prev, teacher: `Preferred teacher: ${preferredTeacherName} is not available in this timeslot.` }));
-          form.setFieldValue("teacher", "");
+        // Get the syllabus subject entry and the canonical subject object
+        const newSyllabusSubject = syllabus[values.subject] as SyllabusSubject;
+        const canonicalSubject = subjects?.[newSyllabusSubject?.SUBJECT_ID];
+        // Use utility for preferred teacher
+        const preferred = getPreferredTeacher(newSyllabusSubject, teachers || {});
+        if (preferred) {
+          const preferredAvailable = availableTeachers.some((t) => t.ID.toString() === preferred.id);
+          if (preferredAvailable) {
+            setPreferredTeacher({ value: preferred.id, label: preferred.name });
+            setWarnings((prev) => ({ ...prev, teacher: undefined }));
+            form.setFieldValue("teacher", preferred.id);
+          } else {
+            setPreferredTeacher(null);
+            setWarnings((prev) => ({ ...prev, teacher: `Preferred teacher: ${preferred.name} is not available in this timeslot.` }));
+            form.setFieldValue("teacher", "");
+          }
         } else {
           setPreferredTeacher(null);
           setWarnings((prev) => ({ ...prev, teacher: undefined }));
           form.setFieldValue("teacher", "");
         }
-        // ...existing code for specialty/classroom grouping...
-        const specialty = (subjects as Record<string, Subject & SelectOptions>)?.[newSubject.SUBJECT_ID.toString()]?.SPECIALTY_ID || null;
-        if (specialty) {
-          const groupedBySubjectClassRooms = Object.values(
-            classRooms || {}
-          ).reduce<classRoomsGroupedOptions>(
-            (acc, classRoomItem) => {
-              if (classRoomItem.SPECIALITY_ID === specialty) {
-                acc[0].items.push(classRoomItem);
-              } else {
-                acc[1].items.push(classRoomItem);
-              }
-              return acc;
-            },
-            [
-              {
-                group: "preferred by speciality",
-                items: [],
-              },
-              {
-                group: "other",
-                items: [],
-              },
-            ]
-          );
-          setSubjectSpecialityId(specialty.toString());
-          setGroupedClassRooms(groupedBySubjectClassRooms);
-        }
-
+        // Use utility for classroom grouping
+        const grouped = groupClassroomsBySpecialty(classRooms || {}, canonicalSubject);
+        setGroupedClassRooms(grouped as classRoomsGroupedOptions);
+        setSubjectSpecialityId(canonicalSubject?.SPECIALTY_ID?.toString() || null);
         // Revalidate classroom if one is selected
         if (values.classRoom) {
           form.validateField('classRoom');
