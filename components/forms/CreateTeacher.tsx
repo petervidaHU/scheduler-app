@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useTransition, useActionState, FC, useEffect, useMemo, useState } from "react";
-import { Container, TextInput, Button, Group, Stack, Select, NumberInput } from "@mantine/core";
+import { Container, TextInput, Button, Group, Stack, Select, NumberInput, Card, Title, Text, Divider } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
@@ -15,6 +15,7 @@ import HourGrid from "../day-planner/HourGrid";
 import TimeslotsList from "../day-planner/TimeslotsList";
 import { getOccupiedTimeslotsByTeacher } from "@/app/[locale]/(tenancy)/_actions/getOccupiedTimeslotsByTeacher";
 import { useStore } from "../../store/store";
+import { IconChalkboard } from "@tabler/icons-react";
 
 const init: FormActionType = {
   error: null,
@@ -24,6 +25,8 @@ const init: FormActionType = {
 
 interface CreateTeacherProps extends ManageFormServerProps {
   entity?: Teacher;
+  formTitle?: string;
+  formDescription?: string;
 }
 
 export const CreateTeacher: FC<CreateTeacherProps> = ({
@@ -32,6 +35,8 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
   backBtnText,
   submitBtnText,
   toastMessage,
+  formTitle = "Create New Teacher",
+  formDescription = "Fill in the details to add a new teacher to your organization.",
 }) => {
   const [isPending, startTransition] = useTransition();
   const [state, action] = useActionState(createTeacher, {
@@ -148,7 +153,15 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
   }, [occupiedTimeslots]);
 
   return (
-    <Container size="md" my="xl">
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+      <Group mb="md" align="center">
+        <IconChalkboard size={32} color="var(--mantine-color-cambridge-6)" />
+        <div>
+          <Title order={2} c="taupe">{formTitle}</Title>
+          <Text c="dimmed" size="sm">{formDescription}</Text>
+        </div>
+      </Group>
+      <Divider mb="md" />
       <div>{JSON.stringify(state)}</div>
       <form onSubmit={teacherForm.onSubmit(handleTeacherFormSubmit)}>
         <Stack>
@@ -174,7 +187,7 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              {submitBtnText || "Create Teacher"}
+              {submitBtnText}
             </Button>
             <Button 
               onClick={() => {
@@ -187,7 +200,7 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
               variant="outline"
               color="gray"
             >
-              {backBtnText || "Cancel"}
+              {backBtnText}
             </Button>
           </Group>
         </Stack>
@@ -265,7 +278,7 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
           </GridContainer>
         </div>
       )}
-    </Container>
+    </Card>
   );
 };
 

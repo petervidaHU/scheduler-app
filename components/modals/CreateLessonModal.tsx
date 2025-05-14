@@ -24,6 +24,8 @@ interface CreateLessonProps {
   day: string;
   closeModal: () => void;
   lessonId?: ID;
+  formTitle?: string;
+  submitBtnText?: string;
 }
 
 type classRoomsGroupedOptions = [
@@ -42,7 +44,7 @@ const init: FormActionType = {
   success: false,
 };
 
-const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal, lessonId }) => {
+const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal, lessonId, formTitle = "Create a Lesson", submitBtnText = "Create" }) => {
   const {
     syllabus,
     tenancyBasedData: {
@@ -252,7 +254,7 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
 
   return (
     <Paper>
-      <Title order={4} mb="md">{lessonId ? 'Edit Lesson' : 'Create a Lesson'}</Title>
+      <Title order={4} mb="md">{formTitle}</Title>
       <form onSubmit={form.onSubmit(handleLessonCreate)}>
         <Stack gap="md">
           <Select
@@ -299,7 +301,7 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
             ) : null;
           })}
           
-          <Button type="submit" mt="md">{lessonId ? 'Save Changes' : 'Create'}</Button>
+          <Button type="submit" mt="md">{submitBtnText}</Button>
         </Stack>
       </form>
     </Paper>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useTransition, useActionState, FC } from "react";
-import { Container, TextInput, Button, Group, Stack } from "@mantine/core";
+import { Container, TextInput, Button, Group, Stack, Card, Title, Text, Divider } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { Specialty } from "@/types/databaseTypes";
@@ -10,6 +10,7 @@ import { manageSpeciality } from "@/app/[locale]/(tenancy)/_actions/manageSpecia
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
 import AddBasicEntities from "./AddBasicEntities";
+import { IconStar } from "@tabler/icons-react";
 
 const init: FormActionType = {
   error: null,
@@ -20,6 +21,8 @@ const init: FormActionType = {
 interface SpecialtyInput extends ManageFormServerProps {
   entity?: Specialty;
   error?: string;
+  formTitle?: string;
+  formDescription?: string;
 }
 
 export const CreateSpeciality: FC<SpecialtyInput> = ({
@@ -29,6 +32,8 @@ export const CreateSpeciality: FC<SpecialtyInput> = ({
   backBtnText,
   submitBtnText,
   toastMessage,
+  formTitle = "Create New Speciality",
+  formDescription = "Fill in the details to add a new speciality to your organization.",
 }) => {
   const [isPending, startTransition] = useTransition();
   const [specialityState, specialityAction] = useActionState(manageSpeciality, {
@@ -83,7 +88,15 @@ export const CreateSpeciality: FC<SpecialtyInput> = ({
 console.log('back button url:', backBtnUrl);
   console.log('back button text:', backBtnText);
   return (
-    <Container size="md" my="xl">
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+      <Group mb="md" align="center">
+        <IconStar size={32} color="var(--mantine-color-cambridge-6)" />
+        <div>
+          <Title order={2} c="taupe">{formTitle}</Title>
+          <Text c="dimmed" size="sm">{formDescription}</Text>
+        </div>
+      </Group>
+      <Divider mb="md" />
       <form onSubmit={specialityForm.onSubmit(handleSpecialityFormSubmit)}>
         <Stack>
           <TextInput
@@ -100,20 +113,20 @@ console.log('back button url:', backBtnUrl);
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              {submitBtnText || "Create Specialty"}
+              {submitBtnText}
             </Button>
             <Button
               variant="outline"
               color="gray"
               onClick={() => redirect(backBtnUrl)}
             >
-              {backBtnText || "Cancel"}
+              {backBtnText}
             </Button>
           </Group>
         </Stack>
       </form>
       <AddBasicEntities entityType={Entities.specialty} />
-    </Container>
+    </Card>
   );
 };
 

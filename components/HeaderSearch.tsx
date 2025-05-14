@@ -2,24 +2,23 @@
 
 import React, { FC, useState, useEffect, useRef } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Burger, Group } from "@mantine/core";
+import { Group } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { Button, Select } from "@mantine/core";
+import { Button, Select, Menu, ActionIcon, useMantineColorScheme, useComputedColorScheme, Burger } from "@mantine/core";
+import { IconSun, IconMoon, IconMenu2 } from "@tabler/icons-react";
 import classes from "./HeaderSearch.module.css";
 import { UserSession } from "@/types/UserTypes";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import LocaleSwitcher from "./LocaleSwitcher";
 import { setTenancyInServer } from "@/lib/database/setTenancyInServer";
-import { ColorModeSwitcher } from "./ColorModeSwitcher";
 import { getTenancyBasedData } from "@/lib/getTenancyBasedData";
 import { useStore } from "@/store/store";
 
 const links = [
-  { link: "/my-tenancy", label: "my tenancy" },
-  { link: "/pricing", label: "pricing" },
-  { link: "/classes", label: "classes" },
-  { link: "/schedules", label: "schedules" },
+  { link: "/my-tenancy", label: "My Tenancy" },
+  { link: "/pricing", label: "Pricing" },
+  { link: "/docs", label: "Documentations" },
 ];
 
 interface props {
@@ -38,15 +37,18 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   );
   const { name, status } = session;
   const router = useRouter();
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('light');
+  const [mobileMenuOpened, setMobileMenuOpened] = useState(false);
   const [opened, { toggle }] = useDisclosure(false);
-  const items = links.map((link) => (
+  // Only keep necessary links
+  const filteredLinks = links; // Now just use the two new items
+  const items = filteredLinks.map((link) => (
     <Link
       key={link.label}
       href={link.link}
       className={classes.link}
-      onClick={(event) => {
-        console.log("click on menu");
-      }}
+      onClick={() => setMobileMenuOpened(false)}
     >
       {link.label}
     </Link>
@@ -172,7 +174,29 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
     <header className={classes.header}>
       <div className={classes.inner}>
         <Group>
-          <ColorModeSwitcher />
+          <Menu shadow="md" width={160} position="bottom-start">
+            <Menu.Target>
+              <ActionIcon variant="subtle" size="lg" aria-label="Toggle color scheme">
+                {computedColorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<IconSun size={16} />}
+                onClick={() => setColorScheme('light')}
+                disabled={computedColorScheme === 'light'}
+              >
+                Light mode
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconMoon size={16} />}
+                onClick={() => setColorScheme('dark')}
+                disabled={computedColorScheme === 'dark'}
+              >
+                Dark mode
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
           {status === "authenticated" && (
             <div className={classes.tenancyInfo}>
               <span className={classes.tenancyLabel}>Current tenancy:</span>
@@ -190,12 +214,11 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
             </div>
           )}
         </Group>
-        
         <Group>
           {status === "authenticated" ? (
             <>
               <Select
-                key="tenancy-select" 
+                key="tenancy-select"
                 value={selectedTenancy ? selectedTenancy.toString() : "0"}
                 onChange={tenancyChangeHandler}
                 data={tenancyOptions}
@@ -220,16 +243,19 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
             </Button>
           )}
         </Group>
-
-        <Group>
-          <Burger opened={opened} onClick={toggle} size="sm" hiddenFrom="sm" />
-        </Group>
-
-        <Group ml={50} gap={5} className={classes.links} visibleFrom="sm">
+        <Group visibleFrom="sm" ml={50} gap={5} className={classes.links}>
           {items}
           <LocaleSwitcher />
         </Group>
+        <Burger opened={mobileMenuOpened} onClick={() => setMobileMenuOpened((o) => !o)} size="sm" hiddenFrom="sm" />
       </div>
+      {/* Mobile menu */}
+      {mobileMenuOpened && (
+        <div className={classes.mobileMenu}>
+          {items}
+          <LocaleSwitcher />
+        </div>
+      )}
     </header>
   );
 };

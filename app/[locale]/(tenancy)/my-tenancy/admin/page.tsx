@@ -53,24 +53,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           id,
           Entities.classroom
         );
-        const serverProps: ManageFormServerProps = {
+        const serverProps: ManageFormServerProps & { formTitle: string } = {
           backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update classroom" : "Create classroom",
           toastMessage: id
             ? "Classroom updated successfully"
             : "Classroom created successfully",
+          formTitle: id ? "Update classroom" : "Create classroom",
         };
-        const title = id ? "Update classroom" : "Create classroom";
-
         return (
-          <>
-            <h2>{title}</h2>
-            <CreateClassRoom
-              {...serverProps}
-              {...(entityToEdit ? entityToEdit : {})}
-            />
-          </>
+          <CreateClassRoom
+            {...serverProps}
+            {...(entityToEdit ? entityToEdit : {})}
+          />
         );
       },
 
@@ -80,24 +76,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           Entities.class
         );
 
-        const serverProps: ManageFormServerProps = {
+        const serverProps: ManageFormServerProps & { formTitle: string } = {
           backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update class" : "Create class",
           toastMessage: id
             ? "Class updated successfully"
             : "Class created successfully",
+          formTitle: id ? "Update class" : "Create class",
         };
-        const title = id ? "Update class" : "Create class";
-
         return (
-          <>
-            <h2>{title}</h2>
-            <CreateClass
-              {...(entityToEdit ? entityToEdit : {})}
-              {...serverProps}
-            />
-          </>
+          <CreateClass
+            {...(entityToEdit ? entityToEdit : {})}
+            {...serverProps}
+          />
         );
       },
 
@@ -107,24 +99,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           Entities.specialty
         );
 
-        const serverProps: ManageFormServerProps = {
+        const serverProps: ManageFormServerProps & { formTitle: string } = {
           backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update speciality" : "Create speciality",
           toastMessage: id
             ? "Speciality updated successfully"
             : "Speciality created successfully",
+          formTitle: id ? "Update speciality" : "Create speciality",
         };
-        const title = id ? "Update speciality" : "Create speciality";
-
         return (
-          <>
-            <h2>{title}</h2>
-            <CreateSpeciality
-              {...(entityToEdit ? entityToEdit : {})}
-              {...serverProps}
-            />
-          </>
+          <CreateSpeciality
+            {...serverProps}
+            {...(entityToEdit ? entityToEdit : {})}
+          />
         );
       },
 
@@ -134,24 +122,21 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           Entities.subject
         );
 
-        const serverProps: ManageFormServerProps = {
+        const serverProps: ManageFormServerProps & { formTitle: string } = {
           backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update subject" : "Create subject",
           toastMessage: id
             ? "Subject updated successfully"
             : "Subject created successfully",
+          formTitle: id ? "Update subject" : "Create subject",
         };
 
-        const title = id ? "Update subject" : "Create subject";
         return (
-          <>
-            <h2>{title}</h2>
-            <CreateSubject
-              {...(entityToEdit ? entityToEdit : {})}
-              {...serverProps}
-            />
-          </>
+          <CreateSubject
+            {...serverProps}
+            {...(entityToEdit ? entityToEdit : {})}
+          />
         );
       },
       [Entities.teacher]: async (id: number | null) => {
@@ -160,24 +145,21 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           Entities.teacher
         );
 
-        const serverProps: ManageFormServerProps = {
+        const serverProps: ManageFormServerProps & { formTitle: string } = {
           backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update teacher" : "Create teacher",
           toastMessage: id
             ? "Teacher updated successfully"
             : "Teacher created successfully",
+          formTitle: id ? "Update teacher" : "Create teacher",
         };
 
-        const title = id ? "Update teacher" : "Create teacher";
         return (
-          <>
-            <h2>{title}</h2>
-            <CreateTeacher
-              {...(entityToEdit ? entityToEdit : {})}
-              {...serverProps}
-            />
-          </>
+          <CreateTeacher
+            {...serverProps}
+            {...(entityToEdit ? entityToEdit : {})}
+          />
         );
       },
       [Entities.frame]: async (id: number | null) => {
@@ -186,24 +168,21 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           Entities.frame
         );
 
-        const serverProps: ManageFormServerProps = {
+        const serverProps: ManageFormServerProps & { formTitle: string } = {
           backBtnUrl: id ? "/my-tenancy" : "/my-tenancy/admin",
           backBtnText: id ? "Go Back" : "Cancel",
           submitBtnText: id ? "Update frame" : "Create frame",
           toastMessage: id
             ? "Frame updated successfully"
             : "Frame created successfully",
+          formTitle: id ? "Update frame" : "Create frame",
         };
 
-        const title = id ? "Update frame" : "Create frame";
         return (
-          <>
-            <h2>{title}</h2>
-            <CreateFrame
-              {...(entityToEdit ? entityToEdit : {})}
-              {...serverProps}
-            />
-          </>
+          <CreateFrame
+            {...serverProps}
+            {...(entityToEdit ? entityToEdit : {})}
+          />
         );
       },
     };

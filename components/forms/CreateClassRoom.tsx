@@ -16,7 +16,12 @@ import {
   Stack,
   Select,
   NumberInput,
+  Card,
+  Title,
+  Text,
+  Divider,
 } from "@mantine/core";
+import { IconHome } from "@tabler/icons-react";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
@@ -44,6 +49,8 @@ const init: FormActionType = {
 interface ClassRoomInput extends ManageFormServerProps {
   entity?: ClassRoom;
   error?: string;
+  formTitle?: string;
+  formDescription?: string;
 }
 
 export const CreateClassRoom: FC<ClassRoomInput> = ({
@@ -53,6 +60,8 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
   backBtnText,
   submitBtnText,
   toastMessage,
+  formTitle = "Create New Classroom",
+  formDescription = "Fill in the details to add a new classroom to your organization.",
 }) => {
   const {
     tenancyBasedData: { specialties, frames },
@@ -189,9 +198,15 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
   console.log("frame options:", frameOptions);
   console.log("local days:", localDays);
   return (
-    <Container size="md" my="xl">
-      {specialties.error && <p>{specialties.error}</p>}
-      {specialties.isLoading && <p>Loading specialities</p>}
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+      <Group mb="md" align="center">
+        <IconHome size={32} color="var(--mantine-color-cambridge-6)" />
+        <div>
+          <Title order={2} c="taupe">{formTitle}</Title>
+          <Text c="dimmed" size="sm">{formDescription}</Text>
+        </div>
+      </Group>
+      <Divider mb="md" />
       <form onSubmit={classRoomForm.onSubmit(handleClassRoomSubmit)}>
         <Stack>
           <TextInput
@@ -221,7 +236,7 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              {submitBtnText || "Create Classroom"}
+              {submitBtnText}
             </Button>
             <Button
               onClick={() => {
@@ -234,7 +249,7 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
               variant="outline"
               color="gray"
             >
-              {backBtnText || "Cancel"}
+              {backBtnText}
             </Button>
           </Group>
         </Stack>
@@ -312,7 +327,7 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
           </GridContainer>
         </div>
       )}
-    </Container>
+    </Card>
   );
 };
 

@@ -22,8 +22,14 @@ export default async function TenancyLayout({
 
   return (
     <>
-      <TenancyHeader />
-      {children}
+      <div style={{ position: 'relative', zIndex: 10, marginBottom: 24 }}>
+        {/* Primary header (main navigation) is rendered globally, e.g. in the root layout */}
+        {/* Secondary header: TenancyHeader as a second row below the main header */}
+        <TenancyHeader />
+      </div>
+      <main>
+        {children}
+      </main>
     </>
   );
 }

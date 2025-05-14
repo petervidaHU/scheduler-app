@@ -10,6 +10,10 @@ import {
   NumberInput,
   Switch,
   Textarea,
+  Card,
+  Title,
+  Text,
+  Divider,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
@@ -19,6 +23,7 @@ import { manageFrame } from "@/app/[locale]/(tenancy)/_actions/manageFrame";
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { useStore } from "@/store/store";
 import { Entities } from "@/types/Entities";
+import { IconCalendar } from "@tabler/icons-react";
 
 const init: FormActionType = {
   error: null,
@@ -28,7 +33,9 @@ const init: FormActionType = {
 
 interface FrameInput extends ManageFormServerProps {
   entity?: Frame;
-  error?: string,
+  error?: string;
+  formTitle?: string;
+  formDescription?: string;
 }
 
 export const CreateFrame: FC<FrameInput> = ({
@@ -38,6 +45,8 @@ export const CreateFrame: FC<FrameInput> = ({
   backBtnText,
   submitBtnText,
   toastMessage,
+  formTitle = "Create New Frame",
+  formDescription = "Fill in the details to add a new frame to your organization.",
 }) => {
   const {
     tenancyBasedData: { specialties },
@@ -104,7 +113,15 @@ export const CreateFrame: FC<FrameInput> = ({
   );
 
   return (
-    <Container size="md" my="xl">
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+      <Group mb="md" align="center">
+        <IconCalendar size={32} color="var(--mantine-color-cambridge-6)" />
+        <div>
+          <Title order={2} c="taupe">{formTitle}</Title>
+          <Text c="dimmed" size="sm">{formDescription}</Text>
+        </div>
+      </Group>
+      <Divider mb="md" />
       {specialties.error && <p>{specialties.error}</p>}
       {specialties.isLoading && <p>Loading specialties</p>}
       <form onSubmit={frameForm.onSubmit(handleFrameSubmit)}>
@@ -133,7 +150,7 @@ export const CreateFrame: FC<FrameInput> = ({
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              {submitBtnText || "Create Frame"}
+              {submitBtnText}
             </Button>
             <Button 
               onClick={() => {
@@ -146,11 +163,11 @@ export const CreateFrame: FC<FrameInput> = ({
               variant="outline"
               color="gray"
             >
-              {backBtnText || "Cancel"}
+              {backBtnText}
             </Button>
           </Group>
         </Stack>
       </form>
-    </Container>
+    </Card>
   );
-}; 
+};

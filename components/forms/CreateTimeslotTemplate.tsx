@@ -15,6 +15,9 @@ import {
   Stack,
   Switch,
   TextInput,
+  Card,
+  Title,
+  Text,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { redirect } from "next/navigation";
@@ -30,13 +33,15 @@ const init: FormActionType = {
   success: false,
 };
 
-interface props extends ManageFormServerProps {
+interface TimeslotTemplateInput extends ManageFormServerProps {
   entity?: Timeslots;
   error?: string;
   dayTemplates: Array<DayTemplates>;
+  formTitle?: string;
+  formDescription?: string;
 }
 
-const CreateTimeslotTemplate: FC<props> = ({
+const CreateTimeslotTemplate: FC<TimeslotTemplateInput> = ({
   entity,
   error,
   backBtnUrl,
@@ -44,6 +49,8 @@ const CreateTimeslotTemplate: FC<props> = ({
   submitBtnText,
   toastMessage,
   dayTemplates,
+  formTitle = "Create New Timeslot Template",
+  formDescription = "Fill in the details to add a new timeslot template.",
 }) => {
   const {
     tenancyBasedData: { specialties },
@@ -120,7 +127,15 @@ const CreateTimeslotTemplate: FC<props> = ({
     );
 
   return (
-    <Container size="md" my="xl">
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+      <Group mb="md" align="center">
+        {/* You can add an icon here if desired */}
+        <div>
+          <Title order={2} c="taupe">{formTitle}</Title>
+          <Text c="dimmed" size="sm">{formDescription}</Text>
+        </div>
+      </Group>
+      <Divider mb="md" />
       {specialties.error && <p>{specialties.error}</p>}
       {specialties.isLoading && <p>Loading specialities</p>}
       <div>Available timeslot templates:</div>
@@ -190,7 +205,7 @@ const CreateTimeslotTemplate: FC<props> = ({
           </GridContainer>
         </Grid.Col>
       </Grid>
-    </Container>
+    </Card>
   );
 };
 

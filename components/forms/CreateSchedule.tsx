@@ -43,12 +43,18 @@ interface SchedulePageProps {
   scheduleId?: string;
   scheduleData?: Schedule;
   syllabusData?: DataWithOptions<Syllabus> | null;
+  submitBtnText: string;
+  backBtnText: string;
+  [key: string]: any;
 }
 
-const SchedulePage = ({ 
+const SchedulePage: React.FC<SchedulePageProps> = ({ 
   scheduleId, 
   scheduleData,
-  syllabusData
+  syllabusData,
+  submitBtnText,
+  backBtnText,
+  ...props
 }: SchedulePageProps) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -506,7 +512,21 @@ const SchedulePage = ({
         />
         
         <Button type="submit" loading={isPending} mb="md">
-          {isEditMode ? "Update Schedule" : "Create Schedule"}
+          {submitBtnText}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          color="gray"
+          onClick={() => {
+            if (props.backBtnUrl) {
+              window.location.href = props.backBtnUrl;
+            } else {
+              window.location.href = "/my-tenancy/admin";
+            }
+          }}
+        >
+          {backBtnText}
         </Button>
       </form>
     </Paper>

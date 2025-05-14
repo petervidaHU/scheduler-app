@@ -2,6 +2,7 @@
 
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Container, Group, Button } from "@mantine/core";
+import classes from "@/components/HeaderSearch.module.css";
 
 const basePath='/my-tenancy'
 
@@ -16,19 +17,30 @@ export const TenancyHeader = () => {
   ];
 
   return (
-    <Container fluid>
-      <Group style={{ height: 56 }}>
-        <Button variant="outline" onClick={() => router.push("/my-tenancy")}>
-          Dashboard
-        </Button>
-        <Group>
-          {secondaryLinks.map((link) => (
-            <Link key={link.label} href={link.link}>
-              <Button variant="subtle">{link.label}</Button>
-            </Link>
-          ))}
+    <div className={classes.secondaryHeader}>
+      <Container fluid>
+        <Group style={{ height: 56 }}>
+          <a
+            href="/my-tenancy"
+            className={classes.link}
+            style={{ color: 'hsla(25, 19%, 26%, 1)' }}
+          >
+            Dashboard
+          </a>
+          <Group>
+            {secondaryLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.link}
+                className={classes.link}
+                style={{ color: 'hsla(25, 19%, 26%, 1)' }}
+              >
+                {link.label}
+              </a>
+            ))}
+          </Group>
         </Group>
-      </Group>
-          </Container>
+      </Container>
+    </div>
   );
 };

@@ -1,36 +1,46 @@
 .header {
     height: 56px;
-    margin-bottom: 120px;
-    background-color: var(--mantine-color-body);
+    background-color: hsla(25, 19%, 26%, 1); /* taupe */
     border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
     padding-left: var(--mantine-spacing-md);
     padding-right: var(--mantine-spacing-md);
-  }
-  
-  .inner {
+    color: hsla(44, 11%, 60%, 1); /* khaki for text */
+}
+
+.secondaryHeader {
+    height: 48px;
+    background-color: hsla(44, 11%, 60%, 1); /* khaki */
+    color: hsla(25, 19%, 26%, 1); /* taupe for text */
+    display: flex;
+    align-items: center;
+    padding-left: var(--mantine-spacing-md);
+    padding-right: var(--mantine-spacing-md);
+    border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.inner {
     height: 56px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-  
-  .link {
+}
+
+.link {
     display: block;
     line-height: 1;
     padding: 8px 12px;
     border-radius: var(--mantine-radius-sm);
     text-decoration: none;
-    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
+    color: #fff !important; /* white text for menu items on primary row */
     font-size: var(--mantine-font-size-sm);
     font-weight: 500;
-  
+
     @mixin hover {
       background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
     }
-  }
-  
-  
-  .tenancyInfo {
+}
+
+.tenancyInfo {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -40,25 +50,25 @@
     background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
     border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  }
-  
-  .tenancyLabel {
+}
+
+.tenancyLabel {
     font-size: var(--mantine-font-size-xs);
     color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
     margin-bottom: 2px;
-  }
-  
-  .loadingIndicator {
+}
+
+.loadingIndicator {
     font-size: var(--mantine-font-size-xs);
     color: light-dark(var(--mantine-color-orange-7), var(--mantine-color-orange-5));
     font-style: italic;
-  }
-  
-  .userName {
+}
+
+.userName {
     font-weight: 500;
-  }
-  
-  .tenancyName {
+}
+
+.tenancyName {
     font-size: var(--mantine-font-size-sm);
     font-weight: 600;
     color: light-dark(var(--mantine-color-blue-7), var(--mantine-color-blue-4));
@@ -68,10 +78,10 @@
     width: 100%;
     padding: 2px 4px;
     border-radius: 3px;
-  }
-  
-  .noTenancy {
+}
+
+.noTenancy {
     color: light-dark(var(--mantine-color-red-7), var(--mantine-color-red-5));
     background-color: light-dark(rgba(255, 0, 0, 0.05), rgba(255, 0, 0, 0.15));
     font-weight: 500;
-  }
+}

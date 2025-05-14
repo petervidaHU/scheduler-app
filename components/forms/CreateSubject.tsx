@@ -9,11 +9,16 @@ import {
   Stack,
   Select,
   ColorPicker,
-  } from "@mantine/core";
+  Card,
+  Title,
+  Text,
+  Divider,
+} from "@mantine/core";
+import { IconBook } from "@tabler/icons-react";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { Subject,  } from "@/types/databaseTypes";
+import { Subject } from "@/types/databaseTypes";
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
 import { useStore } from "@/store/store";
@@ -26,13 +31,14 @@ const init: FormActionType = {
 };
 
 interface SubjectInput extends ManageFormServerProps {
-  entity?: Subject,
-  error?: string,
-  backBtnUrl: string,
-  backBtnText: string,
-  submitBtnText: string,
+  entity?: Subject;
+  error?: string;
+  formTitle?: string;
+  formDescription?: string;
+  backBtnUrl: string;
+  backBtnText: string;
+  submitBtnText: string;
 }
-
 
 export const CreateSubject: FC<SubjectInput> = ({ 
   entity,
@@ -41,6 +47,8 @@ export const CreateSubject: FC<SubjectInput> = ({
   backBtnText,
   submitBtnText,
   toastMessage,
+  formTitle = "Create New Subject",
+  formDescription = "Fill in the details to add a new subject to your organization.",
  }) => {
   const { tenancyBasedData: { specialties }} = useStore();
   const [isPending, startTransition] = useTransition();
@@ -96,7 +104,15 @@ export const CreateSubject: FC<SubjectInput> = ({
     );
 
   return (
-    <Container size="md" my="xl">
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+      <Group mb="md" align="center">
+        <IconBook size={32} color="var(--mantine-color-cambridge-6)" />
+        <div>
+          <Title order={2} c="taupe">{formTitle}</Title>
+          <Text c="dimmed" size="sm">{formDescription}</Text>
+        </div>
+      </Group>
+      <Divider mb="md" />
       {specialties.isLoading && (<p>loading specialities</p>)}
       <form onSubmit={subjectForm.onSubmit(handleSubjectSubmit)}>
         <Stack>
@@ -127,7 +143,7 @@ export const CreateSubject: FC<SubjectInput> = ({
           />
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              {submitBtnText || "Create Subject"}
+              {submitBtnText}
             </Button>
             <Button 
               onClick={() => {
@@ -140,12 +156,12 @@ export const CreateSubject: FC<SubjectInput> = ({
               variant="outline"
               color="gray"
             >
-              {backBtnText || "Cancel"}
+              {backBtnText}
             </Button>
           </Group>
         </Stack>
       </form>
-    </Container>
+    </Card>
   );
 };
 

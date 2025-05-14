@@ -11,6 +11,10 @@ import {
   NumberInput,
   MultiSelect,
   ActionIcon,
+  Card,
+  Title,
+  Text,
+  Divider,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
@@ -22,7 +26,7 @@ import { redirect } from "next/navigation";
 import { Classes, ID } from "@/types/databaseTypes";
 import { createClass } from "@/app/[locale]/(tenancy)/_actions/createClass";
 import { useStore } from "@/store/store";
-import { IconTrash } from "@tabler/icons-react";
+import { IconTrash, IconUsers } from "@tabler/icons-react";
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
 
@@ -34,6 +38,8 @@ const init: FormActionType = {
 
 interface ClassesInput extends ManageFormServerProps {
   entity?: Classes;
+  formTitle?: string;
+  formDescription?: string;
   error?: string;
 }
 
@@ -59,6 +65,8 @@ export const CreateClass: React.FC<ClassesInput> = ({
   backBtnText,
   submitBtnText,
   toastMessage,
+  formTitle = "Create New Class",
+  formDescription = "Fill in the details to add a new class to your organization.",
 }) => {
   const [isPending, startTransition] = useTransition();
   const [state, action] = useActionState(createClass, {
@@ -167,7 +175,15 @@ export const CreateClass: React.FC<ClassesInput> = ({
   };
 
   return (
-    <Container size="md" my="xl">
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 600, margin: "auto" }}>
+      <Group mb="md" align="center">
+        <IconUsers size={32} color="var(--mantine-color-cambridge-6)" />
+        <div>
+          <Title order={2} c="taupe">{formTitle}</Title>
+          <Text c="dimmed" size="sm">{formDescription}</Text>
+        </div>
+      </Group>
+      <Divider mb="md" />
       <form onSubmit={classForm.onSubmit(handleClassSubmit)}>
         <Stack>
           <TextInput
@@ -233,7 +249,7 @@ export const CreateClass: React.FC<ClassesInput> = ({
           })}
           <Group mt="md">
             <Button disabled={isPending} type="submit">
-              {submitBtnText || "Create Class"}
+              {submitBtnText}
             </Button>
             <Button 
               onClick={() => {
@@ -246,12 +262,12 @@ export const CreateClass: React.FC<ClassesInput> = ({
               variant="outline"
               color="gray"
             >
-              {backBtnText || "Cancel"}
+              {backBtnText}
             </Button>
           </Group>
         </Stack>
       </form>
-    </Container>
+    </Card>
   );
 };
 
