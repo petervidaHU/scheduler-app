@@ -9,6 +9,11 @@ import {
   LoadingOverlay,
   Paper,
   Title,
+  Card,
+  Divider,
+  Group,
+  Stack,
+  Text,
 } from "@mantine/core";
 import { createSchedule, ScheduleContext } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
 import { updateSchedule } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/updateSchedule";
@@ -466,58 +471,18 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   }, [isEditMode, isStoreInitialized, scheduleData, lessons, updateLessonsInStore]);
 
   return (
-    <Paper p="xl" withBorder mb="xl">
+    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 700, margin: "32px auto" }}>
       <LoadingOverlay visible={isLoading} />
-      <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
-        <Title order={3} mb="md">Schedule Details</Title>
-        
-        <TextInput
-          label="Schedule Name"
-          placeholder="Enter a descriptive name for this schedule"
-          withAsterisk
-          mb="md"
-          {...form.getInputProps(FormFields.name)}
-        />
-        
-        <Select
-          label="Class"
-          placeholder="Select a class for this schedule"
-          data={classOptions}
-          withAsterisk
-          mb="md"
-          {...form.getInputProps(FormFields.class)}
-        />
-        
-        <Select
-          label="Frame Template"
-          placeholder="Select a frame template"
-          data={frameOptions}
-          withAsterisk
-          mb="md"
-          {...form.getInputProps("frameId")}
-        />
-        
-        <TextInput
-          label="Owner"
-          placeholder="Enter the owner of this schedule"
-          mb="md"
-          {...form.getInputProps(FormFields.owner)}
-        />
-        
-        <Textarea
-          label="Description"
-          placeholder="Enter a description for this schedule"
-          mb="md"
-          {...form.getInputProps(FormFields.description)}
-        />
-        
-        <Button type="submit" loading={isPending} mb="md">
-          {submitBtnText}
-        </Button>
+      <Group mb="md" align="center" justify="space-between">
+        <div>
+          <Title order={2} c="taupe">{props.formTitle || "Schedule Details"}</Title>
+          <Text c="dimmed" size="sm">{props.formDescription || "Fill in the details to create or edit a schedule."}</Text>
+        </div>
         <Button
           type="button"
           variant="outline"
           color="gray"
+          size="sm"
           onClick={() => {
             if (props.backBtnUrl) {
               window.location.href = props.backBtnUrl;
@@ -528,8 +493,53 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         >
           {backBtnText}
         </Button>
+      </Group>
+      <Divider mb="md" />
+      <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
+        <Stack>
+          <TextInput
+            label="Schedule Name"
+            placeholder="Enter a descriptive name for this schedule"
+            withAsterisk
+            mb="md"
+            {...form.getInputProps(FormFields.name)}
+          />
+          <Select
+            label="Class"
+            placeholder="Select a class for this schedule"
+            data={classOptions}
+            withAsterisk
+            mb="md"
+            {...form.getInputProps(FormFields.class)}
+          />
+          <Select
+            label="Frame Template"
+            placeholder="Select a frame template"
+            data={frameOptions}
+            withAsterisk
+            mb="md"
+            {...form.getInputProps("frameId")}
+          />
+          <TextInput
+            label="Owner"
+            placeholder="Enter the owner of this schedule"
+            mb="md"
+            {...form.getInputProps(FormFields.owner)}
+          />
+          <Textarea
+            label="Description"
+            placeholder="Enter a description for this schedule"
+            mb="md"
+            {...form.getInputProps(FormFields.description)}
+          />
+          <Group mt="md">
+            <Button type="submit" loading={isPending} color="cambridge">
+              {submitBtnText}
+            </Button>
+          </Group>
+        </Stack>
       </form>
-    </Paper>
+    </Card>
   );
 };
 
