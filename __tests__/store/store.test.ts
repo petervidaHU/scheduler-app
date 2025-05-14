@@ -194,7 +194,7 @@ describe('Schedule Store', () => {
       
       // Add lesson to the store
       useStore.getState().updateSchedule({
-        lessons: { [lessonId]: { tempId: lessonId, subject: 'Math' } }
+        lessons: { [lessonId]: { id: lessonId, subject: 'Math' } }
       });
     });
     

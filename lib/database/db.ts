@@ -11,19 +11,15 @@ import { getRoleName } from "../utils";
 import {
   DayTemplates,
   GetTenancyByUserResult,
-  GlobalTimeslot,
   ID,
   Syllabus,
   Timeslots,
   Frame,
-  Lesson,
 } from "@/types/databaseTypes";
-import { NormalizedSyllabus } from "@/app/[locale]/(tenancy)/_actions/createClass";
 import { LessonInput } from "@/types/FormActionType";
 import { Entities } from "@/types/Entities";
 import { labelMapper } from "../hooks/labelMapperForTenancyBasedData";
-import { SyllabusForm, SyllabusFormProperties } from "@/types/ScheduleTypes";
-import { OccupiedTimeslot } from "@/components/forms/CreateClassRoom";
+import { OccupiedTimeslot, SyllabusFormProperties } from "@/types/ScheduleTypes";
 
 const tableNameMapping: Record<Entities, string> = {
   specialty: "specialties",
@@ -815,7 +811,7 @@ END;
       const tenancyId = this.getTenancy();
       const bindVariables = {
         templateId: lesson.timeslotId,
-        teacherId: lesson.teacherId,
+        teacherId: JSON.stringify(lesson.teacherId),
         classroomId: lesson.classRoomId,
         subjectId: lesson.subjectId,
         classId: lesson.classId,
@@ -1320,11 +1316,11 @@ console.log('lesson in creation ', lesson);
       days,
       lessons: lessonsResult.reduce((acc: any, lesson: any) => {
         acc[lesson.ID] = {
-          tempId: lesson.ID.toString(),
-          timeslot: lesson.TEMPLATE_ID,
-          teacher: lesson.TEACHERS ? JSON.parse(lesson.TEACHERS)[0] : null,
-          classRoom: lesson.CLASSROOM_ID,
-          subject: lesson.SUBJECT_ID,
+          id: lesson.ID.toString(),
+          timeslotId: lesson.TEMPLATE_ID,
+          teacherId: lesson.TEACHERS ? JSON.parse(lesson.TEACHERS)[0] : null,
+          classRoomId: lesson.CLASSROOM_ID,
+          subjectId: lesson.SUBJECT_ID,
           classId: lesson.CLASS_ID
         };
         return acc;

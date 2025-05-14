@@ -28,11 +28,10 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots, readOnly = fals
     }
     // If lesson is present and has a tempId, pass it as lessonId, else undefined
     let lessonId: ID | undefined = undefined;
-    if (lesson && typeof lesson === 'object' && 'tempId' in lesson && typeof lesson.tempId === 'string') {
+    if (lesson && typeof lesson === 'object' && 'id' in lesson && typeof lesson.id === 'number') {
       lessonId = lesson.id;
-    } else if (typeof lesson === 'string') {
-      lessonId = lesson;
     }
+    
     openModal(
       <CreateLessonModal 
         slot={timeslot} 
