@@ -7,6 +7,7 @@ import { useModal } from "../modals/ModalManager";
 import CreateLessonModal from "../modals/CreateLessonModal";
 import TimeslotsList from "./TimeslotsList";
 import { Timeslots } from "@/types/databaseTypes";
+import TimeslotFilledCard, { TimeslotLessonInput } from "./TimeslotFilledCard";
 
 interface DayPlannerProps {
   day: DayPlan;
@@ -16,15 +17,22 @@ interface DayPlannerProps {
 
 const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots, readOnly = false }) => {
   const { openModal, closeModal } = useModal();
+  const { scheduleState: { lessons } } = useStore();
 
-  const handleOpenModal = (slot: number, lessonId?: string) => {
+  const handleOpenModal = (slot: number, lesson?: TimeslotLessonInput | null) => {
     if (readOnly) return;
     const timeslot = timeslots.find((t) => t.ID === slot);
     if (!timeslot) {
       console.error('Timeslot not found');
       return;
     }
-    
+    // If lesson is present and has a tempId, pass it as lessonId, else undefined
+    let lessonId: string | undefined = undefined;
+    if (lesson && typeof lesson === 'object' && 'tempId' in lesson && typeof lesson.tempId === 'string') {
+      lessonId = lesson.tempId;
+    } else if (typeof lesson === 'string') {
+      lessonId = lesson;
+    }
     openModal(
       <CreateLessonModal 
         slot={timeslot} 
@@ -52,7 +60,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots, readOnly = fals
     .map((t) => {
       return {
         timeslot: timeslots.find((ts) => ts.ID === t.timeslotId) || null,
-        lessonId: t.lessonId,
+        lesson: t.lessonId ? lessons[t.lessonId] : undefined,
       };
     });
 

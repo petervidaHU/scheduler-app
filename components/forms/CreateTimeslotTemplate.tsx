@@ -104,6 +104,7 @@ const CreateTimeslotTemplate: FC<props> = ({
   const timeslotMapping = () =>
     Object.values(activeTimeslots).map((timeslot) => ({
       timeslot: timeslot,
+      lesson: undefined,
     }));
 
   const handleClickOnTimeslot = (id: number) => {

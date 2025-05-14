@@ -178,7 +178,7 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
         FRAME_ID: occ.FRAME_ID,
         // Add other TimeslotInput fields as needed
       },
-      lessonId: { classId: occ.CLASS_ID, subjectId: occ.SUBJECT_ID },
+      lesson: { classId: occ.CLASS_ID, subjectId: occ.SUBJECT_ID },
     }));
   }, [occupiedTimeslots]);
 

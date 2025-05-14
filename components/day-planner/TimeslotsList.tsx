@@ -5,12 +5,12 @@ import { TimeslotInput } from "@/types/databaseTypes";
 import { ActionIcon, Text } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
 
-interface props {
+interface TimeslotsListProps {
   timeSlots: Array<{
     timeslot: TimeslotInput | null;
-    lessonId?: TimeslotLessonInput;
+    lesson?: TimeslotLessonInput | null;
   }>;
-  onClickHandler: (timeslotId: number, lessonId?: string) => void;
+   onClickHandler: (timeslotId: number, lesson?: TimeslotLessonInput | null) => void;
   readOnly?: boolean;
 }
 
@@ -26,7 +26,7 @@ const calculatePosition = (
   return fraction * totalHeight;
 };
 
-const TimeslotsList: FC<props> = ({
+const TimeslotsList: FC<TimeslotsListProps> = ({
   timeSlots,
   onClickHandler,
   readOnly = false,
@@ -34,8 +34,6 @@ const TimeslotsList: FC<props> = ({
   const {
     windowHeight,
     removeActiveTimeslot,
-    scheduleState: { lessons },
-    tenancyBasedData: { subjects },
   } = useStore();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
@@ -61,11 +59,8 @@ const TimeslotsList: FC<props> = ({
           windowHeight
         );
 
-        const backgroundColor =
-          typeof slot.lessonId === "string"
-            ? subjects.data?.[lessons[slot.lessonId || ""]?.subject]
-                ?.HELPER_COLOR
-            : "rgba(255, 208, 235, .5)";
+        // Use a default color (lesson color logic can be added by parent if needed)
+        const backgroundColor = "rgba(255, 208, 235, .5)";
 
         return (
           <div
@@ -73,7 +68,7 @@ const TimeslotsList: FC<props> = ({
             onClick={
               readOnly
                 ? undefined
-                : () => onClickHandler(ID, slot.lessonId as string)
+                : () => onClickHandler(ID, slot.lesson || null)
             }
             onMouseEnter={readOnly ? undefined : () => setHoveredId(ID)}
             onMouseLeave={readOnly ? undefined : () => setHoveredId(null)}
@@ -96,8 +91,8 @@ const TimeslotsList: FC<props> = ({
               cursor: readOnly ? "default" : "pointer",
             }}
           >
-            {slot.lessonId ? (
-              <TimeslotFilledCard lessonId={slot.lessonId} />
+            {slot.lesson ? (
+              <TimeslotFilledCard lessonId={slot.lesson} />
             ) : (
               <>
                 <Text size="xs">{NAME}</Text>
