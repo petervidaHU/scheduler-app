@@ -31,7 +31,7 @@ export interface LessonInput {
     classRoomId: ID | null;
     subjectId: ID;
     classId: ID;
-    tempId: string;
+    id: number;
     frameId: ID | 'CUSTOM';
     dayId: ID | string;
 }

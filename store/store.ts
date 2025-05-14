@@ -200,7 +200,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
         ...state.scheduleState,
         lessons: {
           ...state.scheduleState.lessons,
-          [payload.tempId]: { ...payload },
+          [payload.id]: { ...payload },
         },
       },
     })),
@@ -225,7 +225,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
         return state;
       }
       days[newdayIndex].timeSlots[timeSlotIndex].lessonId =
-        payload.newLesson.tempId;
+        payload.newLesson.id;
       console.log("days in store:", days);
       return {
         ...state,
@@ -233,7 +233,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
           ...state.scheduleState,
           lessons: {
             ...state.scheduleState.lessons,
-            [payload.newLesson.tempId]: { ...payload.newLesson },
+            [payload.newLesson.id]: { ...payload.newLesson },
           },
           days: days,
         },

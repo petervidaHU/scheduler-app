@@ -183,7 +183,7 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
       classRoomId: Number(form.values.classRoom),
       teacherId: [Number(form.values.teacher)],
       timeslotId: slot.ID,
-      tempId: lessonId || Date.now().toString(),
+      id: lessonId || Date.now().toString(),
       frameId: frameId || "CUSTOM",
       dayId: day.toString(),
     };
