@@ -10,10 +10,12 @@ import {
 } from "@/types/FormActionType";
 import { Button, Checkbox, Paper, Select, Stack, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useActionState, useTransition, useState } from "react";
+import { useActionState, useTransition, useState, useEffect, useMemo } from "react";
 import NotificationCard, {
   NotificationContexts,
 } from "../UI-elements/NotificationBadges";
+import { getAvailableClassroomsByFrameAndTimeslot } from "@/app/[locale]/(tenancy)/_actions/getAvailableClassroomsByFrameAndTimeslot";
+import { getAvailableTeachersByFrameAndTimeslot } from "@/app/[locale]/(tenancy)/_actions/getAvailableTeachersByFrameAndTimeslot";
 
 interface CreateLessonProps {
   slot: Timeslots;
@@ -58,6 +60,8 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
   const [preferredTeacher, setPreferredTeacher] = useState<SelectOptions | null>(null);
   const [groupedClassRooms, setGroupedClassRooms] = useState<classRoomsGroupedOptions | null>(null);
   const [sState, sAction] = useActionState(createLesson, { ...init });
+  const [availableClassRooms, setAvailableClassRooms] = useState<ClassRoom[]>([]);
+  const [availableTeachers, setAvailableTeachers] = useState<Teacher[]>([]);
 
   // Find the lesson if we're editing
   const currentDay = days.find(d => d.id === day);
@@ -68,10 +72,35 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
     label: subjects?.[Number(subjectId)]?.NAME || '??',
   }));
 
-  const teacherOptions = Object.values(teachers || {}).map((teacher) => ({
-    value: teacher.ID.toString(),
-    label: teacher.NAME,
-  }));
+  // Fetch available teachers when frameId, day, or slot changes
+  useEffect(() => {
+    if (!frameId || !slot?.ID || !currentDay) {
+      setAvailableTeachers([]);
+      return;
+    }
+    // dayIndex is the SLOT_ORDER of the current day (if available), else index in days array
+    const dayIndex = typeof currentDay.order === 'string' ? Number(currentDay.order) : days.findIndex(d => d.id === day);
+    getAvailableTeachersByFrameAndTimeslot(frameId.toString(), dayIndex, slot.ID)
+      .then(setAvailableTeachers)
+      .catch(() => setAvailableTeachers([]));
+  }, [frameId, slot?.ID, day, days, currentDay]);
+
+  const teacherOptions = useMemo(() => {
+    if (!availableTeachers.length) return Object.values(teachers || {}).map((teacher) => ({
+      value: teacher.ID.toString(),
+      label: teacher.NAME,
+    }));
+    // If editing and current teacher(s) is not available, include them (disabled)
+    const currentIds = currentLesson?.teacherId ? (Array.isArray(currentLesson.teacherId) ? currentLesson.teacherId : [currentLesson.teacherId]) : [];
+    return Object.values(teachers || {}).map((teacher) => {
+      const isAvailable = availableTeachers.some((a) => a.ID === teacher.ID);
+      return {
+        value: teacher.ID.toString(),
+        label: teacher.NAME,
+        disabled: !isAvailable && !currentIds.includes(teacher.ID),
+      };
+    });
+  }, [teachers, availableTeachers, currentLesson]);
 
   interface FormValues {
     subject: string;
@@ -122,23 +151,37 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
         setGroupedClassRooms(null);
         setPreferredTeacher(null);
         setPreferredTeacherCheckbox(false);
+        setWarnings((prev) => ({ ...prev, teacher: undefined }));
         return;
       }
 
       if (values.subject !== previous.subject) {
         const newSubject = syllabus[values.subject];
-
+        let preferredTeacherId: string | undefined = undefined;
+        let preferredTeacherName: string | undefined = undefined;
         if (newSubject?.TEACHERS?.length > 0) {
-          const teacherId = newSubject.TEACHERS[0].toString();
-          const teacherName = (teachers as Record<string, Teacher & SelectOptions>)?.[teacherId]?.NAME || '??';
-          
-          setPreferredTeacher({
-            value: teacherId,
-            label: teacherName,
-          });
-          form.setFieldValue("teacher", teacherId);
+          preferredTeacherId = newSubject.TEACHERS[0].toString();
+          preferredTeacherName = (teachers as Record<string, Teacher & SelectOptions>)?.[preferredTeacherId]?.NAME || '??';
         }
-
+        // Check if preferred teacher is available
+        const preferredAvailable = preferredTeacherId && availableTeachers.some((t) => t.ID.toString() === preferredTeacherId);
+        if (preferredTeacherId && preferredAvailable) {
+          setPreferredTeacher({
+            value: preferredTeacherId,
+            label: preferredTeacherName || '??',
+          });
+          setWarnings((prev) => ({ ...prev, teacher: undefined }));
+          form.setFieldValue("teacher", preferredTeacherId);
+        } else if (preferredTeacherId && !preferredAvailable) {
+          setPreferredTeacher(null);
+          setWarnings((prev) => ({ ...prev, teacher: `Preferred teacher: ${preferredTeacherName} is not available in this timeslot.` }));
+          form.setFieldValue("teacher", "");
+        } else {
+          setPreferredTeacher(null);
+          setWarnings((prev) => ({ ...prev, teacher: undefined }));
+          form.setFieldValue("teacher", "");
+        }
+        // ...existing code for specialty/classroom grouping...
         const specialty = (subjects as Record<string, Subject & SelectOptions>)?.[newSubject.SUBJECT_ID.toString()]?.SPECIALTY_ID || null;
         if (specialty) {
           const groupedBySubjectClassRooms = Object.values(
@@ -174,6 +217,33 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
       }
     },
   });
+
+  // Fetch available classrooms when frameId, day, or slot changes
+  useEffect(() => {
+    if (!frameId || !slot?.ID || !currentDay) {
+      setAvailableClassRooms([]);
+      return;
+    }
+    // dayIndex is the SLOT_ORDER of the current day (if available), else index in days array
+    const dayIndex = typeof currentDay.order === 'string' ? Number(currentDay.order) : days.findIndex(d => d.id === day);
+    getAvailableClassroomsByFrameAndTimeslot(frameId.toString(), dayIndex, slot.ID)
+      .then(setAvailableClassRooms)
+      .catch(() => setAvailableClassRooms([]));
+  }, [frameId, slot?.ID, day, days, currentDay]);
+
+  // Classroom select options: only show available classrooms, but keep current selection if editing
+  const classroomOptions = useMemo(() => {
+    if (!availableClassRooms.length) return Object.values(classRooms || {});
+    // If editing and current classRoom is not available, include it (disabled)
+    const currentId = currentLesson?.classRoomId;
+    return Object.values(classRooms || {}).map((room) => {
+      const isAvailable = availableClassRooms.some((a) => a.ID === room.ID);
+      return {
+        ...room,
+        disabled: !isAvailable && room.ID !== currentId,
+      };
+    });
+  }, [classRooms, availableClassRooms, currentLesson]);
 
   const handleLessonCreate = () => {
     console.log("handleLessonCreate", slot);
@@ -224,7 +294,7 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
             label="Classroom"
             searchable
             clearable
-            data={groupedClassRooms || Object.values(classRooms || {})}
+            data={classroomOptions}
             {...form.getInputProps("classRoom")}
           />
           
@@ -250,7 +320,7 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
               <NotificationCard
                 key={key}
                 message={value}
-                type={"error"}
+                type={key === 'teacher' ? "warning" : "error"}
                 context={key as NotificationContexts}
               />
             ) : null;

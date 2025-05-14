@@ -890,6 +890,98 @@ END;
     }
   }
 
+  /**
+   * Returns classrooms that are available (not occupied) for a given frame, day index, and timeslot.
+   */
+  async getAvailableClassroomsByFrameAndTimeslot(
+    frameId: string,
+    dayIndex: number,
+    timeslotId: number
+  ): Promise<any[]> {
+    // Find all classrooms occupied in this frame, day, and timeslot
+    const occupiedQuery = `
+      SELECT DISTINCT L.CLASSROOM_ID
+      FROM lessons L
+      JOIN days D ON L.DAYS_ID = D.ID
+      WHERE L.FRAME_ID = :frameId
+        AND D.SLOT_ORDER = :dayIndex
+        AND L.TEMPLATE_ID = :timeslotId
+        AND L.TENANCY_ID = :tenancyId
+    `;
+    // All classrooms for this tenancy
+    const allClassroomsQuery = `
+      SELECT * FROM classrooms WHERE tenancy_id = :tenancyId
+    `;
+    try {
+      const tenancyId = this.getTenancy();
+      const occupiedRows = await this.executeQuery(occupiedQuery, {
+        frameId,
+        dayIndex,
+        timeslotId,
+        tenancyId,
+      });
+      const occupiedIds = new Set((occupiedRows as any[]).map((row) => row.CLASSROOM_ID));
+      const allClassrooms = await this.executeQuery(allClassroomsQuery, { tenancyId });
+      // Filter out occupied classrooms
+      return (allClassrooms as any[]).filter((room) => !occupiedIds.has(room.ID));
+    } catch (error) {
+      console.error(`Error getting available classrooms: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Returns teachers that are available (not occupied) for a given frame, day index, and timeslot.
+   * Handles TEACHERS as a stringified array (multiple teachers per lesson).
+   */
+  async getAvailableTeachersByFrameAndTimeslot(
+    frameId: string,
+    dayIndex: number,
+    timeslotId: number
+  ): Promise<any[]> {
+    // Find all teacher IDs occupied in this frame, day, and timeslot
+    const occupiedQuery = `
+      SELECT L.TEACHERS
+      FROM lessons L
+      JOIN days D ON L.DAYS_ID = D.ID
+      WHERE L.FRAME_ID = :frameId
+        AND D.SLOT_ORDER = :dayIndex
+        AND L.TEMPLATE_ID = :timeslotId
+        AND L.TENANCY_ID = :tenancyId
+    `;
+    // All teachers for this tenancy
+    const allTeachersQuery = `
+      SELECT * FROM teachers WHERE tenancy_id = :tenancyId
+    `;
+    try {
+      const tenancyId = this.getTenancy();
+      const occupiedRows = await this.executeQuery(occupiedQuery, {
+        frameId,
+        dayIndex,
+        timeslotId,
+        tenancyId,
+      });
+      // Collect all teacher IDs that are occupied (flatten all stringified arrays)
+      const occupiedIds = new Set<number>();
+      (occupiedRows as any[]).forEach((row) => {
+        if (row.TEACHERS) {
+          try {
+            const ids = JSON.parse(row.TEACHERS);
+            if (Array.isArray(ids)) {
+              ids.forEach((id) => occupiedIds.add(Number(id)));
+            }
+          } catch {}
+        }
+      });
+      const allTeachers = await this.executeQuery(allTeachersQuery, { tenancyId });
+      // Filter out occupied teachers
+      return (allTeachers as any[]).filter((teacher) => !occupiedIds.has(teacher.ID));
+    } catch (error) {
+      console.error(`Error getting available teachers: ${error}`);
+      throw error;
+    }
+  }
+
   // ----------------- CLASS -------------------
   async createClass(
     name: string,
