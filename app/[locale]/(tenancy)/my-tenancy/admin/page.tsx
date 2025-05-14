@@ -46,6 +46,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const resolvedSearchParams = await searchParams;
   const { entity, id } = resolvedSearchParams;
 
+  const db = await getDbInstance();
+  // Fetch entity counts for dashboard cards
+  const [classrooms, classes, specialties, subjects, teachers, frames] = await Promise.all([
+    db.getAllEntity<ClassRoom>(Entities.classroom),
+    db.getAllEntity<Classes>(Entities.class),
+    db.getAllEntity<Specialty>(Entities.specialty),
+    db.getAllEntity<Subject>(Entities.subject),
+    db.getAllEntity<Teacher>(Entities.teacher),
+    db.getAllEntity<Frame>(Entities.frame),
+  ]);
+
   const getContent = async () => {
     const contents = {
       [Entities.classroom]: async (id: number | null) => {
@@ -193,7 +204,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       <div>
         <h1>Admin Dashboard - Create New Entities</h1>
         <p>Select an entity to create:</p>
-        <AdminClientComponent />
+        <AdminClientComponent
+          counts={{
+            classroom: classrooms.length,
+            class: classes.length,
+            specialty: specialties.length,
+            subject: subjects.length,
+            teacher: teachers.length,
+            frame: frames.length,
+          }}
+        />
       </div>
     );
   };
