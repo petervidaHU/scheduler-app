@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useTransition, useActionState, FC } from "react";
-import { Container, TextInput, Button, Group, Stack } from "@mantine/core";
+import React, { useTransition, useActionState, FC, useEffect, useMemo, useState } from "react";
+import { Container, TextInput, Button, Group, Stack, Select, NumberInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FormActionType, ManageFormServerProps } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
@@ -9,6 +9,12 @@ import { createTeacher } from "@/app/[locale]/(tenancy)/_actions/createTeacher";
 import { Teacher } from "@/types/databaseTypes";
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
+import { nanoid } from "nanoid";
+import GridContainer from "../day-planner/GridContainer";
+import HourGrid from "../day-planner/HourGrid";
+import TimeslotsList from "../day-planner/TimeslotsList";
+import { getOccupiedTimeslotsByTeacher } from "@/app/[locale]/(tenancy)/_actions/getOccupiedTimeslotsByTeacher";
+import { useStore } from "../../store/store";
 
 const init: FormActionType = {
   error: null,
@@ -74,6 +80,73 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
     });
   };
 
+  const { tenancyBasedData: { frames }, windowHeight } = useStore();
+  const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
+  const [occupiedTimeslots, setOccupiedTimeslots] = useState<any[]>([]);
+  const [localDays, setLocalDays] = useState<any[]>([]);
+  const isEditMode = !!entity?.ID;
+
+  // Update local days when frame changes
+  useEffect(() => {
+    if (!selectedFrameId) {
+      setLocalDays([]);
+      return;
+    }
+    const frame = frames?.data?.[selectedFrameId];
+    if (!frame) {
+      setLocalDays([]);
+      return;
+    }
+    const numberOfDays = frame.NUMBER_OF_DAYS;
+    const daysArr: any[] = [];
+    for (let i = 0; i < numberOfDays; i++) {
+      daysArr.push({
+        id: nanoid(),
+        identifier: `Day ${i + 1}`,
+      });
+    }
+    setLocalDays(daysArr);
+  }, [selectedFrameId, frames]);
+
+  // Fetch occupied timeslots for teacher
+  useEffect(() => {
+    if (!isEditMode || !selectedFrameId) {
+      setOccupiedTimeslots([]);
+      return;
+    }
+    const fetchOccupiedTimeslots = async () => {
+      const occupied = await getOccupiedTimeslotsByTeacher(entity?.ID, selectedFrameId);
+      setOccupiedTimeslots(occupied || []);
+    };
+    fetchOccupiedTimeslots();
+  }, [isEditMode, selectedFrameId, entity?.ID]);
+
+  // Prepare frame options for select
+  const frameOptions = useMemo(
+    () =>
+      Object.values(frames?.data || {}).map((frame: any) => ({
+        value: frame.ID.toString(),
+        label: `${frame.NAME} (${frame.NUMBER_OF_DAYS} days)`,
+      })),
+    [frames]
+  );
+
+  // Helper for TimeslotsList: map occupiedTimeslots to TimeslotInput for display
+  const timeslotObjects = useMemo(() => {
+    return occupiedTimeslots.map((occ) => ({
+      timeslot: {
+        ID: occ.ID,
+        NAME: occ.TIMESLOT_NAME ?? "",
+        DESCRIPTION: "",
+        PERIOD_START: occ.PERIOD_START,
+        PERIOD_END: occ.PERIOD_END,
+        SLOT_ORDER: occ.SLOT_ORDER,
+        FRAME_ID: occ.FRAME_ID,
+      },
+      lesson: { classId: occ.CLASS_ID, subjectId: occ.SUBJECT_ID },
+    }));
+  }, [occupiedTimeslots]);
+
   return (
     <Container size="md" my="xl">
       <div>{JSON.stringify(state)}</div>
@@ -119,6 +192,79 @@ export const CreateTeacher: FC<CreateTeacherProps> = ({
           </Group>
         </Stack>
       </form>
+      {/* Frame Selector - visually separated from form */}
+      <div
+        style={{
+          margin: "32px 0 16px 0",
+          padding: "16px 0",
+          borderTop: "1px solid #eee",
+        }}
+      >
+        <Select
+          label="Frame Template"
+          placeholder="Select a frame template"
+          data={frameOptions}
+          value={selectedFrameId}
+          onChange={setSelectedFrameId}
+          clearable
+        />
+      </div>
+      {localDays.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <h4>Teacher Timetable</h4>
+          <GridContainer windowHeight={windowHeight}>
+            <HourGrid />
+            {/* Render a column for each local day */}
+            <div
+              style={{
+                display: "flex",
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              {localDays.map((day, idx) => (
+                <div
+                  key={day.id}
+                  style={{
+                    flex: 1,
+                    borderLeft: idx === 0 ? "none" : "1px solid #eee",
+                    position: "relative",
+                    height: "100%",
+                  }}
+                >
+                  <TimeslotsList
+                    timeSlots={
+                      isEditMode
+                        ? timeslotObjects.filter(
+                            (t) => t.timeslot.SLOT_ORDER == idx
+                          )
+                        : []
+                    }
+                    onClickHandler={() => {}}
+                    readOnly={true}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      background: "rgba(240,240,245,0.1)",
+                      textAlign: "center",
+                      fontSize: 12,
+                    }}
+                  >
+                    {day.identifier}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GridContainer>
+        </div>
+      )}
     </Container>
   );
 };

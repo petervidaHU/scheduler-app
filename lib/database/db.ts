@@ -855,6 +855,45 @@ END;
     }
   }
 
+  /**
+   * Get all occupied timeslots for a teacher in a given frame.
+   * This parses the TEACHERS column (stringified array) and checks for teacherId inclusion.
+   */
+  async getOccupiedTimeslotsByTeacher(
+    frameId: string,
+    teacherId: number | string
+  ): Promise<any[]> {
+    const query = `
+      SELECT L.*, D.SLOT_ORDER, T.PERIOD_START, T.PERIOD_END, T.NAME as TIMESLOT_NAME, C.NAME as CLASS_NAME
+      FROM lessons L
+      JOIN days D ON L.DAYS_ID = D.ID
+      JOIN timeslots T ON L.TEMPLATE_ID = T.ID
+      JOIN classes C ON L.CLASS_ID = C.ID
+      WHERE L.frame_id = :frameId AND L.tenancy_id = :tenancyId
+    `;
+    try {
+      const tenancyId = this.getTenancy();
+      const bindVariables = {
+        frameId,
+        tenancyId,
+      };
+      const result = await this.executeQuery(query, bindVariables);
+      // Filter in JS because TEACHERS is a stringified array
+      return (result as any[]).filter(lesson => {
+        if (!lesson.TEACHERS) return false;
+        try {
+          const teachers = JSON.parse(lesson.TEACHERS);
+          return Array.isArray(teachers) && teachers.includes(Number(teacherId));
+        } catch {
+          return false;
+        }
+      });
+    } catch (error) {
+      console.error(`Error getting occupied timeslots for teacher: ${error}`);
+      throw error;
+    }
+  }
+
   // ----------------- CLASS -------------------
   async createClass(
     name: string,
