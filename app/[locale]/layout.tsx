@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "@mantine/core/styles.css";
 import { Geist, Geist_Mono } from "next/font/google";
-import { MantineProvider } from "@mantine/core";
+import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import "../globals.css";
 import { theme } from "../theme";
 import HeaderWithSession from "@/components/HeaderWithSession";
@@ -40,6 +40,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <head>
+          <ColorSchemeScript defaultColorScheme="light" />
         <link rel="shortcut icon" href="/favicon.svg" />
         <meta
           name="viewport"
