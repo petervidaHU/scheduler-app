@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useTransition, useActionState, FC, useState, useMemo, useEffect } from "react";
+import React, {
+  useTransition,
+  useActionState,
+  FC,
+  useState,
+  useMemo,
+  useEffect,
+} from "react";
 import {
   Container,
   TextInput,
@@ -25,8 +32,6 @@ import { getSchedulesByFrame } from "@/app/[locale]/(tenancy)/my-tenancy/schedul
 import { DayPlan, Schedule } from "@/types/ScheduleTypes";
 import { nanoid } from "nanoid";
 import { getOccupiedTimeslotsByFrame } from "@/app/[locale]/(tenancy)/_actions/getOccupiedTimeslots";
-
-
 
 // Interface for occupiedTimeslots state
 export interface OccupiedTimeslot {
@@ -55,7 +60,7 @@ const init: FormActionType = {
 
 interface ClassRoomInput extends ManageFormServerProps {
   entity?: ClassRoom;
-  error?: string,
+  error?: string;
 }
 
 export const CreateClassRoom: FC<ClassRoomInput> = ({
@@ -76,7 +81,9 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
   });
   // Frame selection state
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
-  const [occupiedTimeslots, setOccupiedTimeslots] = useState<OccupiedTimeslot[]>([]);
+  const [occupiedTimeslots, setOccupiedTimeslots] = useState<
+    OccupiedTimeslot[]
+  >([]);
   const isEditMode = !!entity?.ID;
 
   // Local days state for timetable grid
@@ -110,18 +117,24 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
       return;
     }
     const fetchOccupiedTimeslots = async () => {
-      const occupiedTimeslots = await getOccupiedTimeslotsByFrame(entity?.ID, selectedFrameId);
+      const occupiedTimeslots = await getOccupiedTimeslotsByFrame(
+        entity?.ID,
+        selectedFrameId
+      );
       setOccupiedTimeslots(occupiedTimeslots || []);
     };
     fetchOccupiedTimeslots();
   }, [isEditMode, selectedFrameId, entity?.ID]);
 
   // Prepare frame options for select
-  const frameOptions = useMemo(() =>
-    Object.values(frames?.data || {}).map((frame: Frame) => ({
-      value: frame.ID.toString(),
-      label: `${frame.NAME} (${frame.NUMBER_OF_DAYS} days)`
-    })), [frames]);
+  const frameOptions = useMemo(
+    () =>
+      Object.values(frames?.data || {}).map((frame: Frame) => ({
+        value: frame.ID.toString(),
+        label: `${frame.NAME} (${frame.NUMBER_OF_DAYS} days)`,
+      })),
+    [frames]
+  );
 
   const classRoomForm = useForm({
     initialValues: {
@@ -134,13 +147,14 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
     validate: {
       capacity: (value: number) =>
         value <= 0 ? "Classroom capacity must be larger than 0" : null,
-      specialityId: (value: number | null) => (!value ? "must select speciality" : null),
+      specialityId: (value: number | null) =>
+        !value ? "must select speciality" : null,
     },
   });
 
   // Define a success handler callback
   const handleSuccess = React.useCallback(() => {
-    console.log('Classroom created successfully');
+    console.log("Classroom created successfully");
     // Any additional cleanup can be done here
   }, []);
 
@@ -154,13 +168,13 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
 
   const handleClassRoomSubmit = (values: typeof classRoomForm.values) => {
     console.log("Submitting classroom values:", values);
-    
+
     // Create a copy to avoid direct mutation
     const submissionValues = { ...values };
-    
+
     // Use transition to avoid re-renders during form submission
     startTransition(() => {
-      console.log('Submitting form with values:', submissionValues);
+      console.log("Submitting form with values:", submissionValues);
       crAction(submissionValues);
     });
   };
@@ -182,14 +196,15 @@ export const CreateClassRoom: FC<ClassRoomInput> = ({
     }));
   }, [occupiedTimeslots]);
 
-  if (error) return (
-    <Container size="md" my="xl">
-      <p>{error}</p>
-    </Container>
-  );
-console.log('occupied timeslots:', occupiedTimeslots);
-  console.log('frame options:', frameOptions);
-  console.log('local days:', localDays);
+  if (error)
+    return (
+      <Container size="md" my="xl">
+        <p>{error}</p>
+      </Container>
+    );
+  console.log("occupied timeslots:", occupiedTimeslots);
+  console.log("frame options:", frameOptions);
+  console.log("local days:", localDays);
   return (
     <Container size="md" my="xl">
       {specialties.error && <p>{specialties.error}</p>}
@@ -225,14 +240,14 @@ console.log('occupied timeslots:', occupiedTimeslots);
             <Button disabled={isPending} type="submit">
               {submitBtnText || "Create Classroom"}
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 if (backBtnUrl) {
                   window.location.href = backBtnUrl;
                 } else {
                   window.location.href = "/my-tenancy/admin";
                 }
-              }} 
+              }}
               variant="outline"
               color="gray"
             >
@@ -242,7 +257,13 @@ console.log('occupied timeslots:', occupiedTimeslots);
         </Stack>
       </form>
       {/* Frame Selector - visually separated from form */}
-      <div style={{ margin: '32px 0 16px 0', padding: '16px 0', borderTop: '1px solid #eee' }}>
+      <div
+        style={{
+          margin: "32px 0 16px 0",
+          padding: "16px 0",
+          borderTop: "1px solid #eee",
+        }}
+      >
         <Select
           label="Frame Template"
           placeholder="Select a frame template"
@@ -252,26 +273,62 @@ console.log('occupied timeslots:', occupiedTimeslots);
           clearable
         />
       </div>
-      {/* Timetable UI */}
-      <div style={{ marginTop: 16 }}>
-        <h4>Classroom Timetable</h4>
-        <GridContainer windowHeight={windowHeight}>
-          <HourGrid />
-          {/* Render a column for each local day */}
-          <div style={{ display: 'flex', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-            {localDays.map((day, idx) => (
-              <div key={day.id} style={{ flex: 1, borderLeft: idx === 0 ? 'none' : '1px solid #eee', position: 'relative', height: '100%' }}>
-                <TimeslotsList
-                  timeSlots={isEditMode ? timeslotObjects.filter(t => t.timeslot.SLOT_ORDER == idx) : []}
-                  onClickHandler={() => {}}
-                  readOnly={true}
-                />
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', background: 'rgba(240,240,245,0.1)', textAlign: 'center', fontSize: 12 }}>{day.identifier}</div>
-              </div>
-            ))}
-          </div>
-        </GridContainer>
-      </div>
+      {localDays.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <h4>Classroom Timetable</h4>
+          <GridContainer windowHeight={windowHeight}>
+            <HourGrid />
+            {/* Render a column for each local day */}
+            <div
+              style={{
+                display: "flex",
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              {localDays.map((day, idx) => (
+                <div
+                  key={day.id}
+                  style={{
+                    flex: 1,
+                    borderLeft: idx === 0 ? "none" : "1px solid #eee",
+                    position: "relative",
+                    height: "100%",
+                  }}
+                >
+                  <TimeslotsList
+                    timeSlots={
+                      isEditMode
+                        ? timeslotObjects.filter(
+                            (t) => t.timeslot.SLOT_ORDER == idx
+                          )
+                        : []
+                    }
+                    onClickHandler={() => {}}
+                    readOnly={true}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      background: "rgba(240,240,245,0.1)",
+                      textAlign: "center",
+                      fontSize: 12,
+                    }}
+                  >
+                    {day.identifier}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GridContainer>
+        </div>
+      )}
     </Container>
   );
 };
