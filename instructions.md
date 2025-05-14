@@ -8,7 +8,7 @@ This is a frontend application built with Next.js and Mantine UI v7. The project
 
 ## Technology Stack
 - Next.js is the React framework
-- Mantine UI v7 for components and styling
+- Mantine UI v8 for components and styling
 - Zustand for client-side state management
 - TypeScript for type safety
 

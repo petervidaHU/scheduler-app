@@ -497,7 +497,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       </Group>
       <Divider mb="md" />
       <form onSubmit={form.onSubmit(handleScheduleFormSubmit)}>
-        <SimpleGrid cols={2} spacing="md" visibleFrom="lg">
+        <SimpleGrid cols={2} spacing="md">
           <TextInput
             label="Schedule Name"
             placeholder="Enter a descriptive name for this schedule"
