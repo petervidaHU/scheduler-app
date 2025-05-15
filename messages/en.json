@@ -2,11 +2,105 @@
     "dashboard": {
         "message1": "Dashboard",
         "message2": "wow it is the main page",
-        "message3": "hello it is fallback message"
+        "message3": "hello it is fallback message",
+        "myTenancyDashboard": "My Tenancy Dashboard",
+        "welcomeDashboard": "Welcome! Here you can manage all aspects of your organization: classes, teachers, classrooms, and more.",
+        "tenancyId": "Tenancy ID",
+        "role": "Role",
+        "manageClasses": "Manage Classes",
+        "manageTeachers": "Manage Teachers",
+        "add": "Add"
     },
     "pricing": {
         "message1": "Pricing",
         "message2": "wow it is the mapricingpage",
         "message3": "hello it is fallback message"
+    },
+    "admin": {
+        "goBack": "Go Back",
+        "cancel": "Cancel",
+        "updateClassroom": "Update classroom",
+        "createClassroom": "Create classroom",
+        "classroomUpdated": "Classroom updated successfully",
+        "classroomCreated": "Classroom created successfully"
+    },
+    "schedule": {
+        "edit": "Edit",
+        "view": "View",
+        "noSchedules": "No schedules found",
+        "name": "Name",
+        "filterByName": "Filter by name",
+        "class": "Class",
+        "allClasses": "All classes",
+        "owner": "Owner",
+        "allOwners": "All owners",
+        "status": "Status",
+        "allStatuses": "All statuses",
+        "actions": "Actions",
+        "id": "id",
+        "description": "description",
+        "recurrence": "recurrence",
+        "numberOfDays": "number of days",
+        "capacity": "capacity",
+        "speciality": "speciality",
+        "numberOfStudent": "number of student",
+        "email": "email",
+        "helperColor": "helper color",
+        "yes": "Yes",
+        "no": "No",
+        "dash": "-",
+        "unknown": "??",
+        "dataLoading": "data is loading...",
+        "dataError": "there was an error loading the data",
+        "freeSlot": "Free Slot",
+        "addLesson": "Add lesson",
+        "unknownSubject": "Unknown Subject",
+        "unknownTeacher": "Unknown Teacher",
+        "unknownRoom": "Unknown Room",
+        "unknownClass": "Unknown Class"
+    },
+    "syllabus": {
+        "pleaseSelectClass": "Please select a class to view the syllabus",
+        "noSyllabus": "No syllabus data available for the selected class",
+        "ok": "OK",
+        "missingLessons": "Missing lessons",
+        "tooManyLessons": "Too many lessons"
+    },
+    "common": {
+        "lightMode": "Light mode",
+        "darkMode": "Dark mode",
+        "currentTenancy": "Current tenancy:",
+        "noTenancyLoaded": "No tenancy loaded",
+        "notLoggedIn": "Not logged in",
+        "logOut": "Log out",
+        "logIn": "Log in",
+        "selectTenancy": "Select a tenancy",
+        "loading": "Loading..."
+    },
+    "error": {
+        "somethingWentWrong": "Something went wrong.",
+        "troubleLoading": "We're having trouble loading this part of the page. Please try again.",
+        "retry": "Retry",
+        "noRoleContent": "No Role Content",
+        "needToBeSignedIn": "You need to be signed in"
+    },
+    "home": {
+        "welcome": "Welcome to Scheduler App",
+        "welcomeText": "Effortlessly manage your lessons, classrooms, and teachers. Get started by creating or viewing your schedules.",
+        "quickStart": "Quick Start",
+        "quickStartText": "Create a new schedule, add classrooms, or invite teachers to your tenancy.",
+        "goToDashboard": "Go to Dashboard",
+        "exploreMantine": "Explore Mantine UI Components",
+        "createSchedule": "Create Schedule"
+    },
+    "documentation": {
+        "title": "Documentation",
+        "welcome": "Welcome to the School Scheduler documentation. Here you'll find guides and information about using the app.",
+        "gettingStarted": "Getting Started",
+        "navigateMenu": "Navigate using the menu above to access different features.",
+        "useAdmin": "Use the Admin section to manage classes, teachers, and more.",
+        "manageSchedules": "Schedules and timeslots can be managed from their respective sections.",
+        "support": "Support",
+        "helpContact": "For help, contact your administrator or visit our support page."
     }
 }
