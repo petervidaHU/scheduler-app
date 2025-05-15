@@ -19,6 +19,7 @@ import CreateTeacher from "@/components/forms/CreateTeacher";
 import { CreateFrame } from "@/components/forms/CreateFrame";
 import { Entities } from "@/types/Entities";
 import { getDbInstance } from "@/lib/database/db-instance";
+import { ResultHandler } from "@/components/HOC/ResultErrorHandler";
 
 export const TenancyBaseUrl = "";
 
@@ -30,6 +31,15 @@ async function getEntityFromDatabase<T>(id: number | null, label: Entities) {
       ? { error: response }
       : { entity: response }
     : null;
+}
+
+async function safeGetAllEntity(db: any, label: Entities) {
+  try {
+    const data = await db.getAllEntity(label);
+    return { data, error: null };
+  } catch (error) {
+    return { data: [], error: error instanceof Error ? error.message : String(error) };
+  }
 }
 
 interface AdminPageProps {
@@ -47,15 +57,25 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const { entity, id } = resolvedSearchParams;
 
   const db = await getDbInstance();
-  // Fetch entity counts for dashboard cards
-  const [classrooms, classes, specialties, subjects, teachers, frames] = await Promise.all([
-    db.getAllEntity<ClassRoom>(Entities.classroom),
-    db.getAllEntity<Classes>(Entities.class),
-    db.getAllEntity<Specialty>(Entities.specialty),
-    db.getAllEntity<Subject>(Entities.subject),
-    db.getAllEntity<Teacher>(Entities.teacher),
-    db.getAllEntity<Frame>(Entities.frame),
+  // Fetch entity counts for dashboard cards with error handling
+  const [classroomsResult, classesResult, specialtiesResult, subjectsResult, teachersResult, framesResult] = await Promise.all([
+    safeGetAllEntity(db, Entities.classroom),
+    safeGetAllEntity(db, Entities.class),
+    safeGetAllEntity(db, Entities.specialty),
+    safeGetAllEntity(db, Entities.subject),
+    safeGetAllEntity(db, Entities.teacher),
+    safeGetAllEntity(db, Entities.frame),
   ]);
+
+  // Collect all errors for toast display
+  const allErrors = [
+    classroomsResult.error,
+    classesResult.error,
+    specialtiesResult.error,
+    subjectsResult.error,
+    teachersResult.error,
+    framesResult.error,
+  ].filter(Boolean).join("; ") || null;
 
   const getContent = async () => {
     const contents = {
@@ -201,20 +221,22 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     return entity && contents[entity as keyof typeof contents] ? (
       contents[entity as keyof typeof contents](id ? +id : null)
     ) : (
-      <div>
-        <h1>Admin Dashboard - Create New Entities</h1>
-        <p>Select an entity to create:</p>
-        <AdminClientComponent
-          counts={{
-            classroom: classrooms.length,
-            class: classes.length,
-            specialty: specialties.length,
-            subject: subjects.length,
-            teacher: teachers.length,
-            frame: frames.length,
-          }}
-        />
-      </div>
+      <ResultHandler error={allErrors}>
+        <div>
+          <h1>Admin Dashboard - Create New Entities</h1>
+          <p>Select an entity to create:</p>
+          <AdminClientComponent
+            counts={{
+              classroom: classroomsResult.data.length,
+              class: classesResult.data.length,
+              specialty: specialtiesResult.data.length,
+              subject: subjectsResult.data.length,
+              teacher: teachersResult.data.length,
+              frame: framesResult.data.length,
+            }}
+          />
+        </div>
+      </ResultHandler>
     );
   };
 
