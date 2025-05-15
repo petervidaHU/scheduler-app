@@ -2,13 +2,15 @@
 
 import { getDbInstance } from "@/lib/database/db-instance";
 import { ID, Syllabus } from "@/types/databaseTypes";
-import { DataWithOptions } from "@/types/ScheduleTypes";
+import { DataWithOptions, DataWithOptionWithError } from "@/types/ScheduleTypes";
 
-export const getSyllabusAction = async (classId: ID): Promise<DataWithOptions<Syllabus> | null> => {
+export const getSyllabusAction = async (
+  classId: ID
+): Promise<DataWithOptionWithError<Syllabus>> => {
   try {
     const db = await getDbInstance();
     const syllabus = await db.getSyllabus(classId);
-    return syllabus.reduce(
+    const data = syllabus.reduce(
       (acc, item) => {
         acc[item.SUBJECT_ID] = {
           value: item.SUBJECT_ID.toString(),
@@ -19,8 +21,12 @@ export const getSyllabusAction = async (classId: ID): Promise<DataWithOptions<Sy
         return acc;
       },
       {} as DataWithOptions<Syllabus>
-    )
+    );
+    return { data, error: null };
   } catch (error) {
-    return null;
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "Unknown error while fetching syllabus",
+    };
   }
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/store/store";
-import { Toast } from "@/types/UIFeedbackTypes";
+import { Toast, UIFeedbackType } from "@/types/UIFeedbackTypes";
 import { Notification } from "@mantine/core";
 import { IconX, IconCheck } from "@tabler/icons-react";
 import React from "react";
@@ -19,10 +19,9 @@ const overlayStyles = {
 };
 
 const toastIcons = {
-  success: { icon: <IconCheck size={20} />, color: "teal" },
-  error: { icon: <IconX size={20} />, color: "red" },
-  warning: { icon: <IconX size={20} />, color: "orange" },
-  info: { icon: <IconX size={20} />, color: "blue" },
+  [UIFeedbackType.Success]: { icon: <IconCheck size={20} />, color: "teal" },
+  [UIFeedbackType.Error]: { icon: <IconX size={20} />, color: "red" },
+  [UIFeedbackType.Warning]: { icon: <IconX size={20} />, color: "orange" },
 };
 
 interface ToastProps {

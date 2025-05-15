@@ -8,6 +8,12 @@ import { getScheduleById } from "../_actions/getScheduleById";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getSyllabusAction } from "../_actions/getSyllabusAction";
+import { Syllabus } from "@/types/databaseTypes";
+import {
+  DataWithOptions,
+  DataWithOptionWithError,
+} from "@/types/ScheduleTypes";
+import { ResultHandler } from "@/components/HOC/ResultErrorHandler";
 
 interface SchedulePageProps {
   params: {
@@ -25,11 +31,14 @@ export default async function EditSchedulePage({ params }: SchedulePageProps) {
 
   const dayTemplates = await getDayTemplates();
   const timeslots = await getTimeslots();
-  
+
   // Pre-fetch syllabus if class is defined
-  let syllabus = null;
+  let syllabusResult: DataWithOptionWithError<Syllabus> = {
+    data: null,
+    error: null,
+  };
   if (schedule.class) {
-    syllabus = await getSyllabusAction(schedule.class);
+    syllabusResult = await getSyllabusAction(schedule.class);
   }
 
   return (
@@ -40,16 +49,18 @@ export default async function EditSchedulePage({ params }: SchedulePageProps) {
           <Button variant="light">Back to List</Button>
         </Link>
       </Group>
-      <CreateSchedule
-        scheduleId={scheduleId}
-        scheduleData={schedule}
-        syllabusData={syllabus}
-        formTitle="Edit a new schedule"
-        formDescription="Edit the details below."
-        submitBtnText="Update"
-        backBtnText="Back"
-        backBtnUrl="/en/my-tenancy/schedules"
-      />
+      <ResultHandler error={syllabusResult.error}>
+        <CreateSchedule
+          scheduleId={scheduleId}
+          scheduleData={schedule}
+          syllabusData={syllabusResult}
+          formTitle="Edit a new schedule"
+          formDescription="Edit the details below."
+          submitBtnText="Update"
+          backBtnText="Back"
+          backBtnUrl="/en/my-tenancy/schedules"
+        />
+      </ResultHandler>
       <SyllabusTable />
       <SchedulePlanner
         dayTemplates={dayTemplates}

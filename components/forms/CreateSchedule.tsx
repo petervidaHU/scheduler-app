@@ -16,7 +16,10 @@ import {
   Text,
   SimpleGrid,
 } from "@mantine/core";
-import { createSchedule, ScheduleContext } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
+import {
+  createSchedule,
+  ScheduleContext,
+} from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/createSchedule";
 import { updateSchedule } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/updateSchedule";
 import { getScheduleById } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getScheduleById";
 import { FormActionType } from "@/types/FormActionType";
@@ -24,7 +27,7 @@ import { useActionState, useTransition } from "react";
 import { useStore } from "@/store/store";
 import { nanoid } from "nanoid";
 import { getSyllabusAction } from "@/app/[locale]/(tenancy)/my-tenancy/schedules/_actions/getSyllabusAction";
-import { FormFields } from "@/types/ScheduleTypes";
+import { DataWithOptionWithError, FormFields } from "@/types/ScheduleTypes";
 import { DayPlan, Schedule } from "@/types/ScheduleTypes";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -48,14 +51,14 @@ const init: FormActionType = {
 interface SchedulePageProps {
   scheduleId?: string;
   scheduleData?: Schedule;
-  syllabusData?: DataWithOptions<Syllabus> | null;
+  syllabusData?: DataWithOptionWithError<Syllabus> | null;
   submitBtnText: string;
   backBtnText: string;
   [key: string]: any;
 }
 
-const SchedulePage: React.FC<SchedulePageProps> = ({ 
-  scheduleId, 
+const SchedulePage: React.FC<SchedulePageProps> = ({
+  scheduleId,
   scheduleData,
   syllabusData,
   submitBtnText,
@@ -63,6 +66,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   ...props
 }: SchedulePageProps) => {
   const router = useRouter();
+  const { data: syllabusDataFromserver, error: syllabusError } =
+    syllabusData || { data: null, error: null };
   const [isLoading, setIsLoading] = useState(false);
   const isEditMode = !!scheduleId;
   const [isStoreInitialized, setIsStoreInitialized] = useState(false);
@@ -81,7 +86,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
     updateSchedule: updateScheduleInStore,
     scheduleState: { days, lessons },
     resetScheduleState,
-    setDays
+    setDays,
   } = useStore();
 
   // Initialize form with default values or scheduleData if available
@@ -109,17 +114,26 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       if (values.class !== previous.class && values.class) {
         const selectedClass = classes?.[values.class];
         if (selectedClass && !values.name) {
-          form.setFieldValue(FormFields.name, `Weekly schedule for ${selectedClass.NAME}`);
+          form.setFieldValue(
+            FormFields.name,
+            `Weekly schedule for ${selectedClass.NAME}`
+          );
         }
       }
 
       if (values.class !== previous.class && values.class !== "") {
         // Use server-loaded syllabus if available, otherwise fetch it
-        if (values.class === scheduleData?.class?.toString()) {
-          updateSyllabus(syllabusData);
+        if (
+          values.class === scheduleData?.class?.toString() &&
+          syllabusDataFromserver &&
+          syllabusError === null
+        ) {
+          updateSyllabus(syllabusDataFromserver);
         } else {
-          const newSyllabus = await getSyllabusAction(Number(values.class));
-          if (!newSyllabus) {
+          const { data: newSyllabus, error: newSyllabusError } =
+            await getSyllabusAction(Number(values.class));
+          if (!newSyllabus || syllabusError) {
+            console.error("Error fetching syllabus:", newSyllabusError);
             return;
           }
           updateSyllabus(newSyllabus);
@@ -138,7 +152,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
           }
         } else if (values.frameId === CUSTOM_FRAME) {
           // For custom frame, clear existing days but don't auto-create new ones
-          days.forEach(day => {
+          days.forEach((day) => {
             deleteDay(day.id);
           });
         }
@@ -151,7 +165,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
    */
   const initializeStore = useCallback(() => {
     if (!scheduleData) return;
-    
+
     resetScheduleState();
     updateScheduleInStore({
       id: scheduleData.id,
@@ -162,33 +176,41 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       status: scheduleData.status,
       frameId: scheduleData.frameId,
     });
-    
-    if (syllabusData) {
-      updateSyllabus(syllabusData);
+
+    if (syllabusDataFromserver && syllabusError === null) {
+      // Use server-loaded syllabus if available
+      updateSyllabus(syllabusDataFromserver);
     }
-    
+
     // Initialize days all at once (already deduplicated from server)
     if (scheduleData.days && scheduleData.days.length > 0) {
       setDays(scheduleData.days);
     }
-    
+
     // Initialize lessons directly into store state
     if (scheduleData.lessons && Object.keys(scheduleData.lessons).length > 0) {
-      
       // Set lessons directly into store
       const currentState = useStore.getState();
       useStore.setState({
         ...currentState,
         scheduleState: {
           ...currentState.scheduleState,
-          lessons: { ...scheduleData.lessons }
-        }
+          lessons: { ...scheduleData.lessons },
+        },
       });
     }
-    
+
     // Mark as initialized
     setIsStoreInitialized(true);
-  }, [scheduleData, syllabusData, resetScheduleState, updateScheduleInStore, updateSyllabus, setDays]);
+  }, [
+    scheduleData,
+    syllabusDataFromserver,
+    syllabusError,
+    resetScheduleState,
+    updateScheduleInStore,
+    updateSyllabus,
+    setDays,
+  ]);
 
   // Initialize store on mount
   useEffect(() => {
@@ -204,14 +226,16 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   // Define a success handler callback using useCallback to prevent unnecessary re-renders
   const handleSuccess = React.useCallback(() => {
     // Navigation will trigger component unmount which will reset the state
-    router.push('/en/my-tenancy/schedules');
+    router.push("/en/my-tenancy/schedules");
   }, [router]);
 
   // Call the hook directly. Its useEffect will handle the logic.
   useTenancyBasedFormResponse(
     isEditMode ? updateState : createState,
     isEditMode ? null : form, // Pass form only for create mode to reset it
-    isEditMode ? 'Schedule updated successfully' : 'Schedule created successfully',
+    isEditMode
+      ? "Schedule updated successfully"
+      : "Schedule created successfully",
     Entities.class, // Still using Entities.class as placeholder for now
     handleSuccess
   );
@@ -248,7 +272,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
             // Reset and initialize the store with the fetched data
             resetScheduleState();
-            
+
             // Update schedule state
             updateScheduleInStore({
               id: tempScheduleData.id,
@@ -259,33 +283,36 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
               status: tempScheduleData.status,
               frameId: tempScheduleData.frameId,
             });
-            
+
             // Update syllabus if available
             if (tempSyllabusData) {
               updateSyllabus(tempSyllabusData);
             }
-            
+
             // Add scheduleId reference to each day for tracking purposes
-            const daysWithScheduleId = tempScheduleData.days.map(day => ({
+            const daysWithScheduleId = tempScheduleData.days.map((day) => ({
               ...day,
-              scheduleId: tempScheduleData.id
+              scheduleId: tempScheduleData.id,
             }));
-            
+
             // Add all days at once
             setDays(daysWithScheduleId);
-            
+
             // Set lessons directly into store
-            if (tempScheduleData.lessons && Object.keys(tempScheduleData.lessons).length > 0) {
+            if (
+              tempScheduleData.lessons &&
+              Object.keys(tempScheduleData.lessons).length > 0
+            ) {
               const currentState = useStore.getState();
               useStore.setState({
                 ...currentState,
                 scheduleState: {
                   ...currentState.scheduleState,
-                  lessons: { ...tempScheduleData.lessons }
-                }
+                  lessons: { ...tempScheduleData.lessons },
+                },
               });
             }
-            
+
             // Mark as initialized
             setIsStoreInitialized(true);
           }
@@ -298,7 +325,16 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
       loadSchedule();
     }
-  }, [scheduleId, scheduleData, isStoreInitialized, form, resetScheduleState, updateScheduleInStore, updateSyllabus, setDays]);
+  }, [
+    scheduleId,
+    scheduleData,
+    isStoreInitialized,
+    form,
+    resetScheduleState,
+    updateScheduleInStore,
+    updateSyllabus,
+    setDays,
+  ]);
 
   /**
    * Efficiently updates schedule state when form values change
@@ -309,13 +345,13 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   ) => {
     // Collect all changes to make a single store update
     const changes: Record<string, any> = {};
-    
+
     formFields.forEach((element) => {
       if (values[element] !== previous[element]) {
         changes[element] = values[element];
       }
     });
-    
+
     // Only update store if there are changes
     if (Object.keys(changes).length > 0) {
       updateScheduleInStore(changes);
@@ -332,32 +368,35 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
     { value: CUSTOM_FRAME, label: "Custom Frame (Manual day creation)" },
     ...Object.entries(frames || {}).map(([id, frameObj]) => ({
       value: id,
-      label: `${frameObj.NAME} (${frameObj.RECURRENCE === 1 ? 'Recurring' : 'Non-recurring'}, ${frameObj.NUMBER_OF_DAYS} days)`,
-    }))
+      label: `${frameObj.NAME} (${frameObj.RECURRENCE === 1 ? "Recurring" : "Non-recurring"}, ${frameObj.NUMBER_OF_DAYS} days)`,
+    })),
   ];
 
   /**
    * Updates days based on a frame's NUMBER_OF_DAYS property
    * Creates a fresh set of days instead of modifying existing ones
    */
-  const updateDaysBasedOnFrame = useCallback((numberOfDays: number) => {
-    // Create all days in a single array
-    const newDays: DayPlan[] = [];
-    
-    for (let i = 0; i < numberOfDays; i++) {
-      newDays.push({
-        id: nanoid(),
-        order: String(i + 1),
-        identifier: `Day ${i + 1}`,
-        timeSlots: [],
-        lessons: [],
-        templateId: undefined,
-      });
-    }
-    
-    // Update all days at once for better performance and consistency
-    setDays(newDays);
-  }, [setDays]);
+  const updateDaysBasedOnFrame = useCallback(
+    (numberOfDays: number) => {
+      // Create all days in a single array
+      const newDays: DayPlan[] = [];
+
+      for (let i = 0; i < numberOfDays; i++) {
+        newDays.push({
+          id: nanoid(),
+          order: String(i + 1),
+          identifier: `Day ${i + 1}`,
+          timeSlots: [],
+          lessons: [],
+          templateId: undefined,
+        });
+      }
+
+      // Update all days at once for better performance and consistency
+      setDays(newDays);
+    },
+    [setDays]
+  );
 
   // Update days if frameId is already set when component mounts
   useEffect(() => {
@@ -373,39 +412,44 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   /**
    * Handles form submission with proper state capture
    */
-  const handleScheduleFormSubmit = useCallback((values: typeof form.values) => {
-    
-    // Create a snapshot of the current state to prevent stale data
-    const currentState = useStore.getState().scheduleState;
-    const currentLessons = {...currentState.lessons};
-    const currentDays = [...currentState.days];
-    
-    startTransition(() => {
-      // Build the context for submission
-      const context: ScheduleContext = {
-        name: values.name,
-        description: values.description,
-        frameId: values.frameId === CUSTOM_FRAME ? CUSTOM_FRAME : Number(values.frameId),
-        class: Number(values.class),
-        lessons: currentLessons,
-        days: currentDays.map(day => ({
-          id: day.id,
-          timeSlots: day.timeSlots.map(slot => ({
-            timeslotId: slot.timeslotId,
-            lessonId: slot.lessonId
-          })),
-          templateId: day.templateId
-        })),
-        owner: values.owner,
-      };
+  const handleScheduleFormSubmit = useCallback(
+    (values: typeof form.values) => {
+      // Create a snapshot of the current state to prevent stale data
+      const currentState = useStore.getState().scheduleState;
+      const currentLessons = { ...currentState.lessons };
+      const currentDays = [...currentState.days];
 
-      if (isEditMode && scheduleId) {
-        updateAction({ ...context, id: scheduleId });
-      } else {
-        createAction(context);
-      }
-    });
-  }, [updateAction, createAction, isEditMode, scheduleId]);
+      startTransition(() => {
+        // Build the context for submission
+        const context: ScheduleContext = {
+          name: values.name,
+          description: values.description,
+          frameId:
+            values.frameId === CUSTOM_FRAME
+              ? CUSTOM_FRAME
+              : Number(values.frameId),
+          class: Number(values.class),
+          lessons: currentLessons,
+          days: currentDays.map((day) => ({
+            id: day.id,
+            timeSlots: day.timeSlots.map((slot) => ({
+              timeslotId: slot.timeslotId,
+              lessonId: slot.lessonId,
+            })),
+            templateId: day.templateId,
+          })),
+          owner: values.owner,
+        };
+
+        if (isEditMode && scheduleId) {
+          updateAction({ ...context, id: scheduleId });
+        } else {
+          createAction(context);
+        }
+      });
+    },
+    [updateAction, createAction, isEditMode, scheduleId]
+  );
 
   // Add cleanup on component unmount to prevent stale state
   useEffect(() => {
@@ -432,8 +476,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       ...currentState,
       scheduleState: {
         ...currentState.scheduleState,
-        lessons: { ...currentState.scheduleState.lessons, ...lessons }
-      }
+        lessons: { ...currentState.scheduleState.lessons, ...lessons },
+      },
     });
   }, []);
 
@@ -443,41 +487,64 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
    */
   useEffect(() => {
     // Only run this check if we're in edit mode and store is initialized
-    if (!isEditMode || !isStoreInitialized || !scheduleData || !scheduleData.lessons) return;
+    if (
+      !isEditMode ||
+      !isStoreInitialized ||
+      !scheduleData ||
+      !scheduleData.lessons
+    )
+      return;
 
     const expectedLessonCount = Object.keys(scheduleData.lessons).length;
     if (expectedLessonCount === 0) return;
 
     const actualLessonCount = Object.keys(lessons).length;
-    
+
     // If lessons count doesn't match what we expect from scheduleData
     if (actualLessonCount !== expectedLessonCount) {
       // Get list of lesson IDs from both sources
       const expectedLessonIds = new Set(Object.keys(scheduleData.lessons));
       const actualLessonIds = new Set(Object.keys(lessons));
-      
+
       // Find missing lessons
       const missingLessons: Record<string, any> = {};
-      expectedLessonIds.forEach(id => {
+      expectedLessonIds.forEach((id) => {
         if (!actualLessonIds.has(id)) {
           missingLessons[id] = scheduleData.lessons[id];
         }
       });
-      
+
       // Only update if we found missing lessons
       if (Object.keys(missingLessons).length > 0) {
         updateLessonsInStore(missingLessons);
       }
     }
-  }, [isEditMode, isStoreInitialized, scheduleData, lessons, updateLessonsInStore]);
+  }, [
+    isEditMode,
+    isStoreInitialized,
+    scheduleData,
+    lessons,
+    updateLessonsInStore,
+  ]);
 
   return (
-    <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}>
+    <Card
+      shadow="md"
+      radius="lg"
+      p="xl"
+      withBorder
+      style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}
+    >
       <LoadingOverlay visible={isLoading} />
       <Group mb="md" align="center" justify="space-between">
         <div>
-          <Title order={2} c="taupe">{props.formTitle || "Schedule Details"}</Title>
-          <Text c="dimmed" size="sm">{props.formDescription || "Fill in the details to create or edit a schedule."}</Text>
+          <Title order={2} c="taupe">
+            {props.formTitle || "Schedule Details"}
+          </Title>
+          <Text c="dimmed" size="sm">
+            {props.formDescription ||
+              "Fill in the details to create or edit a schedule."}
+          </Text>
         </div>
         <Button
           type="button"

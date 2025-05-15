@@ -1,4 +1,8 @@
-export type UIFeedbackType = 'success' | 'error' | 'warning';
+export enum UIFeedbackType {
+    Success = 'success',
+    Error = 'error',
+    Warning = 'warning'
+}
 
 export interface Toast {
     title: string;

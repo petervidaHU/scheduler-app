@@ -9,7 +9,12 @@ import {
   Timeslots,
   Frame,
 } from "./databaseTypes";
-import { LessonInput, PreloadDataObject, SelectOptions, SyllabusInputForm } from "./FormActionType";
+import {
+  LessonInput,
+  PreloadDataObject,
+  SelectOptions,
+  SyllabusInputForm,
+} from "./FormActionType";
 
 export type SStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
 
@@ -25,7 +30,7 @@ export interface DayPlan {
   id: string;
   order: string;
   identifier: string;
-  timeSlots: Array<{timeslotId: number, lessonId?: string}>;
+  timeSlots: Array<{ timeslotId: number; lessonId?: string }>;
   lessons: Array<string>;
   templateId?: string;
   scheduleId?: string; // Add this to track which schedule a day belongs to
@@ -49,7 +54,7 @@ export type SyllabusSubjectWithOptions = Syllabus & SelectOptions;
 export type SyllabusFormProperties = {
   teachers: Array<number>;
   occurrence: number;
-}
+};
 
 export type SyllabusForm = {
   classId: ID;
@@ -66,14 +71,19 @@ export type SyllabusWithOptions = {
     TEACHERS: ID[];
     TENANCY_ID: ID;
     OCCURRENCE: number;
-  }
+  };
 };
 
 // TODO turn key: string to key: ID
 export interface DataWithOptions<T> {
   [key: string]: T & SelectOptions;
 }
- 
+
+export interface DataWithOptionWithError<T> {
+  data: DataWithOptions<T> | null;
+  error: string | null;
+}
+
 export interface TenancyBasedData {
   teachers: PreloadDataObject<DataWithOptions<Teacher>>;
   classRooms: PreloadDataObject<DataWithOptions<ClassRoom>>;
