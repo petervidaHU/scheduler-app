@@ -1509,7 +1509,7 @@ console.log('lesson in creation ', lesson);
       const daysToUpdate: Array<{ id: number, templateId: number | null }> = [];
       
       // Process days
-      console.log(`Processing ${days.length} days for update`);
+      // console.log(`Processing ${days.length} days for update`);
       for (let i = 0; i < days.length; i++) {
         const day = days[i];
         if (!day) continue;
@@ -1530,7 +1530,7 @@ console.log('lesson in creation ', lesson);
           daysToUpdate.push({ id: existingDayId, templateId });
         } else {
           // Create new day
-          console.log(`Creating new day ${day.id} with template ID ${day.templateId || 'none'}`);
+          // console.log(`Creating new day ${day.id} with template ID ${day.templateId || 'none'}`);
           
           daysToCreate.push({
             tenancyId: Number(tenancyId),
@@ -1572,7 +1572,7 @@ console.log('lesson in creation ', lesson);
       
       // Update existing days
       for (const dayToUpdate of daysToUpdate) {
-        console.log(`Updating day ID ${dayToUpdate.id} with template ID ${dayToUpdate.templateId || 'NULL'}`);
+        // console.log(`Updating day ID ${dayToUpdate.id} with template ID ${dayToUpdate.templateId || 'NULL'}`);
         
         await conn.execute(
           `UPDATE DAYS SET DAY_TEMPLATE_ID = :templateId 
@@ -1608,11 +1608,12 @@ console.log('lesson in creation ', lesson);
       const lessonsToCreate: Array<any> = [];
       const lessonsToUpdate: Array<any> = [];
       const existingLessonIds = new Set();
-      
+      // console.log(`Processing lessons for update`, lessons);
+      console.log(`days`, days);
       for (const [lessonId, lesson] of Object.entries(lessons)) {
-        const day = days.find(d => d.timeSlots.some(ts => ts.timeslotId === lesson.timeslotId));
+        const day = days.find(d => d.id === lesson.dayId);
         if (!day) continue;
-        
+
         const dayId = dayIDs[day.id];
         if (!dayId) continue;
         
