@@ -44,6 +44,11 @@ export default async function EditSchedulePage({ params }: SchedulePageProps) {
         scheduleId={scheduleId}
         scheduleData={schedule}
         syllabusData={syllabus}
+        formTitle="Edit a new schedule"
+        formDescription="Edit the details below."
+        submitBtnText="Update"
+        backBtnText="Back"
+        backBtnUrl="/en/my-tenancy/schedules"
       />
       <SyllabusTable />
       <SchedulePlanner

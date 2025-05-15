@@ -60,6 +60,8 @@ const TimeslotFilledCard: FC<props> = ({ lesson }) => {
     <Group
       style={{
         width: "100%",
+        height: "100%",
+        padding: "0 10px",
         justifyContent: "space-between",
         alignItems: "center",
       }}

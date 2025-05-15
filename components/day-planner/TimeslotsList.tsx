@@ -35,7 +35,13 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
   onClickHandler,
   readOnly = false,
 }) => {
-  const { windowHeight, removeActiveTimeslot } = useStore();
+  const {
+    windowHeight,
+    removeActiveTimeslot,
+    tenancyBasedData: {
+      subjects: { data: subjectData },
+    },
+  } = useStore();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   // Total minutes in a day (24 hours * 60 minutes)
@@ -63,7 +69,10 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
         );
 
         // Use a default color (lesson color logic can be added by parent if needed)
-        const backgroundColor = "rgba(255, 208, 235, .5)";
+        const backgroundColor =
+          lesson && lesson.subjectId && subjectData
+            ? subjectData[lesson.subjectId].HELPER_COLOR
+            : "rgba(255, 208, 235, .5)";
 
         return (
           <Card
@@ -78,10 +87,6 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
             radius="md"
             withBorder
             style={{
-              borderLeft: lesson
-                ? "4px solid var(--mantine-color-green-6)"
-                : "4px solid var(--mantine-color-gray-4)",
-              marginBottom: 8,
               padding: 8,
               display: "flex",
               alignItems: "center",
@@ -121,17 +126,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
                       <IconPlus size={18} />
                     </ActionIcon>
                   </Tooltip>
-                  {lesson && (
-                    <Tooltip label="Remove lesson">
-                      <ActionIcon
-                        color="red"
-                        variant="light"
-                        // onClick={...} // Implement remove logic if needed
-                      >
-                        <IconTrash size={18} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
+                  
                 </Group>
               )}
             </Group>
