@@ -1,22 +1,20 @@
+import { getTranslations } from 'next-intl/server';
 import styles from "./documentation.module.css";
 
-export default function DocumentationPage() {
+export default async function DocumentationPage() {
+  const t = await getTranslations('documentation');
   return (
     <div className={styles.docContainer}>
-      <h1>Documentation</h1>
-      <p>
-        Welcome to the School Scheduler documentation. Here you'll find guides and information about using the app.
-      </p>
-      <h2>Getting Started</h2>
+      <h1>{t('title')}</h1>
+      <p>{t('welcome')}</p>
+      <h2>{t('gettingStarted')}</h2>
       <ul>
-        <li>Navigate using the menu above to access different features.</li>
-        <li>Use the Admin section to manage classes, teachers, and more.</li>
-        <li>Schedules and timeslots can be managed from their respective sections.</li>
+        <li>{t('navigateMenu')}</li>
+        <li>{t('useAdmin')}</li>
+        <li>{t('manageSchedules')}</li>
       </ul>
-      <h2>Support</h2>
-      <p>
-        For help, contact your administrator or visit our support page.
-      </p>
+      <h2>{t('support')}</h2>
+      <p>{t('helpContact')}</p>
     </div>
   );
 }

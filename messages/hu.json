@@ -9,7 +9,15 @@
         "role": "Szerepkör",
         "manageClasses": "Osztályok kezelése",
         "manageTeachers": "Tanárok kezelése",
-        "add": "Hozzáadás"
+        "add": "Hozzáadás",
+        "selectTenancy": "Intézmény kiválasztása",
+        "logOut": "Kijelentkezés",
+        "myTenancy": "Saját intézmény",
+        "pricing": "Árazás",
+        "documentation": "Dokumentáció",
+        "lightMode": "Világos mód",
+        "darkMode": "Sötét mód",
+        "currentTenancy": "Aktuális intézmény:"
     },
     "pricing": {
         "message1": "árazás",
@@ -75,7 +83,12 @@
         "logOut": "Kijelentkezés",
         "logIn": "Bejelentkezés",
         "selectTenancy": "Intézmény kiválasztása",
-        "loading": "Betöltés..."
+        "loading": "Betöltés...",
+        "languageSwitcherLabel": "Nyelvválasztó",
+        "lang": {
+            "en": "Angol",
+            "hu": "Magyar"
+        }
     },
     "error": {
         "somethingWentWrong": "Valami hiba történt.",

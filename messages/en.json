@@ -75,7 +75,12 @@
         "logOut": "Log out",
         "logIn": "Log in",
         "selectTenancy": "Select a tenancy",
-        "loading": "Loading..."
+        "loading": "Loading...",
+        "languageSwitcherLabel": "Language Switcher",
+        "lang": {
+            "en": "English",
+            "hu": "Hungarian"
+        }
     },
     "error": {
         "somethingWentWrong": "Something went wrong.",

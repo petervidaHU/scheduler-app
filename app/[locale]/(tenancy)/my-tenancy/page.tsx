@@ -4,8 +4,10 @@ import { getAuth } from "@/app/api/auth/[...nextauth]/getAuth";
 import { Container, Title, Text, Card, Group, Button, SimpleGrid, Badge, Box } from '@mantine/core';
 import { IconBuilding, IconUsers, IconBook, IconChalkboard, IconPlus } from '@tabler/icons-react';
 import TabsWithTable from '@/components/TabsWithTable';
+import { getTranslations } from 'next-intl/server';
 
 export default async function MyTenancyPage() {
+  const t = await getTranslations('dashboard');
   const { tenancyId, userRole } = await getAuth();
 
   if (!userRole || userRole === 'norole') {
@@ -18,17 +20,17 @@ export default async function MyTenancyPage() {
       <Box style={{ position: 'relative', zIndex: 1 }}>
         <Container size="lg" py="xl">
           <Title order={1} ta="center" mb="md">
-            My Tenancy Dashboard
+            {t('myTenancyDashboard')}
           </Title>
           <Text ta="center" c="dimmed" mb="xl">
-            Welcome! Here you can manage all aspects of your organization: classes, teachers, classrooms, and more.
+            {t('welcomeDashboard')}
           </Text>
           <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg" mb="xl">
             <Card shadow="sm" padding="lg" radius="md" withBorder>
               <Group>
                 <IconBuilding size={32} />
                 <div>
-                  <Text fw={500}>Tenancy ID</Text>
+                  <Text fw={500}>{t('tenancyId')}</Text>
                   <Badge color="blue" variant="light">{tenancyId}</Badge>
                 </div>
               </Group>
@@ -37,7 +39,7 @@ export default async function MyTenancyPage() {
               <Group>
                 <IconUsers size={32} />
                 <div>
-                  <Text fw={500}>Role</Text>
+                  <Text fw={500}>{t('role')}</Text>
                   <Badge color="teal" variant="light">{userRole}</Badge>
                 </div>
               </Group>
@@ -46,8 +48,8 @@ export default async function MyTenancyPage() {
               <Group>
                 <IconBook size={32} />
                 <div>
-                  <Text fw={500}>Manage Classes</Text>
-                  <Button component="a" href="/classes" size="xs" mt="xs" leftSection={<IconPlus size={16} />}>Add</Button>
+                  <Text fw={500}>{t('manageClasses')}</Text>
+                  <Button component="a" href="/classes" size="xs" mt="xs" leftSection={<IconPlus size={16} />}>{t('add')}</Button>
                 </div>
               </Group>
             </Card>
@@ -55,8 +57,8 @@ export default async function MyTenancyPage() {
               <Group>
                 <IconChalkboard size={32} />
                 <div>
-                  <Text fw={500}>Manage Teachers</Text>
-                  <Button component="a" href="/teachers" size="xs" mt="xs" leftSection={<IconPlus size={16} />}>Add</Button>
+                  <Text fw={500}>{t('manageTeachers')}</Text>
+                  <Button component="a" href="/teachers" size="xs" mt="xs" leftSection={<IconPlus size={16} />}>{t('add')}</Button>
                 </div>
               </Group>
             </Card>

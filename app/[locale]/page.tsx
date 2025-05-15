@@ -1,41 +1,43 @@
 import { Container, Title, Text, Button, Group, Card, SimpleGrid } from '@mantine/core';
+import { getTranslations } from 'next-intl/server';
 
-export default function Home() {
+export default async function Home() {
+  const t = await getTranslations('home');
   return (
     <Container size="lg" py="xl">
       <Title order={1} ta="center" mb="md">
-        Welcome to Scheduler App
+        {t('welcome')}
       </Title>
       <Text ta="center" c="dimmed" mb="xl">
-        Effortlessly manage your lessons, classrooms, and teachers. Get started by creating or viewing your schedules.
+        {t('welcomeText')}
       </Text>
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl" mb="xl">
         <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Title order={3} mb="xs">My Tenancy Dashboard</Title>
+          <Title order={3} mb="xs">{t('myTenancyDashboard')}</Title>
           <Text c="dimmed" mb="md">
-            Access your dashboard to manage schedules, classrooms, and more for your organization.
+            {t('dashboardAccess')}
           </Text>
           <Group justify="flex-end">
             <Button component="a" href="/[locale]/my-tenancy" variant="filled" color="blue">
-              Go to Dashboard
+              {t('goToDashboard')}
             </Button>
           </Group>
         </Card>
         <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Title order={3} mb="xs">Quick Start</Title>
+          <Title order={3} mb="xs">{t('quickStart')}</Title>
           <Text c="dimmed" mb="md">
-            Create a new schedule, add classrooms, or invite teachers to your tenancy.
+            {t('quickStartText')}
           </Text>
           <Group justify="flex-end">
             <Button component="a" href="/[locale]/(tenancy)/schedules" variant="outline" color="blue">
-              Create Schedule
+              {t('createSchedule')}
             </Button>
           </Group>
         </Card>
       </SimpleGrid>
       <Group justify="center">
         <Button component="a" href="https://ui.mantine.dev/" target="_blank" variant="subtle" color="gray">
-          Explore Mantine UI Components
+          {t('exploreMantine')}
         </Button>
       </Group>
     </Container>

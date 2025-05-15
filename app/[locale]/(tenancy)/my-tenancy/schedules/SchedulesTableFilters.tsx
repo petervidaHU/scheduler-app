@@ -1,5 +1,6 @@
 "use client";
 import { Group, TextInput, Select } from "@mantine/core";
+import { useTranslations } from "next-intl";
 
 interface SchedulesTableFiltersProps {
   nameFilter: string;
@@ -28,18 +29,19 @@ export default function SchedulesTableFilters({
   ownerOptions,
   statusOptions,
 }: SchedulesTableFiltersProps) {
+  const t = useTranslations("schedule");
   return (
     <Group mb="md" gap="md" wrap="wrap">
       <TextInput
-        label="Name"
-        placeholder="Filter by name"
+        label={t("name")}
+        placeholder={t("filterByName")}
         value={nameFilter}
         onChange={e => setNameFilter(e.currentTarget.value)}
         style={{ minWidth: 180 }}
       />
       <Select
-        label="Class"
-        placeholder="All classes"
+        label={t("class")}
+        placeholder={t("allClasses")}
         data={classOptions}
         value={classFilter}
         onChange={value => setClassFilter(value || "")}
@@ -47,8 +49,8 @@ export default function SchedulesTableFilters({
         style={{ minWidth: 160 }}
       />
       <Select
-        label="Owner"
-        placeholder="All owners"
+        label={t("owner")}
+        placeholder={t("allOwners")}
         data={ownerOptions}
         value={ownerFilter}
         onChange={value => setOwnerFilter(value || "")}
@@ -56,8 +58,8 @@ export default function SchedulesTableFilters({
         style={{ minWidth: 160 }}
       />
       <Select
-        label="Status"
-        placeholder="All statuses"
+        label={t("status")}
+        placeholder={t("allStatuses")}
         data={statusOptions}
         value={statusFilter}
         onChange={value => setStatusFilter(value || "")}

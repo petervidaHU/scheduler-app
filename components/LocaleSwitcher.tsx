@@ -1,8 +1,9 @@
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function LocaleSwitcher() {
+  const t = useTranslations('common');
   // The hook gives you the current locale that Next‑intl determined.
   const currentLocale = useLocale();
   // usePathname gets the full current route name.
@@ -21,20 +22,20 @@ export default function LocaleSwitcher() {
   };
 
   return (
-    <div>
+    <div aria-label={t('languageSwitcherLabel')}>
       {supportedLocales.map((locale) => {
         // If this locale matches the current one, simply show it.
         if (locale === currentLocale) {
           return (
-            <span key={locale} style={{ fontWeight: 'bold', marginRight: '1rem' }}>
-              {locale.toUpperCase()}
+            <span key={locale} style={{ fontWeight: 'bold', marginRight: '1rem' }} aria-current="true">
+              {t(`lang.${locale}`)}
             </span>
           );
         }
         // Otherwise, provide a link that navigates to the same path with the new locale.
         return (
-          <Link key={locale} href={buildLocalizedPath(locale)}>
-            <span style={{ marginRight: '1rem' }}>{locale.toUpperCase()}</span>
+          <Link key={locale} href={buildLocalizedPath(locale)} aria-label={t(`lang.${locale}`)}>
+            <span style={{ marginRight: '1rem' }}>{t(`lang.${locale}`)}</span>
           </Link>
         );
       })}

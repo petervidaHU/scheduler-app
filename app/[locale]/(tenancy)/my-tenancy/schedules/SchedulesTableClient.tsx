@@ -2,6 +2,7 @@
 import { useState, useMemo } from "react";
 import { Card, Button, Group, Title, useMantineColorScheme } from "@mantine/core";
 import Link from "next/link";
+import { useTranslations } from 'next-intl';
 import SchedulesTableFilters from "./SchedulesTableFilters";
 import SchedulesTable from "./SchedulesTable";
 
@@ -15,6 +16,7 @@ interface Schedule {
 }
 
 export default function SchedulesTableClient({ schedules }: { schedules: Schedule[] }) {
+  const t = useTranslations('schedule');
   // Extract unique filter values (ensure all values are strings)
   const classOptions = Array.from(new Set(schedules.map(s => String(s.CLASS_NAME ?? s.CLASS_ID)))).map(c => ({ value: c, label: c }));
   const ownerOptions = Array.from(new Set(schedules.map(s => String(s.OWNER)))).map(o => ({ value: o, label: o }));
@@ -41,10 +43,10 @@ export default function SchedulesTableClient({ schedules }: { schedules: Schedul
   return (
     <Card shadow="md" radius="lg" p="xl" withBorder style={{ maxWidth: 1000, width: "90vw", margin: "32px auto" }}>
       <Group justify="space-between" align="center" mb="md">
-        <Title order={2} c="taupe">Schedules</Title>
+        <Title order={2} c="taupe">{t('schedules')}</Title>
         <Link href="/en/my-tenancy/schedules/new">
           <Button leftSection={"+"} color="cambridge">
-            Create New Schedule
+            {t('createNewSchedule')}
           </Button>
         </Link>
       </Group>

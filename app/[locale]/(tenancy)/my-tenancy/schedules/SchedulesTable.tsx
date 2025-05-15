@@ -1,6 +1,7 @@
 "use client";
 import { Card, Button, Group, Badge, Table as MantineTable, Title, useMantineColorScheme } from "@mantine/core";
 import Link from "next/link";
+import { useTranslations } from 'next-intl';
 
 interface Schedule {
   ID: number;
@@ -13,6 +14,7 @@ interface Schedule {
 
 export default function SchedulesTable({ filteredSchedules }: { filteredSchedules: Schedule[] }) {
   const { colorScheme } = useMantineColorScheme();
+  const t = useTranslations('schedule');
 
   return (
     <>
@@ -21,11 +23,11 @@ export default function SchedulesTable({ filteredSchedules }: { filteredSchedule
           <MantineTable striped highlightOnHover withTableBorder withColumnBorders verticalSpacing="xs" horizontalSpacing="md" stickyHeader stickyHeaderOffset={0}>
             <MantineTable.Thead>
               <MantineTable.Tr>
-                <MantineTable.Th>Name</MantineTable.Th>
-                <MantineTable.Th>Class</MantineTable.Th>
-                <MantineTable.Th>Owner</MantineTable.Th>
-                <MantineTable.Th>Status</MantineTable.Th>
-                <MantineTable.Th style={{ textAlign: "right" }}>Actions</MantineTable.Th>
+                <MantineTable.Th>{t('name')}</MantineTable.Th>
+                <MantineTable.Th>{t('class')}</MantineTable.Th>
+                <MantineTable.Th>{t('owner')}</MantineTable.Th>
+                <MantineTable.Th>{t('status')}</MantineTable.Th>
+                <MantineTable.Th style={{ textAlign: "right" }}>{t('actions')}</MantineTable.Th>
               </MantineTable.Tr>
             </MantineTable.Thead>
             <MantineTable.Tbody>
@@ -45,16 +47,16 @@ export default function SchedulesTable({ filteredSchedules }: { filteredSchedule
                         letterSpacing: 0.2,
                       }}
                     >
-                      {schedule.STATUS ?? 'DRAFT'}
+                      {schedule.STATUS ?? t('draft')}
                     </Badge>
                   </MantineTable.Td>
                   <MantineTable.Td style={{ textAlign: "right" }}>
                     <Group gap="xs" justify="end">
                       <Link href={`/en/my-tenancy/schedules/${schedule.ID}`}>
-                        <Button variant="light" size="xs" color="cambridge">Edit</Button>
+                        <Button variant="light" size="xs" color="cambridge">{t('edit')}</Button>
                       </Link>
                       <Link href={`/en/my-tenancy/schedules/view/${schedule.ID}`}>
-                        <Button variant="outline" size="xs" color="taupe">View</Button>
+                        <Button variant="outline" size="xs" color="taupe">{t('view')}</Button>
                       </Link>
                     </Group>
                   </MantineTable.Td>
@@ -65,7 +67,7 @@ export default function SchedulesTable({ filteredSchedules }: { filteredSchedule
         </MantineTable.ScrollContainer>
       ) : (
         <div style={{ textAlign: "center", padding: "48px 0" }}>
-          <p style={{ color: "var(--mantine-color-dimmed)" }}>No schedules found</p>
+          <p style={{ color: "var(--mantine-color-dimmed)" }}>{t('noSchedules')}</p>
         </div>
       )}
     </>

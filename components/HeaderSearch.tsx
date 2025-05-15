@@ -14,12 +14,7 @@ import LocaleSwitcher from "./LocaleSwitcher";
 import { setTenancyInServer } from "@/lib/database/setTenancyInServer";
 import { getTenancyBasedData } from "@/lib/getTenancyBasedData";
 import { useStore } from "@/store/store";
-
-const links = [
-  { link: "/my-tenancy", label: "My Tenancy" },
-  { link: "/pricing", label: "Pricing" },
-  { link: "/docs", label: "Documentations" },
-];
+import { UIFeedbackType } from "@/types/UIFeedbackTypes";
 
 interface props {
   session: UserSession;
@@ -28,6 +23,12 @@ interface props {
 
 export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const t = useTranslations("dashboard");
+  // Move links array here so t is available
+  const links = [
+    { link: "/my-tenancy", label: t('myTenancy') },
+    { link: "/pricing", label: t('pricing') },
+    { link: "/docs", label: t('documentation') },
+  ];
   const [loading, setLoading] = useState(false);
   const { fillTenancyBasedData, addToast } = useStore();
   const { update } = useSession();
@@ -130,7 +131,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
       addToast({
         message: (error as any)["message"] || "Something went wrong",
         title: "Error",
-        type: "error",
+        type: UIFeedbackType.Error,
         autoClose: true,
         id: Date.now().toString(),
       });
@@ -151,21 +152,21 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
   const getTenancyStatus = () => {
     if (!session || status !== "authenticated") {
       return {
-        name: "Not logged in",
+        name: t('notLoggedIn', { ns: 'common' }),
         isLoaded: false
       };
     }
     
     if (!selectedTenancy) {
       return {
-        name: "No tenancy loaded",
+        name: t('noTenancyLoaded', { ns: 'common' }),
         isLoaded: false
       };
     }
     
     const selectedTenancyObject = tenancies.find(t => t.ID === selectedTenancy);
     return {
-      name: selectedTenancyObject ? selectedTenancyObject.NAME : "No tenancy loaded",
+      name: selectedTenancyObject ? selectedTenancyObject.NAME : t('noTenancyLoaded', { ns: 'common' }),
       isLoaded: !!selectedTenancyObject
     };
   };
@@ -186,20 +187,20 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
                 onClick={() => setColorScheme('light')}
                 disabled={computedColorScheme === 'light'}
               >
-                Light mode
+                {t('lightMode', { ns: 'common' })}
               </Menu.Item>
               <Menu.Item
                 leftSection={<IconMoon size={16} />}
                 onClick={() => setColorScheme('dark')}
                 disabled={computedColorScheme === 'dark'}
               >
-                Dark mode
+                {t('darkMode', { ns: 'common' })}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
           {status === "authenticated" && (
             <div className={classes.tenancyInfo}>
-              <span className={classes.tenancyLabel}>Current tenancy:</span>
+              <span className={classes.tenancyLabel}>{t('currentTenancy', { ns: 'common' })}</span>
               {(() => {
                 const { name, isLoaded } = getTenancyStatus();
                 return (
@@ -222,15 +223,15 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
                 value={selectedTenancy ? selectedTenancy.toString() : "0"}
                 onChange={tenancyChangeHandler}
                 data={tenancyOptions}
-                placeholder="Select a tenancy"
+                placeholder={t('selectTenancy', { ns: 'common' })}
                 clearable
               />
-              {loading && <span className={classes.loadingIndicator}>Loading...</span>}
+              {loading && <span className={classes.loadingIndicator}>{t('loading', { ns: 'common' })}</span>}
               <Button
                 variant="outline"
                 onClick={() => signOut()}
               >
-                Log out
+                {t('logOut', { ns: 'common' })}
               </Button>
               <Group className={classes.userName}>{name && name}</Group>
             </>
@@ -239,7 +240,7 @@ export const HeaderSearch: FC<props> = ({ session, tenancies }) => {
               variant="outline"
               onClick={() => router.push("/auth/signin")}
             >
-              Log in
+              {t('logIn', { ns: 'common' })}
             </Button>
           )}
         </Group>
