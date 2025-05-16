@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "@mantine/core/styles.css";
 import { Geist, Geist_Mono } from "next/font/google";
-import "../globals.css";
 import HeaderWithSession from "@/components/HeaderWithSession";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import routing from "@/lib/i18n/routing";
@@ -29,21 +28,33 @@ export default async function RootLayout({
   params,
 }: Readonly<{
   children: React.ReactNode;
-  params:  Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }>) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
   return (
-    <>
-      <NextIntlClientProvider>
-        <ModalProvider>
-          <HeaderWithSession />
-          {children}
-          <ToastContainer />
-        </ModalProvider>
-      </NextIntlClientProvider>
-    </>
+    <NextIntlClientProvider>
+      <ModalProvider>
+        <HeaderWithSession />
+        <main className="main-content">{children}</main>
+        <footer className="footer sticky-footer">
+          <a href="#" target="_blank" rel="noopener noreferrer">
+            <img src="/next.svg" alt="Next.js Logo" width={24} height={24} />
+            <span>Powered by Next.js</span>
+          </a>
+          <a href="#" target="_blank" rel="noopener noreferrer">
+            <img src="/vercel.svg" alt="Vercel Logo" width={24} height={24} />
+            <span>Hosted on Vercel</span>
+          </a>
+          <a href="#" target="_blank" rel="noopener noreferrer">
+            <img src="/globe.svg" alt="Globe" width={24} height={24} />
+            <span>Placeholder Link</span>
+          </a>
+        </footer>
+        <ToastContainer />
+      </ModalProvider>
+    </NextIntlClientProvider>
   );
 }
