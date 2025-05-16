@@ -65,7 +65,10 @@
         "unknownSubject": "Ismeretlen tantárgy",
         "unknownTeacher": "Ismeretlen tanár",
         "unknownRoom": "Ismeretlen terem",
-        "unknownClass": "Ismeretlen osztály"
+        "unknownClass": "Ismeretlen osztály",
+        "schedules": "Órarendek",
+        "createNewSchedule": "Új órarend létrehozása",
+        "draft": "Piszkozat"
     },
     "syllabus": {
         "pleaseSelectClass": "Válassz ki egy osztályt a tanterv megtekintéséhez",
