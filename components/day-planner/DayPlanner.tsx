@@ -47,25 +47,28 @@ const DayPlanner: React.FC<DayPlannerProps> = ({ day, timeslots, readOnly = fals
     );
   };
   
-  const mappedTimeslots = day.timeSlots
-    .filter(t => {
-      // Find the corresponding timeslot definition
-      const found = timeslots.find((ts) => ts.ID === t.timeslotId);
-      if (!found) {
-        console.warn(`Timeslot with ID ${t.timeslotId} not found in timeslots array`);
-      }
-      return found !== undefined;
-    })
-    .map((t) => {
-      return {
-        timeslot: timeslots.find((ts) => ts.ID === t.timeslotId) || null,
+  // Merge template timeslots and custom timeslots for display
+  const allTimeslots = [
+    ...day.timeSlots
+      .filter(t => {
+        // Only include if the timeslot exists in the timeslots array
+        return timeslots.some(ts => ts.ID === t.timeslotId);
+      })
+      .map(t => ({
+        timeslot: timeslots.find(ts => ts.ID === t.timeslotId) || null,
         lesson: t.lessonId ? lessons[t.lessonId] : undefined,
-      };
-    });
+        isCustom: false,
+      })),
+    ...((day.customTimeslots || []).map((custom) => ({
+      timeslot: custom,
+      lesson: undefined,
+      isCustom: true,
+    })))
+  ];
 
   return (
     <TimeslotsList
-      timeSlots={mappedTimeslots}
+      timeSlots={allTimeslots}
       onClickHandler={handleOpenModal}
       readOnly={readOnly}
     />

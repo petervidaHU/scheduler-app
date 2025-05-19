@@ -17,6 +17,7 @@ import { useForm } from "@mantine/form";
 interface props {
   timeslotId: number | null;
   overlappingAccepted: boolean;
+  onSubmit?: (values: any) => void;
 }
 
 export const getTimeInMinutes = (hour: number, minute: number) => {
@@ -36,6 +37,7 @@ export const getMinute = (time: number | undefined) => {
 const CreateTimeslot: FC<props> = ({
   timeslotId,
   overlappingAccepted = true,
+  onSubmit,
 }) => {
   const { addActiveTimeslot, selectActiveTimeslot, activeTimeslots } =
     useStore();
@@ -128,17 +130,21 @@ const CreateTimeslot: FC<props> = ({
   };
 
   const handleSubmit = (values: typeof timeslotForm.values) => {
-    addActiveTimeslot({
-      ID: values.id,
-      NAME: values.name,
-      DESCRIPTION: values.description,
-      PERIOD_START: getTimeInMinutes(
-        values.startTimeHour,
-        values.startTimeMinute
-      ),
-      PERIOD_END: getTimeInMinutes(values.endTimeHour, values.endTimeMinute),
-    });
-    clearForm();
+    if (onSubmit) {
+      onSubmit(values);
+    } else {
+      addActiveTimeslot({
+        ID: values.id,
+        NAME: values.name,
+        DESCRIPTION: values.description,
+        PERIOD_START: getTimeInMinutes(
+          values.startTimeHour,
+          values.startTimeMinute
+        ),
+        PERIOD_END: getTimeInMinutes(values.endTimeHour, values.endTimeMinute),
+      });
+      clearForm();
+    }
   };
 
   return (

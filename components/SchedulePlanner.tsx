@@ -20,6 +20,7 @@ import DayPlanner from "./day-planner/DayPlanner";
 import GridContainer from "./day-planner/GridContainer";
 import { useModal } from "./modals/ModalManager";
 import { Schedule } from "@/types/ScheduleTypes";
+import CreateTimeslot from "@/components/forms/CreateTimeslot";
 
 // Special value for custom frame
 const CUSTOM_FRAME = "CUSTOM";
@@ -39,7 +40,8 @@ const SchedulePlanner: FC<props> = ({
 }) => {
   const [openForNewSlot, setOpenForNewSlot] = React.useState(false);
   const [dayToDelete, setDayToDelete] = React.useState<string | null>(null);
-  const { openConfirmModal } = useModal();
+  const [newTimeslotData, setNewTimeslotData] = React.useState<any>(null);
+  const { openConfirmModal, openModal } = useModal();
 
   const {
     scheduleState: { days, frameId },
@@ -146,9 +148,7 @@ const SchedulePlanner: FC<props> = ({
     }
 
     // Use the helper function to get timeslot IDs
-    console.log("timeslot in dddding template", template);
     const timeslotIds = getTimeslotIdsFromTemplate(template);
-    console.log("timeslotIds dddddddding", timeslotIds);
 
     const day = days.find((d) => d.id === dayId);
     if (!day) {
@@ -178,8 +178,40 @@ const SchedulePlanner: FC<props> = ({
   };
 
   const emptySlotClickHandler = (thisHour: number, day: any) => {
-    // Handle click on empty slot
-    console.log(`Clicked on empty slot at hour ${thisHour} on day ${day.id}`);
+    setNewTimeslotData({ startTimeHour: thisHour, startTimeMinute: 0 });
+    openModal(
+      <CreateTimeslot
+        timeslotId={null}
+        overlappingAccepted={true}
+        onSubmit={(values: any) => {
+          setDays(
+            days.map((d) =>
+              d.id === day.id
+                ? {
+                    ...d,
+                    customTimeslots: [
+                      ...(d.customTimeslots || []),
+                      {
+                        ID: values.id,
+                        NAME: values.name,
+                        DESCRIPTION: values.description,
+                        PERIOD_START:
+                          values.startTimeHour * 60 + values.startTimeMinute,
+                        PERIOD_END:
+                          values.endTimeHour * 60 + values.endTimeMinute,
+                      },
+                    ],
+                  }
+                : d
+            )
+          );
+          // Close modal after submit
+          return true;
+        }}
+        {...{ startTimeHour: thisHour, startTimeMinute: 0 }}
+      />,
+      { title: "Create Custom Timeslot", centered: true }
+    );
   };
 
   const handleDeleteDayClick = (dayId: string) => {

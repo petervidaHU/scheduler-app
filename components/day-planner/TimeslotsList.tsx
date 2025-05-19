@@ -10,6 +10,7 @@ interface TimeslotsListProps {
   timeSlots: Array<{
     timeslot: TimeslotInput | null;
     lesson?: TimeslotLessonInput | null;
+    isCustom?: boolean;
   }>;
   onClickHandler: (
     timeslotId: number,
@@ -59,6 +60,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
         } = slot.timeslot;
 
         const lesson = slot.lesson;
+        const isCustom = slot.isCustom;
 
         // Calculate position and height based on start and end times
         const top = calculatePosition(start, TOTAL_MINUTES, windowHeight);
@@ -72,6 +74,8 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
         const backgroundColor =
           lesson && lesson.subjectId && subjectData
             ? subjectData[lesson.subjectId].HELPER_COLOR
+            : isCustom
+            ? "rgba(255, 255, 200, .7)" // Custom timeslot color
             : "rgba(255, 208, 235, .5)";
 
         return (
@@ -94,8 +98,8 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
               top: `${top}px`,
               height: `${height}px`,
               width: "100%",
-              background: readOnly && !slot.lesson? "hsl(0, 0%, 95%)" : backgroundColor,
-              border: "1px solid #8cbce6",
+              background: backgroundColor,
+              border: isCustom ? "2px dashed #e6b800" : "1px solid #8cbce6",
               boxSizing: "border-box",
               zIndex: 100,
               justifyContent: "space-between",
@@ -110,7 +114,8 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
             >
               {!lesson && (
                 <>
-                  <Text>Free Slot</Text>
+                  <Text>{isCustom ? "Custom Timeslot" : "Free Slot"}</Text>
+                  {isCustom && <Badge color="yellow" size="xs">Custom</Badge>}
                   <Text size="xs" c="dimmed">
                     {typeof start === "number" && typeof end === "number"
                       ? `${end - start} min`
@@ -126,7 +131,6 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
                       <IconPlus size={18} />
                     </ActionIcon>
                   </Tooltip>
-                  
                 </Group>
               )}
             </Group>
