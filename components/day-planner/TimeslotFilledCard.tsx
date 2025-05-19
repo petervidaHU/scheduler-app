@@ -9,7 +9,7 @@ interface props {
 }
 
 const TimeslotFilledCard: FC<props> = ({ lesson }) => {
-  console.log("in TimeslotFilledCard", lesson);
+  // console.log("in TimeslotFilledCard", lesson);
   const {
     tenancyBasedData: { subjects, teachers, classRooms, classes },
     deleteOneLesson,

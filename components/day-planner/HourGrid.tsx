@@ -1,5 +1,5 @@
 import { useStore } from "@/store/store";
-import React from "react";
+import React, { FC } from "react";
 
 // Helper function to calculate position based on time
 const calculatePosition = (time: number, totalMinutes: number, totalHeight: number): number => {
@@ -9,7 +9,7 @@ const calculatePosition = (time: number, totalMinutes: number, totalHeight: numb
   return fraction * totalHeight;
 };
 
-const HourGrid = () => {
+const HourGrid: FC<{ onClickHandler?: (hour: number ) => void }> = ({ onClickHandler }) => {
   const { windowHeight } = useStore();
   
   // Total minutes in a day (24 hours * 60 minutes)
@@ -23,11 +23,12 @@ const HourGrid = () => {
       const slotTop = calculatePosition(hourInMinutes, TOTAL_MINUTES, windowHeight);
       // Calculate height of one hour
       const hourHeight = calculatePosition(60, TOTAL_MINUTES, windowHeight);
-      
+
       return (
         <div
           key={hour}
           style={{
+            color: "rgba(0, 0, 0, 0.5)",
             position: "absolute",
             top: `${slotTop}px`,
             height: `${hourHeight}px`,
@@ -38,6 +39,7 @@ const HourGrid = () => {
             padding: "2px 4px",
             boxSizing: "border-box",
           }}
+          onClick={() => onClickHandler && onClickHandler(hour)}
         >
           {hour}:00
         </div>

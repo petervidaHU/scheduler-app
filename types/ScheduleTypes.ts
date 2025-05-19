@@ -34,6 +34,7 @@ export interface DayPlan {
   lessons: Array<string>;
   templateId?: string;
   scheduleId?: string; // Add this to track which schedule a day belongs to
+  customTimeslots?: Array<Timeslots>;
 }
 
 export interface Schedule {

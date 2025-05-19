@@ -65,79 +65,91 @@ const SchedulePlanner: FC<props> = ({
   // Helper function to get timeslot IDs from a template
   const getTimeslotIdsFromTemplate = (template: DayTemplates) => {
     let timeslotIds: number[] = [];
-    
-    if (typeof template.TIMESLOTS === 'string') {
+
+    if (typeof template.TIMESLOTS === "string") {
       let str = (template.TIMESLOTS as string).trim();
-      if (!str.startsWith('[')) str = `[${str}]`;
+      if (!str.startsWith("[")) str = `[${str}]`;
       try {
         timeslotIds = JSON.parse(str);
       } catch (e) {
-        console.error('Failed to parse template.TIMESLOTS:', template.TIMESLOTS, e);
+        console.error(
+          "Failed to parse template.TIMESLOTS:",
+          template.TIMESLOTS,
+          e
+        );
         timeslotIds = [];
       }
     } else if (Array.isArray(template.TIMESLOTS)) {
       timeslotIds = template.TIMESLOTS;
     }
-    
+
     return timeslotIds;
   };
-  
+
   useEffect(() => {
     if (scheduleData && scheduleData.days && scheduleData.days.length > 0) {
       const currentScheduleId = scheduleData?.id;
-      const currentStoreScheduleId = days.length > 0 ? days[0].scheduleId : null;
-      
-      if (days.length === 0 || (currentScheduleId && currentScheduleId !== currentStoreScheduleId)) {
+      const currentStoreScheduleId =
+        days.length > 0 ? days[0].scheduleId : null;
+
+      if (
+        days.length === 0 ||
+        (currentScheduleId && currentScheduleId !== currentStoreScheduleId)
+      ) {
         // Process all days and ensure they have all required timeslots from their templates
-        const daysWithScheduleId = scheduleData.days.map(day => {
+        const daysWithScheduleId = scheduleData.days.map((day) => {
           // Start with the day's existing timeslots (if any)
           let dayTimeSlots = [...(day.timeSlots || [])];
-          
+
           // If the day has a template, ensure ALL timeslots from the template are included
           if (day.templateId) {
-            const template = dayTemplates.find(t => t.ID.toString() === day.templateId);
-            
+            const template = dayTemplates.find(
+              (t) => t.ID.toString() === day.templateId
+            );
+
             if (template) {
               // Get all timeslot IDs from the template
               const templateTimeslotIds = getTimeslotIdsFromTemplate(template);
-              
+
               // Create a set of existing timeslot IDs for quick lookup
-              const existingTimeslotIds = new Set(dayTimeSlots.map(slot => slot.timeslotId));
-              
+              const existingTimeslotIds = new Set(
+                dayTimeSlots.map((slot) => slot.timeslotId)
+              );
+
               // Add any missing timeslots from the template
-              templateTimeslotIds.forEach(timeslotId => {
+              templateTimeslotIds.forEach((timeslotId) => {
                 if (!existingTimeslotIds.has(timeslotId)) {
                   dayTimeSlots.push({ timeslotId });
                 }
               });
             }
           }
-          
+
           // Return the updated day with all necessary timeslots
           return {
             ...day,
             scheduleId: currentScheduleId,
-            timeSlots: dayTimeSlots
+            timeSlots: dayTimeSlots,
           };
         });
-        
+
         setDays(daysWithScheduleId);
       }
     }
   }, [scheduleData, setDays, dayTemplates, days]);
-  
+
   const handleAddTimeslots = (dayId: string, templateId: string) => {
     const template = dayTemplates.find((t) => t.ID.toString() === templateId);
     if (!template) {
       console.error(`Template with ID ${templateId} not found`);
       return;
     }
-    
+
     // Use the helper function to get timeslot IDs
-    console.log('timeslot in dddding template', template);
+    console.log("timeslot in dddding template", template);
     const timeslotIds = getTimeslotIdsFromTemplate(template);
-    console.log('timeslotIds dddddddding', timeslotIds);
-    
+    console.log("timeslotIds dddddddding", timeslotIds);
+
     const day = days.find((d) => d.id === dayId);
     if (!day) {
       console.error(`Day with ID ${dayId} not found`);
@@ -145,10 +157,12 @@ const SchedulePlanner: FC<props> = ({
     }
 
     updateDayTemplateId(dayId, templateId);
-    
+
     // Get all existing timeslot IDs for quick lookup to avoid duplicates
-    const existingTimeslotIds = new Set(day.timeSlots.map(slot => slot.timeslotId));
-    
+    const existingTimeslotIds = new Set(
+      day.timeSlots.map((slot) => slot.timeslotId)
+    );
+
     // For each timeslot in the template
     timeslotIds.forEach((slotId: number) => {
       // Only add if it doesn't already exist
@@ -161,6 +175,11 @@ const SchedulePlanner: FC<props> = ({
       } else {
       }
     });
+  };
+
+  const emptySlotClickHandler = (thisHour: number, day: any) => {
+    // Handle click on empty slot
+    console.log(`Clicked on empty slot at hour ${thisHour} on day ${day.id}`);
   };
 
   const handleDeleteDayClick = (dayId: string) => {
@@ -235,7 +254,9 @@ const SchedulePlanner: FC<props> = ({
                       </Badge>
                     )}
                     {!day.templateId && (
-                      <Badge size="sm" color="gray" title="No template applied">No Template</Badge>
+                      <Badge size="sm" color="gray" title="No template applied">
+                        No Template
+                      </Badge>
                     )}
                   </Group>
                   {!readOnly && (
@@ -277,7 +298,9 @@ const SchedulePlanner: FC<props> = ({
           <Grid.Col span={2} key={`day-grid-${day.id}`}>
             <GridContainer windowHeight={windowHeight}>
               <DayPlanner day={day} timeslots={timeslots} readOnly={readOnly} />
-              {openForNewSlot && !readOnly && <HourGrid />}
+              {openForNewSlot && !readOnly && (
+                <HourGrid onClickHandler={(hour) => emptySlotClickHandler(hour, day)} />
+              )}
             </GridContainer>
           </Grid.Col>
         ))}
