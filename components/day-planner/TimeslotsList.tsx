@@ -94,7 +94,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
               top: `${top}px`,
               height: `${height}px`,
               width: "100%",
-              background: backgroundColor,
+              background: readOnly && !slot.lesson? "hsl(0, 0%, 95%)" : backgroundColor,
               border: "1px solid #8cbce6",
               boxSizing: "border-box",
               zIndex: 100,
