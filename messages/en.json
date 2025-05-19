@@ -9,7 +9,16 @@
         "role": "Role",
         "manageClasses": "Manage Classes",
         "manageTeachers": "Manage Teachers",
-        "add": "Add"
+        "add": "Add",
+        "myTenancy": "My Tenancy",
+        "pricing": "Pricing",
+        "documentation": "Documentation",
+        "lightMode": "Light mode",
+        "darkMode": "Dark mode",
+        "currentTenancy": "Current tenancy:",
+        "noTenancyLoaded": "No tenancy loaded",
+        "selectTenancy": "Select tenancy",
+        "logOut": "Log out"
     },
     "pricing": {
         "message1": "Pricing",
@@ -57,7 +66,10 @@
         "unknownSubject": "Unknown Subject",
         "unknownTeacher": "Unknown Teacher",
         "unknownRoom": "Unknown Room",
-        "unknownClass": "Unknown Class"
+        "unknownClass": "Unknown Class",
+        "schedules": "Schedules",
+        "createNewSchedule": "Create New Schedule",
+        "draft": "Draft"
     },
     "syllabus": {
         "pleaseSelectClass": "Please select a class to view the syllabus",
