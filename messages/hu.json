@@ -17,7 +17,9 @@
         "documentation": "Dokumentáció",
         "lightMode": "Világos mód",
         "darkMode": "Sötét mód",
-        "currentTenancy": "Aktuális intézmény:"
+        "currentTenancy": "Aktuális intézmény:",
+        "noTenancyLoaded": "Nincs betöltött intézmény",
+        "loading": "Betöltés..."
     },
     "pricing": {
         "message1": "árazás",
