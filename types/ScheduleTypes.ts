@@ -6,14 +6,13 @@ import {
   Subject,
   Syllabus,
   Teacher,
-  Timeslots,
   Frame,
+  TimeslotInput,
 } from "./databaseTypes";
 import {
   LessonInput,
   PreloadDataObject,
   SelectOptions,
-  SyllabusInputForm,
 } from "./FormActionType";
 
 export type SStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
@@ -33,8 +32,7 @@ export interface DayPlan {
   timeSlots: Array<{ timeslotId: number; lessonId?: string }>;
   lessons: Array<string>;
   templateId?: string;
-  scheduleId?: string; // Add this to track which schedule a day belongs to
-  customTimeslots?: Array<Timeslots>;
+  scheduleId?: string;
 }
 
 export interface Schedule {
@@ -46,8 +44,8 @@ export interface Schedule {
   [FormFields.owner]: ID | null;
   frameId: ID | "CUSTOM" | null;
   lessons: Record<string, LessonInput>;
-  // timeslots: Record<string, Timeslots>;
   days: DayPlan[];
+  customTimeslots?: TimeslotInput[];
 }
 
 export type SyllabusSubjectWithOptions = Syllabus & SelectOptions;

@@ -20,7 +20,7 @@ import { groupClassroomsBySpecialty } from "@/lib/resourceAvailability/groupClas
 import { getPreferredTeacher } from "@/lib/resourceAvailability/getPreferredTeacher";
 
 interface CreateLessonProps {
-  slot: Timeslots;
+  slot: Omit<Timeslots, "TENANCY_ID">;
   day: string;
   closeModal: () => void;
   lessonId?: ID;
@@ -251,6 +251,7 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
       form.setFieldValue("teacher", "");
     }
   };
+  console.log('warnings', warnings);
 
   return (
     <Paper>
@@ -295,7 +296,7 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
               <NotificationCard
                 key={key}
                 message={value}
-                type={key === 'teacher' ? "warning" : "error"}
+                type={key === 'teacher' ? "success" : "error"}
                 context={key as NotificationContexts}
               />
             ) : null;

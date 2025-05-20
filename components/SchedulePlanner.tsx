@@ -13,7 +13,7 @@ import {
   Box,
   Paper,
 } from "@mantine/core";
-import { DayTemplates, Timeslots } from "@/types/databaseTypes";
+import { DayTemplates, TimeslotInput, Timeslots } from "@/types/databaseTypes";
 import HourGrid from "./day-planner/HourGrid";
 import { IconTrash } from "@tabler/icons-react";
 import DayPlanner from "./day-planner/DayPlanner";
@@ -51,6 +51,7 @@ const SchedulePlanner: FC<props> = ({
     setDays,
     updateSchedule,
     updateDayTemplateId,
+    addCustomTimeslot,
   } = useStore();
 
   // Create a map of template IDs to template names for quick lookup
@@ -178,34 +179,29 @@ const SchedulePlanner: FC<props> = ({
   };
 
   const emptySlotClickHandler = (thisHour: number, day: any) => {
-    setNewTimeslotData({ startTimeHour: thisHour, startTimeMinute: 0 });
     openModal(
       <CreateTimeslot
         timeslotId={null}
         overlappingAccepted={true}
         onSubmit={(values: any) => {
+          const newId = Date.now();
+          addCustomTimeslot({
+            ID: newId,
+            NAME: values.name,
+            DESCRIPTION: values.description,
+            PERIOD_START: values.startTimeHour * 60 + values.startTimeMinute,
+            PERIOD_END: values.endTimeHour * 60 + values.endTimeMinute,
+          });
           setDays(
             days.map((d) =>
               d.id === day.id
                 ? {
                     ...d,
-                    customTimeslots: [
-                      ...(d.customTimeslots || []),
-                      {
-                        ID: values.id,
-                        NAME: values.name,
-                        DESCRIPTION: values.description,
-                        PERIOD_START:
-                          values.startTimeHour * 60 + values.startTimeMinute,
-                        PERIOD_END:
-                          values.endTimeHour * 60 + values.endTimeMinute,
-                      },
-                    ],
+                    timeSlots: [...d.timeSlots, { timeslotId: newId }],
                   }
                 : d
             )
           );
-          // Close modal after submit
           return true;
         }}
         {...{ startTimeHour: thisHour, startTimeMinute: 0 }}

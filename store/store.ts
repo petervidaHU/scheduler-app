@@ -72,6 +72,10 @@ interface ScheduleState {
   removeActiveTimeslot: (payload: ID) => void;
   selectActiveTimeslot: (payload: ID) => TimeslotInput;
   updateDayTemplateId: (dayId: string, templateId: string) => void;
+
+  addCustomTimeslot: (payload: TimeslotInput) => void;
+  removeCustomTimeslot: (id: number) => void;
+  removeCustomTimeslotById: (id: number) => void;
 }
 
 const createScheduleSlice = (set: any, get: any): ScheduleState => ({
@@ -93,6 +97,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
     frameId: null,
     lessons: {},
     days: [],
+    customTimeslots: [],
   },
 
   syllabus: {} as SyllabusWithOptions,
@@ -221,8 +226,8 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
       );
       console.log("timeSlotIndex", timeSlotIndex)
       if (newdayIndex < 0 || timeSlotIndex < 0) {
-        console.log("store error", newdayIndex, timeSlotIndex);
-        return state;
+      days[newdayIndex].timeSlots[timeSlotIndex].lessonId =
+        String(payload.newLesson.id);
       }
       days[newdayIndex].timeSlots[timeSlotIndex].lessonId =
         payload.newLesson.id;
@@ -337,6 +342,7 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
         frameId: null,
         lessons: {},
         days: [],
+        customTimeslots: [],
       },
       syllabus: {} as SyllabusWithOptions,
       activeTimeslots: {},
@@ -356,6 +362,30 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
         days: state.scheduleState.days.map((day) =>
           day.id === dayId ? { ...day, templateId } : day
         ),
+      },
+    })),
+  addCustomTimeslot: (payload: TimeslotInput) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      scheduleState: {
+        ...state.scheduleState,
+        customTimeslots: [...(state.scheduleState.customTimeslots || []), payload],
+      },
+    })),
+  removeCustomTimeslot: (id: number) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      scheduleState: {
+        ...state.scheduleState,
+        customTimeslots: (state.scheduleState.customTimeslots || []).filter(ts => ts.ID !== id),
+      },
+    })),
+  removeCustomTimeslotById: (id: number) =>
+    set((state: ScheduleState) => ({
+      ...state,
+      scheduleState: {
+        ...state.scheduleState,
+        customTimeslots: (state.scheduleState.customTimeslots || []).filter(ts => ts.ID !== id),
       },
     })),
 });

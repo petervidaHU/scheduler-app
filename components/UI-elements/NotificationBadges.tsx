@@ -2,7 +2,6 @@ import React from "react";
 import { Notification } from "@mantine/core";
 import { IconHome2, IconSchool } from "@tabler/icons-react";
 import { UIFeedbackType } from "@/types/UIFeedbackTypes";
-import s from "./NotificationBadges.module.css";
 
 const notificationType: Record<UIFeedbackType, Record<any, any>> = {
   error: {

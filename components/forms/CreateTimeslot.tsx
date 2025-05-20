@@ -46,7 +46,7 @@ const CreateTimeslot: FC<props> = ({
 
   const timeslotForm = useForm({
     initialValues: {
-      id: timeslotId || new Date().getTime(),
+      id: timeslotId || new Date().getTime(), 
       name: timeslot?.NAME || "",
       description: timeslot?.DESCRIPTION || "",
       startTimeHour: getHour(timeslot?.PERIOD_START) || 0,

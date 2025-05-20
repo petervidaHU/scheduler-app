@@ -39,11 +39,13 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
   const {
     windowHeight,
     removeActiveTimeslot,
+    removeCustomTimeslotById, // use the new reducer
     tenancyBasedData: {
       subjects: { data: subjectData },
     },
   } = useStore();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
+  console.log('timeslots', timeSlots);
 
   // Total minutes in a day (24 hours * 60 minutes)
   const TOTAL_MINUTES = 24 * 60;
@@ -96,6 +98,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
               alignItems: "center",
               position: "absolute",
               top: `${top}px`,
+              minHeight: '20px',
               height: `${height}px`,
               width: "100%",
               background: backgroundColor,
@@ -107,6 +110,27 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
               cursor: readOnly ? "default" : "pointer",
             }}
           >
+            {/* Absolutely positioned delete icon for custom timeslots */}
+            {!readOnly && !lesson && isCustom && hoveredId === ID && (
+              <Tooltip label="Delete timeslot" withArrow>
+                <ActionIcon
+                  color="cambridge"
+                  variant="light"
+                  onClick={e => {
+                    e.stopPropagation();
+                    removeCustomTimeslotById(ID);
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    right: 4,
+                    zIndex: 200,
+                  }}
+                >
+                  <IconTrash size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
             <Group
               justify="space-between"
               align="center"
@@ -114,8 +138,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
             >
               {!lesson && (
                 <>
-                  <Text>{isCustom ? "Custom Timeslot" : "Free Slot"}</Text>
-                  {isCustom && <Badge color="yellow" size="xs">Custom</Badge>}
+                  <Text>{NAME || isCustom ? "Custom Timeslot" : "Free Slot"}</Text>
                   <Text size="xs" c="dimmed">
                     {typeof start === "number" && typeof end === "number"
                       ? `${end - start} min`
@@ -124,15 +147,6 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
                 </>
               )}
               {slot.lesson && <TimeslotFilledCard lesson={slot.lesson} />}
-              {!readOnly && !lesson && (
-                <Group>
-                  <Tooltip label="Add lesson">
-                    <ActionIcon color="cambridge" variant="light">
-                      <IconPlus size={18} />
-                    </ActionIcon>
-                  </Tooltip>
-                </Group>
-              )}
             </Group>
           </Card>
         );
