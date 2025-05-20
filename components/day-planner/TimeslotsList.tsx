@@ -17,6 +17,7 @@ interface TimeslotsListProps {
     lesson?: TimeslotLessonInput | null
   ) => void;
   readOnly?: boolean;
+  readOnlyCustomTimeslots?: boolean;
 }
 
 // Helper function to calculate position based on time
@@ -35,6 +36,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
   timeSlots,
   onClickHandler,
   readOnly = false,
+  readOnlyCustomTimeslots = false,
 }) => {
   const {
     windowHeight,
@@ -45,7 +47,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
     },
   } = useStore();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
-  console.log('timeslots', timeSlots);
+  // console.log('timeslots', timeSlots);
 
   // Total minutes in a day (24 hours * 60 minutes)
   const TOTAL_MINUTES = 24 * 60;
@@ -111,7 +113,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
             }}
           >
             {/* Absolutely positioned delete icon for custom timeslots */}
-            {!readOnly && !lesson && isCustom && hoveredId === ID && (
+            {!readOnly && !readOnlyCustomTimeslots && !lesson && isCustom && hoveredId === ID && (
               <Tooltip label="Delete timeslot" withArrow>
                 <ActionIcon
                   color="cambridge"

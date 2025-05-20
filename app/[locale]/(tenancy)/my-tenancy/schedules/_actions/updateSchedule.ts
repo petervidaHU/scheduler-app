@@ -11,7 +11,6 @@ export async function updateSchedule(
 ): Promise<FormActionType> {
   try {
     const db = await getDbInstance();
-    
     // Update schedule and lessons in a single transaction
     await db.updateSchedule(
       context.id,
@@ -22,6 +21,8 @@ export async function updateSchedule(
       context.days,
       context.class,
       context.name,
+      context.usingCustomTimeslots,
+      context.customTimeslots
     );
 
     return {
@@ -37,4 +38,4 @@ export async function updateSchedule(
       error: error instanceof Error ? error.message : 'Unknown error occurred'
     };
   }
-} 
+}

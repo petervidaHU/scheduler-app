@@ -12,6 +12,8 @@ export interface ScheduleContext {
   lessons: Record<string, LessonInput>;
   days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }>; templateId?: string }>;
   owner: string;
+  usingCustomTimeslots?: boolean;
+  customTimeslots?: any[];
 }
 
 export async function createSchedule(state: FormActionType, context: ScheduleContext): Promise<FormActionType> {
@@ -27,6 +29,8 @@ export async function createSchedule(state: FormActionType, context: ScheduleCon
       context.days,
       context.class,
       context.name,
+      context.usingCustomTimeslots,
+      context.customTimeslots
     );
 
     return {

@@ -22,7 +22,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({
 }) => {
   const { openModal, closeModal } = useModal();
   const {
-    scheduleState: { lessons, customTimeslots },
+    scheduleState: { lessons, customTimeslots, usingCustomTimeslots },
   } = useStore();
 
   const handleOpenModal = (
@@ -78,6 +78,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({
       timeSlots={allTimeslots}
       onClickHandler={handleOpenModal}
       readOnly={readOnly}
+      readOnlyCustomTimeslots={!usingCustomTimeslots}
     />
   );
 };

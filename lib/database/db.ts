@@ -1110,6 +1110,8 @@ END;
     days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }>; templateId?: string }>,
     classId: ID,
     name: string,
+    usingCustomTimeslots?: boolean,
+    customTimeslots?: any[]
   ): Promise<number> {
     const conn = await this.pool!.getConnection();
     if (!conn) {
@@ -1119,8 +1121,8 @@ END;
     try {
       // schedule 
       const querySchedule = `
-        INSERT INTO SCHEDULE (TENANCY_ID, FRAME_ID, DESCRIPTION, OWNER, CLASS_ID, NAME)
-        VALUES (:tenancyId, :frameId, :description, :owner, :classId, :name)
+        INSERT INTO SCHEDULE (TENANCY_ID, FRAME_ID, DESCRIPTION, OWNER, CLASS_ID, NAME, USING_CUSTOM_TIMESLOTS)
+        VALUES (:tenancyId, :frameId, :description, :owner, :classId, :name, :usingCustomTimeslots)
         RETURNING ID INTO :scheduleId
       `;
       
@@ -1132,6 +1134,7 @@ END;
         owner,
         classId,
         name,
+        usingCustomTimeslots: usingCustomTimeslots ? 1 : 0,
         scheduleId: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
       };
 
@@ -1274,6 +1277,19 @@ console.log('lesson in creation ', lesson);
     }
     
     const schedule = scheduleResult[0] as any;
+    // Parse customTimeslots and usingCustomTimeslots
+    let customTimeslots = [];
+    let usingCustomTimeslots = true;
+    if (schedule.CUSTOM_TIMESLOTS) {
+      try {
+        customTimeslots = JSON.parse(schedule.CUSTOM_TIMESLOTS);
+      } catch (e) {
+        customTimeslots = [];
+      }
+    }
+    if (typeof schedule.USING_CUSTOM_TIMESLOTS !== 'undefined') {
+      usingCustomTimeslots = !!schedule.USING_CUSTOM_TIMESLOTS;
+    }
     
     // Get days with template IDs
     const queryDays = `
@@ -1416,7 +1432,9 @@ console.log('lesson in creation ', lesson);
           classId: lesson.CLASS_ID
         };
         return acc;
-      }, {})
+      }, {}),
+      customTimeslots,
+      usingCustomTimeslots
     };
   }
 
@@ -1444,6 +1462,8 @@ console.log('lesson in creation ', lesson);
     days: Array<{ id: string; timeSlots: Array<{ timeslotId: ID; lessonId?: string }>; templateId?: string; databaseId?: number }>,
     classId: ID,
     name: string,
+    usingCustomTimeslots?: boolean,
+    customTimeslots?: any[]
   ): Promise<void> {
     const conn = await this.pool!.getConnection();
     if (!conn) {
@@ -1460,7 +1480,9 @@ console.log('lesson in creation ', lesson);
             DESCRIPTION = :description, 
             OWNER = :owner,
             CLASS_ID = :classId,
-            NAME = :name
+            NAME = :name,
+            USING_CUSTOM_TIMESLOTS = :usingCustomTimeslots,
+            CUSTOM_TIMESLOTS = :customTimeslots
         WHERE ID = :scheduleId AND TENANCY_ID = :tenancyId
       `;
       
@@ -1471,6 +1493,8 @@ console.log('lesson in creation ', lesson);
         owner,
         classId: Number(classId),
         name,
+        usingCustomTimeslots: usingCustomTimeslots ? 1 : 0,
+        customTimeslots: customTimeslots ? JSON.stringify(customTimeslots) : null,
         tenancyId
       };
 

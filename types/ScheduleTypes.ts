@@ -46,6 +46,7 @@ export interface Schedule {
   lessons: Record<string, LessonInput>;
   days: DayPlan[];
   customTimeslots?: TimeslotInput[];
+  usingCustomTimeslots?: boolean;
 }
 
 export type SyllabusSubjectWithOptions = Syllabus & SelectOptions;

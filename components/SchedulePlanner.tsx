@@ -44,7 +44,7 @@ const SchedulePlanner: FC<props> = ({
   const { openConfirmModal, openModal } = useModal();
 
   const {
-    scheduleState: { days, frameId },
+    scheduleState: { days, frameId, usingCustomTimeslots },
     windowHeight,
     addTimeslotToDay,
     deleteDay,
@@ -325,8 +325,13 @@ const SchedulePlanner: FC<props> = ({
         {days.map((day) => (
           <Grid.Col span={2} key={`day-grid-${day.id}`}>
             <GridContainer windowHeight={windowHeight}>
-              <DayPlanner day={day} timeslots={timeslots} readOnly={readOnly} />
-              {openForNewSlot && !readOnly && (
+              <DayPlanner
+                day={day}
+                timeslots={timeslots}
+                readOnly={readOnly}
+                usingCustomTimeslots={usingCustomTimeslots}
+              />
+              {openForNewSlot && !readOnly && usingCustomTimeslots && (
                 <HourGrid onClickHandler={(hour) => emptySlotClickHandler(hour, day)} />
               )}
             </GridContainer>

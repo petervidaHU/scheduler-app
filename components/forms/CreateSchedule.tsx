@@ -7,14 +7,13 @@ import {
   Button,
   TextInput,
   LoadingOverlay,
-  Paper,
   Title,
   Card,
   Divider,
   Group,
-  Stack,
   Text,
   SimpleGrid,
+  Switch,
 } from "@mantine/core";
 import {
   createSchedule,
@@ -31,13 +30,10 @@ import { DataWithOptionWithError, FormFields } from "@/types/ScheduleTypes";
 import { DayPlan, Schedule } from "@/types/ScheduleTypes";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ID, Syllabus } from "@/types/databaseTypes";
+import { Syllabus } from "@/types/databaseTypes";
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
-import { DataWithOptions } from "@/types/ScheduleTypes";
 import React from "react";
-
-const formFields = Object.values(FormFields);
 
 // Special value for custom frame
 const CUSTOM_FRAME = "CUSTOM";
@@ -99,6 +95,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       [FormFields.status]: scheduleData?.status || "DRAFT",
       frameId: scheduleData?.frameId?.toString() || "",
       variations: "",
+      usingCustomTimeslots: scheduleData?.usingCustomTimeslots ?? true,
     },
     validate: {
       class: (value) => (!value ? "Class is required" : null),
@@ -258,6 +255,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
               status: fetchedScheduleData.status || "DRAFT",
               frameId: fetchedScheduleData.frameId?.toString() || "",
               variations: "",
+              usingCustomTimeslots:
+                fetchedScheduleData.usingCustomTimeslots ?? true,
             });
 
             // Fetch syllabus if needed
@@ -282,6 +281,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
               owner: tempScheduleData.owner,
               status: tempScheduleData.status,
               frameId: tempScheduleData.frameId,
+              usingCustomTimeslots: tempScheduleData.usingCustomTimeslots,
             });
 
             // Update syllabus if available
@@ -340,13 +340,13 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
    * Efficiently updates schedule state when form values change
    */
   const updateScheduleState = (
-    values: Record<FormFields, any>,
-    previous: Record<FormFields, any>
+    values: Record<string, any>,
+    previous: Record<string, any>
   ) => {
     // Collect all changes to make a single store update
     const changes: Record<string, any> = {};
 
-    formFields.forEach((element) => {
+     Object.keys(form.values).forEach((element) => {
       if (values[element] !== previous[element]) {
         changes[element] = values[element];
       }
@@ -418,6 +418,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       const currentState = useStore.getState().scheduleState;
       const currentLessons = { ...currentState.lessons };
       const currentDays = [...currentState.days];
+      const customTimeslots = currentState.customTimeslots || [];
+      const usingCustomTimeslots = values.usingCustomTimeslots;
 
       startTransition(() => {
         // Build the context for submission
@@ -439,6 +441,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             templateId: day.templateId,
           })),
           owner: values.owner,
+          usingCustomTimeslots,
+          customTimeslots,
         };
 
         if (isEditMode && scheduleId) {
@@ -601,6 +605,12 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             {...form.getInputProps(FormFields.description)}
           />
         </SimpleGrid>
+        <Switch
+          label="open for custom timeslots"
+          {...form.getInputProps("usingCustomTimeslots", { type: "checkbox" })}
+        
+          mt="md"
+        />
         <Group mt="md">
           <Button type="submit" loading={isPending} color="cambridge">
             {submitBtnText}
