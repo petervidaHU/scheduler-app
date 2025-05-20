@@ -251,7 +251,8 @@ const CreateLessonModal: React.FC<CreateLessonProps> = ({ slot, day, closeModal,
       form.setFieldValue("teacher", "");
     }
   };
-  console.log('warnings', warnings);
+  // TODO: warning bug
+  console.log('bug in warnings', warnings);
 
   return (
     <Paper>
