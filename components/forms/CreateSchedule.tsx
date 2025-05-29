@@ -172,6 +172,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       owner: scheduleData.owner,
       status: scheduleData.status,
       frameId: scheduleData.frameId,
+      usingCustomTimeslots: scheduleData.usingCustomTimeslots || false,
     });
 
     if (syllabusDataFromserver && syllabusError === null) {
