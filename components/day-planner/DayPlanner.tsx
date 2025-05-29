@@ -7,22 +7,39 @@ import { useModal } from "../modals/ModalManager";
 import CreateLessonModal from "../modals/CreateLessonModal";
 import TimeslotsList from "./TimeslotsList";
 import { ID, Timeslots } from "@/types/databaseTypes";
-import TimeslotFilledCard from "./TimeslotFilledCard";
+
+interface NormalizedTimeSlot {
+  timeslot: import("@/types/databaseTypes").TimeslotInput | null;
+  lesson?: TimeslotLessonInput | null;
+  isCustom?: boolean;
+}
+
+export interface NormalizedDayPlan {
+  id: string;
+  order: string;
+  identifier: string;
+  timeSlots: NormalizedTimeSlot[];
+  lessons: Array<string>;
+  templateId?: string;
+  scheduleId?: string;
+}
 
 interface DayPlannerProps {
-  day: DayPlan;
-  timeslots: Array<Timeslots>;
+  /**
+   * Normalized day object. All timeslot/lesson mapping must be done before passing to this component.
+   * Each timeSlots entry: { timeslot: TimeslotInput | null, lesson?: TimeslotLessonInput | null, isCustom?: boolean }
+   */
+  day: NormalizedDayPlan;
   readOnly?: boolean;
 }
 
 const DayPlanner: React.FC<DayPlannerProps> = ({
   day,
-  timeslots,
   readOnly = false,
 }) => {
   const { openModal, closeModal } = useModal();
   const {
-    scheduleState: { lessons, customTimeslots, usingCustomTimeslots },
+    scheduleState: { usingCustomTimeslots },
   } = useStore();
 
   const handleOpenModal = (
@@ -30,12 +47,15 @@ const DayPlanner: React.FC<DayPlannerProps> = ({
     lesson?: TimeslotLessonInput | null
   ) => {
     if (readOnly) return;
-    const timeslot = timeslots.find((t) => t.ID === slot) || customTimeslots?.find((t) => t.ID === slot);
+    // Find the timeslot object in the normalized day.timeSlots array
+    const slotObj = day.timeSlots.find(
+      (t) => t.timeslot && t.timeslot.ID === slot
+    );
+    const timeslot = slotObj?.timeslot;
     if (!timeslot) {
       console.error("Timeslot not found");
       return;
     }
-    // If lesson is present and has a tempId, pass it as lessonId, else undefined
     let lessonId: ID | undefined = undefined;
     if (
       lesson &&
@@ -45,7 +65,6 @@ const DayPlanner: React.FC<DayPlannerProps> = ({
     ) {
       lessonId = lesson.id;
     }
-
     openModal(
       <CreateLessonModal
         slot={timeslot}
@@ -61,21 +80,9 @@ const DayPlanner: React.FC<DayPlannerProps> = ({
     );
   };
 
-  const getTimeslotById = (id: number) =>
-    timeslots.find((ts) => ts.ID === id) ||
-    (customTimeslots || []).find((ts) => ts.ID === id);
-
-  const allTimeslots = [
-    ...day.timeSlots.map((t) => ({
-      timeslot: getTimeslotById(t.timeslotId) || null,
-      lesson: t.lessonId ? lessons[t.lessonId] : undefined,
-      isCustom: !!customTimeslots?.find((ts) => ts.ID === t.timeslotId) || false,
-    })),
-  ];
-
   return (
     <TimeslotsList
-      timeSlots={allTimeslots}
+      timeSlots={day.timeSlots}
       onClickHandler={handleOpenModal}
       readOnly={readOnly}
       readOnlyCustomTimeslots={!usingCustomTimeslots}

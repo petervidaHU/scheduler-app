@@ -179,25 +179,26 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       updateSyllabus(syllabusDataFromserver);
     }
 
-    // Initialize days all at once (already deduplicated from server)
+    // Initialize days and lessons directly into store state
     if (scheduleData.days && scheduleData.days.length > 0) {
       setDays(scheduleData.days);
     }
-
-    // Initialize lessons directly into store state
     if (scheduleData.lessons && Object.keys(scheduleData.lessons).length > 0) {
-      // Set lessons directly into store
+      // Merge lessons into store instead of overwriting
       const currentState = useStore.getState();
       useStore.setState({
         ...currentState,
         scheduleState: {
           ...currentState.scheduleState,
-          lessons: { ...scheduleData.lessons },
+          lessons: { ...currentState.scheduleState.lessons, ...scheduleData.lessons },
         },
       });
+      // Debug: log lessons after initialization
+      console.debug('[Schedule] Lessons after store initialization:', {
+        ...currentState.scheduleState.lessons,
+        ...scheduleData.lessons,
+      });
     }
-
-    // Mark as initialized
     setIsStoreInitialized(true);
   }, [
     scheduleData,
@@ -417,6 +418,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       // Create a snapshot of the current state to prevent stale data
       const currentState = useStore.getState().scheduleState;
       const currentLessons = { ...currentState.lessons };
+      console.log(' const currentLessons = { ...currentState.lessons }', currentLessons);
       const currentDays = [...currentState.days];
       const customTimeslots = currentState.customTimeslots || [];
       const usingCustomTimeslots = values.usingCustomTimeslots;

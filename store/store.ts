@@ -3,7 +3,6 @@ import { create } from "zustand";
 import {
   DayPlan,
   Schedule,
-  SyllabusForm,
   TenancyBasedData,
   DataWithOptions,
   SyllabusWithOptions,
@@ -16,7 +15,6 @@ import {
   Subject,
   Teacher,
   TimeslotInput,
-  Timeslots,
   Frame,
 } from "@/types/databaseTypes";
 import { LessonInput, PreloadDataObject } from "@/types/FormActionType";
@@ -215,32 +213,38 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
     timeslotId: ID;
   }) =>
     set((state: ScheduleState) => {
-      const days = state.scheduleState.days;
-      console.log("days", days, payload.dayId)
-      const newdayIndex = state.scheduleState.days.findIndex(
-        (day) => day.id === payload.dayId
-      );
-      console.log("newdayIndex", newdayIndex)
-      const timeSlotIndex = days[newdayIndex].timeSlots?.findIndex(
-        (timeSlot) => timeSlot.timeslotId === payload.timeslotId
-      );
-      console.log("timeSlotIndex", timeSlotIndex)
-      if (newdayIndex < 0 || timeSlotIndex < 0) {
-      days[newdayIndex].timeSlots[timeSlotIndex].lessonId =
-        String(payload.newLesson.id);
-      }
-      days[newdayIndex].timeSlots[timeSlotIndex].lessonId =
-        payload.newLesson.id;
-      console.log("days in store:", days);
+      // Create a deep copy of days to avoid mutating state
+      const days = state.scheduleState.days.map((day) => {
+        if (day.id !== payload.dayId) return day;
+        // Copy timeSlots array
+        let timeSlots = Array.isArray(day.timeSlots) ? [...day.timeSlots] : [];
+        const slotIdx = timeSlots.findIndex((slot) => slot.timeslotId === payload.timeslotId);
+        if (slotIdx >= 0) {
+          // Update existing slot with new lessonId
+          timeSlots = timeSlots.map((slot, idx) =>
+            idx === slotIdx ? { ...slot, lessonId: String(payload.newLesson.id) } : slot
+          );
+        } else {
+          // Add new slot with lessonId
+          timeSlots = [
+            ...timeSlots,
+            { timeslotId: payload.timeslotId, lessonId: String(payload.newLesson.id) },
+          ];
+        }
+        return { ...day, timeSlots };
+      });
+      // Add or update lesson in lessons object (copy)
+      const lessons = {
+        ...state.scheduleState.lessons,
+        [payload.newLesson.id]: { ...payload.newLesson },
+      };
+      console.debug('[Store] Lessons after createOneLesson:', lessons);
       return {
         ...state,
         scheduleState: {
           ...state.scheduleState,
-          lessons: {
-            ...state.scheduleState.lessons,
-            [payload.newLesson.id]: { ...payload.newLesson },
-          },
-          days: days,
+          lessons,
+          days,
         },
       };
     }),
@@ -258,6 +262,8 @@ const createScheduleSlice = (set: any, get: any): ScheduleState => ({
             : slot
         )
       }));
+
+      console.debug('[Store] Lessons after deleteOneLesson:', newLessons);
 
       return {
         ...state,

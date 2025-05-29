@@ -21,6 +21,7 @@ import GridContainer from "./day-planner/GridContainer";
 import { useModal } from "./modals/ModalManager";
 import { Schedule } from "@/types/ScheduleTypes";
 import CreateTimeslot from "@/components/forms/CreateTimeslot";
+import { normalizeDayPlan } from "@/lib/dayPlannerUtils";
 
 // Special value for custom frame
 const CUSTOM_FRAME = "CUSTOM";
@@ -38,7 +39,6 @@ const SchedulePlanner: FC<props> = ({
   scheduleData,
   readOnly = false,
 }) => {
-  const [openForNewSlot, setOpenForNewSlot] = React.useState(false);
   const [dayToDelete, setDayToDelete] = React.useState<string | null>(null);
   const [newTimeslotData, setNewTimeslotData] = React.useState<any>(null);
   const { openConfirmModal, openModal } = useModal();
@@ -197,7 +197,11 @@ const SchedulePlanner: FC<props> = ({
               d.id === day.id
                 ? {
                     ...d,
-                    timeSlots: [...d.timeSlots, { timeslotId: newId }],
+                    timeSlots: [
+                      ...d.timeSlots,
+                      // Add new timeslot, but preserve lessonId if present (should be undefined for new)
+                      { timeslotId: newId },
+                    ],
                   }
                 : d
             )
@@ -246,16 +250,10 @@ const SchedulePlanner: FC<props> = ({
     label: t.NAME,
     value: t.ID.toString(),
   }));
+  // console.log('days in scheduleplanner', days)
 
   return (
     <div>
-      {!readOnly && (
-        <input
-          type="checkbox"
-          id="newSlot"
-          onChange={() => setOpenForNewSlot(!openForNewSlot)}
-        />
-      )}
       <h3>schedule planner</h3>
 
       {/* Day Headers Section */}
@@ -326,13 +324,19 @@ const SchedulePlanner: FC<props> = ({
           <Grid.Col span={2} key={`day-grid-${day.id}`}>
             <GridContainer windowHeight={windowHeight}>
               <DayPlanner
-                day={day}
-                timeslots={timeslots}
+                day={normalizeDayPlan(
+                  day,
+                  timeslots,
+                  scheduleData?.customTimeslots || [],
+                  /* Use up-to-date lessons from store, not scheduleData */
+                  (useStore.getState().scheduleState.lessons)
+                )}
                 readOnly={readOnly}
-                usingCustomTimeslots={usingCustomTimeslots}
               />
-              {openForNewSlot && !readOnly && usingCustomTimeslots && (
-                <HourGrid onClickHandler={(hour) => emptySlotClickHandler(hour, day)} />
+              {!readOnly && usingCustomTimeslots && (
+                <HourGrid
+                  onClickHandler={(hour) => emptySlotClickHandler(hour, day)}
+                />
               )}
             </GridContainer>
           </Grid.Col>
