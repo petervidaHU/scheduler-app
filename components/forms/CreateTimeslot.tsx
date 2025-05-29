@@ -18,6 +18,8 @@ interface props {
   timeslotId: number | null;
   overlappingAccepted: boolean;
   onSubmit?: (values: any) => void;
+  startTimeHour?: number;
+  startTimeMinute?: number;
 }
 
 export const getTimeInMinutes = (hour: number, minute: number) => {
@@ -38,6 +40,8 @@ const CreateTimeslot: FC<props> = ({
   timeslotId,
   overlappingAccepted = true,
   onSubmit,
+  startTimeHour,
+  startTimeMinute,
 }) => {
   const { addActiveTimeslot, selectActiveTimeslot, activeTimeslots } =
     useStore();
@@ -46,11 +50,11 @@ const CreateTimeslot: FC<props> = ({
 
   const timeslotForm = useForm({
     initialValues: {
-      id: timeslotId || new Date().getTime(), 
+      id: timeslotId || new Date().getTime(),
       name: timeslot?.NAME || "",
       description: timeslot?.DESCRIPTION || "",
-      startTimeHour: getHour(timeslot?.PERIOD_START) || 0,
-      startTimeMinute: getMinute(timeslot?.PERIOD_START) || 0,
+      startTimeHour: typeof startTimeHour === 'number' ? startTimeHour : (getHour(timeslot?.PERIOD_START) || 0),
+      startTimeMinute: typeof startTimeMinute === 'number' ? startTimeMinute : (getMinute(timeslot?.PERIOD_START) || 0),
       endTimeHour: getHour(timeslot?.PERIOD_END) || 0,
       endTimeMinute: getMinute(timeslot?.PERIOD_END) || 0,
     },

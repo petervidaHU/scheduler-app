@@ -1,6 +1,9 @@
 import { useStore } from "@/store/store";
 import React, { FC } from "react";
 
+// Set this to 5 or 10 to control the minute rounding interval for slot creation
+const ROUND_TO_MINUTES = 10; // Change to 5 for 5-minute rounding
+
 // Helper function to calculate position based on time
 const calculatePosition = (time: number, totalMinutes: number, totalHeight: number): number => {
   // Convert time (in minutes) to a fraction of the day
@@ -9,7 +12,12 @@ const calculatePosition = (time: number, totalMinutes: number, totalHeight: numb
   return fraction * totalHeight;
 };
 
-const HourGrid: FC<{ onClickHandler?: (hour: number ) => void }> = ({ onClickHandler }) => {
+// Helper to round to nearest 5 or 10
+const roundToNearest = (value: number, nearest: number = ROUND_TO_MINUTES) => {
+  return Math.round(value / nearest) * nearest;
+};
+
+const HourGrid: FC<{ onClickHandler?: (hour: number, minute?: number) => void }> = ({ onClickHandler }) => {
   const { windowHeight } = useStore();
   
   // Total minutes in a day (24 hours * 60 minutes)
@@ -39,7 +47,14 @@ const HourGrid: FC<{ onClickHandler?: (hour: number ) => void }> = ({ onClickHan
             padding: "2px 4px",
             boxSizing: "border-box",
           }}
-          onClick={() => onClickHandler && onClickHandler(hour)}
+          onClick={e => {
+            if (!onClickHandler) return;
+            // Calculate minute offset within the hour
+            const rect = (e.target as HTMLDivElement).getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            const minute = roundToNearest((y / rect.height) * 60, ROUND_TO_MINUTES); // round to nearest 5 or 10 min
+            onClickHandler(hour, Math.max(0, Math.min(59, minute)));
+          }}
         >
           {hour}:00
         </div>

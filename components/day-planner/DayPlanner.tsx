@@ -79,7 +79,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({
       }
     );
   };
-
+console.log('timeslots coming as props:', day.timeSlots);
   return (
     <TimeslotsList
       timeSlots={day.timeSlots}

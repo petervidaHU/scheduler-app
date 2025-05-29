@@ -21,6 +21,7 @@ export function normalizeDayPlan(
     allTimeslots.find((ts) => ts.ID === id) ||
     customTimeslots.find((ts) => ts.ID === id) ||
     null;
+    console.log('custom timeslots:', customTimeslots);
 
   // Map timeSlots to include lesson and isCustom
   const normalizedTimeSlots = (day.timeSlots || []).map((t: any) => ({

@@ -41,7 +41,7 @@ const SchedulePlanner: FC<props> = ({
 }) => {
   const [dayToDelete, setDayToDelete] = React.useState<string | null>(null);
   const [newTimeslotData, setNewTimeslotData] = React.useState<any>(null);
-  const { openConfirmModal, openModal } = useModal();
+  const { openConfirmModal, openModal, closeModal } = useModal();
 
   const {
     scheduleState: { days, frameId, usingCustomTimeslots },
@@ -53,6 +53,10 @@ const SchedulePlanner: FC<props> = ({
     updateDayTemplateId,
     addCustomTimeslot,
   } = useStore();
+
+  // Select lessons and customTimeslots reactively from the store
+  const lessons = useStore((state) => state.scheduleState.lessons);
+  const customTimeslots = useStore((state) => state.scheduleState.customTimeslots || []);
 
   // Create a map of template IDs to template names for quick lookup
   const templateNameMap = useMemo(() => {
@@ -178,7 +182,7 @@ const SchedulePlanner: FC<props> = ({
     });
   };
 
-  const emptySlotClickHandler = (thisHour: number, day: any) => {
+  const emptySlotClickHandler = (thisHour: number, thisMinute: number, day: any) => {
     openModal(
       <CreateTimeslot
         timeslotId={null}
@@ -199,16 +203,16 @@ const SchedulePlanner: FC<props> = ({
                     ...d,
                     timeSlots: [
                       ...d.timeSlots,
-                      // Add new timeslot, but preserve lessonId if present (should be undefined for new)
                       { timeslotId: newId },
                     ],
                   }
                 : d
             )
           );
+          closeModal(); // Close the modal after success
           return true;
         }}
-        {...{ startTimeHour: thisHour, startTimeMinute: 0 }}
+        {...{ startTimeHour: thisHour, startTimeMinute: thisMinute }}
       />,
       { title: "Create Custom Timeslot", centered: true }
     );
@@ -327,15 +331,14 @@ const SchedulePlanner: FC<props> = ({
                 day={normalizeDayPlan(
                   day,
                   timeslots,
-                  scheduleData?.customTimeslots || [],
-                  /* Use up-to-date lessons from store, not scheduleData */
-                  (useStore.getState().scheduleState.lessons)
+                  customTimeslots,
+                  lessons
                 )}
                 readOnly={readOnly}
               />
               {!readOnly && usingCustomTimeslots && (
                 <HourGrid
-                  onClickHandler={(hour) => emptySlotClickHandler(hour, day)}
+                  onClickHandler={(hour, minute = 0) => emptySlotClickHandler(hour, minute, day)}
                 />
               )}
             </GridContainer>
