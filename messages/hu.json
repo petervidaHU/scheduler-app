@@ -110,7 +110,8 @@
         "quickStartText": "Hozz létre új órarendet, adj hozzá tantermeket, vagy hívj meg tanárokat az intézményedhez.",
         "goToDashboard": "Ugrás a vezérlőpultra",
         "exploreMantine": "Mantine UI komponensek felfedezése",
-        "createSchedule": "Órarend létrehozása"
+        "createSchedule": "Órarend létrehozása",
+        "dashboardAccess": "Itt éred el az intézményed fő vezérlőpultját."
     },
     "documentation": {
         "title": "Dokumentáció",

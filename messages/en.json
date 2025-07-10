@@ -109,7 +109,8 @@
         "quickStartText": "Create a new schedule, add classrooms, or invite teachers to your tenancy.",
         "goToDashboard": "Go to Dashboard",
         "exploreMantine": "Explore Mantine UI Components",
-        "createSchedule": "Create Schedule"
+        "createSchedule": "Create Schedule",
+        "dashboardAccess": "Here you access your tenancy's main dashboard."
     },
     "documentation": {
         "title": "Documentation",
