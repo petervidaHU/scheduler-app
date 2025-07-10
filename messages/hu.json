@@ -106,6 +106,7 @@
     },
     "home": {
         "welcome": "Üdvözlünk a Scheduler App-ban",
+        "myTenancyDashboard":"Saját intézmény vezérlőpult",
         "welcomeText": "Órák, tantermek és tanárok egyszerű kezelése. Kezdd el az órarendek létrehozását vagy megtekintését!",
         "quickStart": "Gyors kezdés",
         "quickStartText": "Hozz létre új órarendet, adj hozzá tantermeket, vagy hívj meg tanárokat az intézményedhez.",

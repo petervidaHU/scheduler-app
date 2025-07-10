@@ -106,6 +106,7 @@
     },
     "home": {
         "welcome": "Welcome to Scheduler App",
+        "myTenancyDashboard": "My Tenancy Dashboard",
         "welcomeText": "Effortlessly manage your lessons, classrooms, and teachers. Get started by creating or viewing your schedules.",
         "quickStart": "Quick Start",
         "quickStartText": "Create a new schedule, add classrooms, or invite teachers to your tenancy.",
