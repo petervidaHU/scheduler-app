@@ -19,6 +19,8 @@
         "noTenancyLoaded": "No tenancy loaded",
         "selectTenancy": "Select tenancy",
         "logOut": "Log out",
+        "logIn": "Log in",
+        "loading": "Loading...",
         "dashboardAccess": "Here you access your tenancy's main dashboard."
     },
     "pricing": {
