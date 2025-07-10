@@ -35,11 +35,6 @@ export default async function Home() {
           </Group>
         </Card>
       </SimpleGrid>
-      <Group justify="center">
-        <Button component="a" href="https://ui.mantine.dev/" target="_blank" variant="subtle" color="gray">
-          {t('exploreMantine')}
-        </Button>
-      </Group>
     </Container>
   );
 }

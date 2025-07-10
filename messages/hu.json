@@ -19,7 +19,8 @@
         "darkMode": "Sötét mód",
         "currentTenancy": "Aktuális intézmény:",
         "noTenancyLoaded": "Nincs betöltött intézmény",
-        "loading": "Betöltés..."
+        "loading": "Betöltés...",
+        "dashboardAccess": "Itt éred el az intézményed fő vezérlőpultját."
     },
     "pricing": {
         "message1": "árazás",
