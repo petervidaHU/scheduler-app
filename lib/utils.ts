@@ -8,8 +8,8 @@ export async function hashPassword(password: string) {
 }
 
 export async function verifyPassword(password: string, hashedPassword: string) {
-  // return await bcrypt.compare(password, hashedPassword);
-  return true
+  const res = await bcrypt.compare(password, hashedPassword);
+  return res;
 }
 
 export const getRoleName = (id: number): Roles => {
