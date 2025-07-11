@@ -13,8 +13,8 @@
     "test:file": "jest --testPathPattern"
   },
   "dependencies": {
-    "@mantine/core": "^8.0.0",
-    "@mantine/form": "^8.0.0",
+    "@mantine/core": "^8.1.3",
+    "@mantine/form": "^8.1.3",
     "@mantine/hooks": "^8.0.0",
     "@tabler/icons-react": "^3.31.0",
     "bcryptjs": "^3.0.2",
