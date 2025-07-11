@@ -11,8 +11,8 @@ export interface Tenancy {
 }
 
 export interface GetTenancyByUserResult {
-    TENANCY_ID: number,
-    TENANCY_NAME: string,
+    ID: number,
+    NAME: string,
     ROLE_ID: number,
     ROLE_NAME: string,
 }
