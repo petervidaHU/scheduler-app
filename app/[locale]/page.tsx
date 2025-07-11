@@ -1,6 +1,8 @@
 import { Container, Title, Text, Button, Group, Card, SimpleGrid } from '@mantine/core';
 import { getTranslations } from 'next-intl/server';
 
+// TODO buttons use bad link, fix later
+
 export default async function Home() {
   const t = await getTranslations('home');
   return (
