@@ -69,13 +69,7 @@ const SignInPageLogic: FC<props> = ({ source }) => {
     <>
       {status !== "authenticated" ? (
         <Paper withBorder p="md" radius="md" maw={400} mx="auto">
-          <form
-            onSubmit={e => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              formAction(formData);
-            }}
-          >
+          <form action={formAction}>
             <Stack>
               <TextInput
                 label="Email"
