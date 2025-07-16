@@ -65,7 +65,7 @@ export const authOptions = {
         token.tenancyId = session.tenancyId;
       }
       if (user) {
-        token.id = user.USER_ID || user.ID;
+        token.id = user.USER_ID || user.id;
         token.firstName = user.FIRST_NAME || user.firstName;
         token.lastName = user.LAST_NAME || user.lastName;
         token.email = user.EMAIL || user.email;
