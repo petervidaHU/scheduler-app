@@ -52,9 +52,20 @@ const validationFunctionWithLessonsBinder = (
 > => ({
   teacher: (s) => {
     const myError = {...teacherError};
-    const preferredTeachers = typeof s.TEACHERS === 'string' 
-      ? JSON.parse(s.TEACHERS) 
-      : (s.TEACHERS || []);
+    let preferredTeachers: any = [];
+    if (typeof s.TEACHERS === 'string') {
+      try {
+        const parsed = JSON.parse(s.TEACHERS);
+        preferredTeachers = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn('Malformed TEACHERS value in syllabus:', s.TEACHERS, e);
+        preferredTeachers = [];
+      }
+    } else if (Array.isArray(s.TEACHERS)) {
+      preferredTeachers = s.TEACHERS;
+    } else {
+      preferredTeachers = [];
+    }
     if (preferredTeachers.length === 0) return null;
 
     const result = lessonsFilteredBySubjects.filter(
