@@ -49,22 +49,8 @@ const HourGrid: FC<{ onClickHandler?: (hour: number, minute?: number) => void }>
     );
   });
 
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateRows: `repeat(${TOTAL_ROWS}, 1fr)`,
-        gridTemplateColumns: "60px 1fr",
-        height: windowHeight,
-        position: "relative",
-        background: "#f8f8fa",
-        overflow: "hidden",
-      }}
-    >
-      {hourLabels}
-      {slotDivs}
-    </div>
-  );
+  // Remove the outer grid container, just return hourLabels and slotDivs as fragments
+  return <>{hourLabels}{slotDivs}</>;
 };
 
 export default HourGrid;

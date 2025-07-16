@@ -64,6 +64,8 @@ const TimeslotFilledCard: FC<props> = ({ lesson }) => {
         padding: "0 10px",
         justifyContent: "space-between",
         alignItems: "center",
+        // Remove any absolute/fixed positioning, let parent grid control placement
+        position: undefined,
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

@@ -18,77 +18,54 @@ interface TimeslotsListProps {
   ) => void;
   readOnly?: boolean;
   readOnlyCustomTimeslots?: boolean;
+  /**
+   * The minute of the day the grid starts from (e.g. 0 for midnight, 480 for 8:00 AM)
+   */
+  gridStartMinute?: number;
+  /**
+   * The minute of the day the grid ends (exclusive). Optional, for filtering.
+   */
+  gridEndMinute?: number;
 }
-
-// Helper function to calculate position based on time
-const calculatePosition = (
-  time: number,
-  totalMinutes: number,
-  totalHeight: number
-): number => {
-  // Convert time (in minutes) to a fraction of the day
-  const fraction = time / totalMinutes;
-  // Convert the fraction to pixels
-  return fraction * totalHeight;
-};
 
 const TimeslotsList: FC<TimeslotsListProps> = ({
   timeSlots,
   onClickHandler,
   readOnly = false,
   readOnlyCustomTimeslots = false,
+  gridStartMinute = 0,
+  gridEndMinute,
 }) => {
   const {
-    windowHeight,
     removeActiveTimeslot,
-    removeCustomTimeslotById, // use the new reducer
+    removeCustomTimeslotById,
     tenancyBasedData: {
       subjects: { data: subjectData },
     },
   } = useStore();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
-  // console.log('timeslots', timeSlots);
-
-  // Total minutes in a day (24 hours * 60 minutes)
-  const TOTAL_MINUTES = 24 * 60;
 
   return (
-    <>
+    <div style={{ display: "contents" }}>
       {timeSlots.map((slot) => {
         if (!slot.timeslot) return null;
-        const {
-          PERIOD_END: end,
-          PERIOD_START: start,
-          ID,
-          NAME,
-        } = slot.timeslot;
-
+        const { PERIOD_END: end, PERIOD_START: start, ID, NAME } = slot.timeslot;
+        if ((typeof gridEndMinute === 'number' && start >= gridEndMinute) || end <= gridStartMinute) {
+          return null;
+        }
         const lesson = slot.lesson;
         const isCustom = slot.isCustom;
-
-        // Calculate position and height based on start and end times
-        const top = calculatePosition(start, TOTAL_MINUTES, windowHeight);
-        const height = calculatePosition(
-          end - start,
-          TOTAL_MINUTES,
-          windowHeight
-        );
-
-        // Use a default color (lesson color logic can be added by parent if needed)
+        const gridRowStart = Math.floor((start - gridStartMinute) / 5) + 1;
+        const gridRowEnd = Math.floor((end - gridStartMinute) / 5) + 1;
         const backgroundColor =
           lesson && lesson.subjectId && subjectData
             ? subjectData[lesson.subjectId].HELPER_COLOR
             : isCustom
-            ? "rgba(255, 255, 200, .7)" // Custom timeslot color
+            ? "rgba(255, 255, 200, .7)"
             : "rgba(255, 208, 235, .5)";
-
         return (
           <Card
-            onClick={
-              readOnly
-                ? undefined
-                : () => onClickHandler(ID, slot.lesson || null)
-            }
+            onClick={readOnly ? undefined : () => onClickHandler(ID, slot.lesson || null)}
             onMouseEnter={readOnly ? undefined : () => setHoveredId(ID)}
             onMouseLeave={readOnly ? undefined : () => setHoveredId(null)}
             key={ID}
@@ -98,18 +75,18 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
               padding: 8,
               display: "flex",
               alignItems: "center",
-              position: "absolute",
-              top: `${top}px`,
+              gridRow: `${gridRowStart} / ${gridRowEnd}`,
+              gridColumn: "1 / 3", // Cover both hour label and timeslot columns
               minHeight: '20px',
-              height: `${height}px`,
               width: "100%",
               background: backgroundColor,
               border: isCustom ? "2px dashed #e6b800" : "1px solid #8cbce6",
               boxSizing: "border-box",
-              zIndex: 100,
+              zIndex: 3,
               justifyContent: "space-between",
               overflow: "hidden",
               cursor: readOnly ? "default" : "pointer",
+              position: "relative",
             }}
           >
             {/* Absolutely positioned delete icon for custom timeslots */}
@@ -122,29 +99,18 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
                     e.stopPropagation();
                     removeCustomTimeslotById(ID);
                   }}
-                  style={{
-                    position: "absolute",
-                    top: 4,
-                    right: 4,
-                    zIndex: 200,
-                  }}
+                  style={{ position: "absolute", top: 4, right: 4, zIndex: 10 }}
                 >
                   <IconTrash size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
-            <Group
-              justify="space-between"
-              align="center"
-              style={{ width: "100%" }}
-            >
+            <Group justify="space-between" align="center" style={{ width: "100%" }}>
               {!lesson && (
                 <>
                   <Text>{NAME || isCustom ? "Custom Timeslot" : "Free Slot"}</Text>
                   <Text size="xs" c="dimmed">
-                    {typeof start === "number" && typeof end === "number"
-                      ? `${end - start} min`
-                      : null}
+                    {typeof start === "number" && typeof end === "number" ? `${end - start} min` : null}
                   </Text>
                 </>
               )}
@@ -153,7 +119,7 @@ const TimeslotsList: FC<TimeslotsListProps> = ({
           </Card>
         );
       })}
-    </>
+    </div>
   );
 };
 

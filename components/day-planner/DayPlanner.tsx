@@ -7,6 +7,8 @@ import { useModal } from "../modals/ModalManager";
 import CreateLessonModal from "../modals/CreateLessonModal";
 import TimeslotsList from "./TimeslotsList";
 import { ID, Timeslots } from "@/types/databaseTypes";
+import HourGrid from "./HourGrid";
+import GridContainer from "./GridContainer";
 
 interface NormalizedTimeSlot {
   timeslot: import("@/types/databaseTypes").TimeslotInput | null;
@@ -40,6 +42,7 @@ const DayPlanner: React.FC<DayPlannerProps> = ({
   const { openModal, closeModal } = useModal();
   const {
     scheduleState: { usingCustomTimeslots },
+    windowHeight,
   } = useStore();
 
   const handleOpenModal = (
@@ -79,14 +82,31 @@ const DayPlanner: React.FC<DayPlannerProps> = ({
       }
     );
   };
-console.log('timeslots coming as props:', day.timeSlots);
+  console.log('timeslots coming as props:', day.timeSlots);
   return (
-    <TimeslotsList
-      timeSlots={day.timeSlots}
-      onClickHandler={handleOpenModal}
-      readOnly={readOnly}
-      readOnlyCustomTimeslots={!usingCustomTimeslots}
-    />
+    <GridContainer windowHeight={windowHeight}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateRows: `repeat(${288}, 1fr)`, // 24*12 rows for 5-min intervals
+          gridTemplateColumns: "60px 1fr", // hour labels + timeslots
+          height: windowHeight,
+          position: "relative",
+          background: "#f8f8fa",
+          overflow: "hidden",
+        }}
+      >
+        <HourGrid />
+        <TimeslotsList
+          timeSlots={day.timeSlots}
+          onClickHandler={handleOpenModal}
+          readOnly={readOnly}
+          readOnlyCustomTimeslots={!usingCustomTimeslots}
+          gridStartMinute={0}
+          gridEndMinute={1440}
+        />
+      </div>
+    </GridContainer>
   );
 };
 
