@@ -801,6 +801,17 @@ END;
     try {
       const tenancyId = this.getTenancy();
       const result = await this.executeQuery(query, [tenancyId, classId]);
+      result.forEach((item: any) => {
+        if (item.TEACHERS) {
+          try {
+            item.TEACHERS = JSON.parse(item.TEACHERS);
+          } catch (e) {
+            console.error("Error parsing TEACHERS:", e);
+            item.TEACHERS = []; // Fallback if parsing fails
+          }
+        }
+      });
+      console.log('teachers in result', result);
       return result as Syllabus[];
     } catch (error) {
       console.error(`Error getting syllabus: ${error}`);

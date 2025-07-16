@@ -24,12 +24,13 @@ import {
   SyllabusInputForm,
 } from "@/types/FormActionType";
 import { redirect } from "next/navigation";
-import { Classes, ID } from "@/types/databaseTypes";
+import { Classes, ID, Syllabus } from "@/types/databaseTypes";
 import { createClass } from "@/app/[locale]/(tenancy)/_actions/createClass";
 import { useStore } from "@/store/store";
 import { IconTrash, IconUsers } from "@tabler/icons-react";
 import { useTenancyBasedFormResponse } from "@/lib/hooks/useFormResponse";
 import { Entities } from "@/types/Entities";
+import { getSyllabusByClassId } from '@/app/[locale]/(tenancy)/_actions/getSyllabusByClassId';
 
 const init: FormActionType = {
   error: null,
@@ -51,12 +52,6 @@ interface SyllabusInput {
 
 interface SyllabusData {
   [subject: ID]: SyllabusInput;
-}
-
-interface SyllabusApiResponse {
-  SUBJECT_ID: ID;
-  TEACHERS: ID[];
-  OCCURRENCE: number;
 }
 
 export const CreateClass: React.FC<ClassesInput> = ({
@@ -113,21 +108,19 @@ export const CreateClass: React.FC<ClassesInput> = ({
   // Initialize syllabus state with entity data if in edit mode
   useEffect(() => {
     if (entity?.ID && subjects) {
-      // Fetch syllabus data for this class
+      // Fetch syllabus data for this class using server action
       const loadSyllabusData = async () => {
         try {
-          const res = await fetch(`/api/syllabus/${entity.ID}`);
-          const syllabusData: SyllabusApiResponse[] = await res.json();
-          
+          // Use server action instead of fetch
+          const syllabusData: Syllabus[] = await getSyllabusByClassId(entity.ID);
           // Transform the data into our SyllabusData format
           const initialSyllabus: SyllabusData = {};
-          syllabusData.forEach((item: SyllabusApiResponse) => {
+          syllabusData.forEach((item: Syllabus) => {
             initialSyllabus[item.SUBJECT_ID] = {
               teachers: item.TEACHERS || [],
               occurrence: item.OCCURRENCE || 0
             };
           });
-          
           setSyllabus(initialSyllabus);
         } catch (error) {
           console.error("Failed to load syllabus data:", error);
