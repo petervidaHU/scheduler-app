@@ -1,76 +1,68 @@
 import { useStore } from "@/store/store";
 import React, { FC } from "react";
 
-// Set this to 5 or 10 to control the minute rounding interval for slot creation
-const ROUND_TO_MINUTES = 10; // Change to 5 for 5-minute rounding
-
-// Helper function to calculate position based on time
-const calculatePosition = (time: number, totalMinutes: number, totalHeight: number): number => {
-  // Convert time (in minutes) to a fraction of the day
-  const fraction = time / totalMinutes;
-  // Convert the fraction to pixels
-  return fraction * totalHeight;
-};
-
-// Helper to round to nearest 5 or 10
-const roundToNearest = (value: number, nearest: number = ROUND_TO_MINUTES) => {
-  return Math.round(value / nearest) * nearest;
-};
+const MINUTES_PER_ROW = 5;
+const ROWS_PER_HOUR = 60 / MINUTES_PER_ROW;
+const TOTAL_ROWS = 24 * ROWS_PER_HOUR;
 
 const HourGrid: FC<{ onClickHandler?: (hour: number, minute?: number) => void }> = ({ onClickHandler }) => {
   const { windowHeight } = useStore();
-  
-  // Total minutes in a day (24 hours * 60 minutes)
-  const TOTAL_MINUTES = 24 * 60;
+  const rowHeight = windowHeight / TOTAL_ROWS;
 
-  const hourGrid = (id: string | null = null) => {
-    return Array.from(new Array(24), (_, hour) => {
-      // Convert hour to minutes
-      const hourInMinutes = hour * 60;
-      // Calculate position
-      const slotTop = calculatePosition(hourInMinutes, TOTAL_MINUTES, windowHeight);
-      // Calculate height of one hour
-      const hourHeight = calculatePosition(60, TOTAL_MINUTES, windowHeight);
+  // Render hour labels (each label spans 12 rows)
+  const hourLabels = Array.from({ length: 24 }, (_, hour) => (
+    <div
+      key={hour}
+      style={{
+        gridRow: `${hour * ROWS_PER_HOUR + 1} / span ${ROWS_PER_HOUR}`,
+        gridColumn: 1,
+        color: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "flex-start",
+        padding: "2px 4px",
+        fontSize: 12,
+        borderBottom: "1px dashed rgba(0,0,0,0.1)",
+        background: "rgba(240,240,245,0.3)",
+        zIndex: 2,
+      }}
+    >
+      {hour}:00
+    </div>
+  ));
 
-      return (
-        <div
-          key={hour}
-          style={{
-            color: "rgba(0, 0, 0, 0.5)",
-            position: "absolute",
-            top: `${slotTop}px`,
-            height: `${hourHeight}px`,
-            left: "5%",
-            width: "90%",
-            background: "rgba(240, 240, 245, 0.6)",
-            borderBottom: "1px dashed rgba(0, 0, 0, 0.1)",
-            padding: "2px 4px",
-            boxSizing: "border-box",
-          }}
-          onClick={e => {
-            if (!onClickHandler) return;
-            // Calculate minute offset within the hour
-            const rect = (e.target as HTMLDivElement).getBoundingClientRect();
-            const y = e.clientY - rect.top;
-            const minute = roundToNearest((y / rect.height) * 60, ROUND_TO_MINUTES); // round to nearest 5 or 10 min
-            onClickHandler(hour, Math.max(0, Math.min(59, minute)));
-          }}
-        >
-          {hour}:00
-        </div>
-      );
-    });
-  };
-  
+  // Render 5-minute slots for click handling
+  const slotDivs = Array.from({ length: TOTAL_ROWS }, (_, idx) => {
+    const hour = Math.floor(idx / ROWS_PER_HOUR);
+    const minute = (idx % ROWS_PER_HOUR) * MINUTES_PER_ROW;
+    return (
+      <div
+        key={`slot-${idx}`}
+        style={{
+          gridRow: idx + 1,
+          gridColumn: 2,
+          borderBottom: "1px dashed rgba(0,0,0,0.05)",
+          height: rowHeight,
+          cursor: onClickHandler ? "pointer" : undefined,
+        }}
+        onClick={() => onClickHandler && onClickHandler(hour, minute)}
+      />
+    );
+  });
+
   return (
     <div
       style={{
+        display: "grid",
+        gridTemplateRows: `repeat(${TOTAL_ROWS}, 1fr)`,
+        gridTemplateColumns: "60px 1fr",
+        height: windowHeight,
         position: "relative",
-        height: `${windowHeight}px`,
+        background: "#f8f8fa",
         overflow: "hidden",
       }}
     >
-      {hourGrid()}
+      {hourLabels}
+      {slotDivs}
     </div>
   );
 };
