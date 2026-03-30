@@ -216,6 +216,22 @@ store/
 - `useFetcher` replaces most of the current non-navigation form/action interactions
 - Zustand stays for transient client concerns, not as the authoritative source for server data
 
+### Integrated backend pattern (mandatory)
+
+Treat React Router server route modules as HTTP entry points (controller layer), not as business-logic containers.
+
+- `loader`/`action`/resource route: request parsing, auth guard, response shaping
+- service layer: use-case orchestration and tenancy-aware workflows
+- domain layer: pure scheduling and tenancy business rules/calculations
+- repository layer: Prisma data access and query composition
+
+Rules:
+
+- keep route modules thin
+- keep heavy tenancy calculations in domain/services
+- keep Node.js-only code in server modules (for example `*.server.ts`)
+- design services and domain modules so they can be extracted to Fastify/Express later if needed
+
 ### Service worker and caching strategy
 
 A service worker can be used, but it should be introduced carefully in an SSR app.
@@ -369,6 +385,7 @@ Actions:
 - add route guard helpers for authenticated and tenancy-required routes
 - rework components that currently depend on `useSession`
 - re-model how `userRole` is resolved, preferably per request or with explicit caching instead of ad hoc DB access from auth helpers
+- enforce thin route-module handlers that call service/domain modules for auth and tenancy logic
 
 Recommended approach:
 
@@ -387,7 +404,15 @@ Deliverables:
 - protected routes working
 - tenancy-aware session model defined
 
-## Phase 4: Replace i18n and route conventions
+Current implementation status (2026-03-30):
+
+- implemented custom cookie session helpers in the React Router app
+- implemented credentials login service using `bcryptjs`
+- implemented route-level auth guards for authenticated and tenancy-required routes
+- implemented locale-prefixed `login`, `logout`, and one protected route (`/:locale/app`)
+- wired route handlers to service/domain/repository layering (no business logic embedded in route module)
+
+## Phase 4: Replace i18n and route conventions ✅ COMPLETE
 
 Goals:
 
@@ -409,10 +434,22 @@ Recommended approach:
 
 Deliverables:
 
-- localized routing working
-- translation lookup working in both route components and shared UI
+- localized routing working ✅
+- translation lookup working in both route components and shared UI ✅
 
-## Phase 5: Port route tree and page shells
+Implementation notes:
+
+- packages: `remix-i18next@7.4.2`, `i18next`, `react-i18next`, `i18next-browser-languagedetector`, `i18next-fetch-backend`
+- `future.v8_middleware: true` enabled in `react-router.config.ts`
+- `app/locales/en/translation.ts` and `app/locales/hu/translation.ts` — bundled translation catalogs
+- `app/middleware/i18next.ts` — `createI18nextMiddleware` with URL-path-based locale detection
+- `app/routes/api.locales.ts` — resource route at `/api/locales/:lng/:ns` serves translation JSON for client-side hydration
+- `app/root.tsx` — exports middleware array, locale loader, and syncs `i18n.changeLanguage` on the client
+- `app/entry.server.tsx` — wraps SSR tree with `I18nextProvider`
+- `app/entry.client.tsx` — initialises i18next with Fetch backend + HTML-tag language detector
+- TypeScript: `DeepString<T>` utility type in `hu/translation.ts` allows different string values while enforcing key parity with `en` catalog
+
+## Phase 5: Port route tree and page shells ✅ COMPLETE
 
 Goals:
 
@@ -432,10 +469,58 @@ Key caveat:
 
 Deliverables:
 
-- core navigation tree recreated
-- protected and public layouts separated cleanly
+- core navigation tree recreated ✅
+- protected and public layouts separated cleanly ✅
+
+Implementation notes:
+
+- `app/routes.ts` now uses explicit layout routes under `:locale`:
+  - `layout("routes/public-shell.tsx", [...])` for public pages
+  - `route("app", "routes/tenancy-layout.tsx", [...])` for protected tenancy area
+- New public shell route: `app/routes/public-shell.tsx`
+  - locale-aware nav links
+  - login/logout links and locale switch links
+  - shared `<Outlet />` host for home/login/pricing/documentation pages
+- New protected shell route: `app/routes/tenancy-layout.tsx`
+  - tenancy guard in parent loader using `requireTenancyUser`
+  - shared protected header/nav
+  - typed outlet context for child protected routes
+- New route modules added:
+  - `app/routes/pricing.tsx`
+  - `app/routes/documentation.tsx`
+  - `app/routes/docs.tsx` (alias redirect to `/documentation`)
+- Protected dashboard updated to consume user/locale from protected layout outlet context (`app/routes/protected-dashboard.tsx`)
+- Runtime smoke checks verified:
+  - `/en`, `/hu`, `/en/pricing`, `/hu/pricing`, `/en/documentation` return 200
+  - `/en/docs` redirects to `/en/documentation`
+  - `/en/app` redirects to `/en/login` when not authenticated
 
 ## Phase 6: Feature slice migration
+
+Current implementation status (2026-03-30):
+
+- tenancy-based nested route structure has been scaffolded in React Router under `/:locale/my-tenancy/*`
+- protected nested pages mapped: dashboard, admin, schedules (list/new/edit/view), timeslots
+- routes are guarded by the existing tenancy auth layout and currently redirect unauthenticated users to `/:locale/login`
+- next step is feature-level porting of loaders/actions and form workflows for each nested page
+
+Phase 6 progress update (schedules list/create/edit):
+
+- implemented Prisma-backed schedule repository at `app/lib/repositories/scheduleRepository.server.ts`
+- implemented schedule service + validation at `app/lib/services/schedules/manageSchedules.server.ts`
+- `/:locale/my-tenancy/schedules` now uses a real loader with tenancy-scoped database query
+- `/:locale/my-tenancy/schedules/new` now uses real loader/action for frame lookup + schedule creation
+- `/:locale/my-tenancy/schedules/:id` now uses real loader/action for tenancy-scoped schedule edit
+- forms now return field/form validation errors and redirect to schedule list on success
+- next implementation target: port schedule view/details and timeslot-linked planner workflows
+
+Testing progress update (2026-03-30):
+
+- Jest introduced in `react-router-v7-app` with TypeScript support (`jest.config.cjs`, `tsconfig.jest.json`)
+- new unit tests added for schedule service logic and route loader/action behavior
+- coverage includes schedules list/create/edit logic paths and validation/error flows
+- coverage now also includes core routes, nested route components, auth/session helpers, tenancy service behavior, and Zustand store behavior
+- current status: `npm test` passing (54 tests)
 
 Suggested order:
 
@@ -535,6 +620,7 @@ These decisions are now accepted and should be treated as fixed constraints for 
 2. Auth approach: custom cookie/session auth
 3. Data retention: Oracle data can be dropped (no migration/import required)
 4. Service worker initial scope: static assets only
+5. Backend architecture: integrated backend with thin loaders/actions plus service/domain/repository layering
 
 Phase impact:
 
@@ -550,7 +636,8 @@ The first real milestone should not be feature parity. It should be a thin but c
 3. PostgreSQL + Prisma initialized
 4. login/logout implemented
 5. locale-prefixed routing working
-6. one protected CRUD slice working end-to-end
+6. one route proving loader -> service -> domain -> repository data flow
+7. one protected CRUD slice working end-to-end
 
 Once that exists, the rest of the migration becomes repetitive engineering instead of architecture discovery.
 
