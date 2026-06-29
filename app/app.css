@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--mantine-color-khaki-0);
+  color: var(--mantine-color-taupe-9);
+
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark;
+  }
+}
+
+body {
+  background-image:
+    radial-gradient(circle at top left, rgba(63, 205, 161, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(193, 159, 89, 0.22), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(246, 241, 228, 0.96));
+}
+
+body[data-mantine-color-scheme="dark"] {
+  background-color: #14110f;
+  color: #f4efeb;
+  background-image:
+    radial-gradient(circle at top left, rgba(63, 205, 161, 0.18), transparent 24%),
+    radial-gradient(circle at top right, rgba(164, 123, 91, 0.22), transparent 22%),
+    linear-gradient(180deg, rgba(28, 24, 22, 0.95), rgba(20, 17, 15, 1));
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: rgba(63, 205, 161, 0.24);
+}
+
+#app,
+main {
+  position: relative;
+}
+
+.app-page-shell {
+  max-width: 60rem;
+  margin: 0 auto;
+}

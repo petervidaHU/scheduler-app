@@ -1,0 +1,242 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TenancyRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id           String          @id @default(cuid())
+  email        String          @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  memberships  TenancyMember[]
+  sessions     Session[]
+}
+
+model Tenancy {
+  id            String          @id @default(cuid())
+  slug          String          @unique
+  name          String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  memberships   TenancyMember[]
+  sessions      Session[]
+  specialties   Specialty[]
+  subjects      Subject[]
+  classrooms    Classroom[]
+  teachers      Teacher[]
+  classes       Class[]
+  frames        Frame[]
+  timeslots     Timeslot[]
+  schedules     Schedule[]
+  syllabusItems SyllabusItem[]
+}
+
+model TenancyMember {
+  id        String      @id @default(cuid())
+  userId    String
+  tenancyId String
+  role      TenancyRole @default(MEMBER)
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenancy   Tenancy     @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenancyId])
+  @@index([tenancyId])
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  userId     String
+  tenancyId  String?
+  expiresAt  DateTime
+  userAgent  String?
+  ipAddress  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenancy    Tenancy?  @relation(fields: [tenancyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([tenancyId])
+}
+
+model Specialty {
+  id        String    @id @default(cuid())
+  tenancyId String
+  name      String
+  code      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  tenancy   Tenancy   @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  subjects  Subject[]
+  classes   Class[]
+
+  @@unique([tenancyId, name])
+}
+
+model Subject {
+  id          String      @id @default(cuid())
+  tenancyId   String
+  specialtyId String?
+  name        String
+  code        String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  tenancy     Tenancy     @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  specialty   Specialty?  @relation(fields: [specialtyId], references: [id], onDelete: SetNull)
+  timeslots   Timeslot[]
+  syllabus    SyllabusItem[]
+
+  @@unique([tenancyId, name])
+}
+
+model Classroom {
+  id        String     @id @default(cuid())
+  tenancyId String
+  name      String
+  capacity  Int?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  tenancy   Tenancy    @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  classes   Class[]
+  timeslots Timeslot[]
+
+  @@unique([tenancyId, name])
+}
+
+model Teacher {
+  id        String     @id @default(cuid())
+  tenancyId String
+  name      String
+  email     String?
+  code      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  tenancy   Tenancy    @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  classes   Class[]
+  timeslots Timeslot[]
+
+  @@unique([tenancyId, name])
+}
+
+model Class {
+  id          String       @id @default(cuid())
+  tenancyId   String
+  specialtyId String?
+  teacherId   String?
+  classroomId String?
+  name        String
+  code        String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  tenancy     Tenancy      @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  specialty   Specialty?   @relation(fields: [specialtyId], references: [id], onDelete: SetNull)
+  teacher     Teacher?     @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  classroom   Classroom?   @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  timeslots   Timeslot[]
+  syllabus    SyllabusItem[]
+
+  @@unique([tenancyId, name])
+}
+
+model Frame {
+  id        String     @id @default(cuid())
+  tenancyId String
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  tenancy   Tenancy    @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  timeslots Timeslot[]
+  schedules Schedule[]
+
+  @@unique([tenancyId, name])
+}
+
+model Timeslot {
+  id          String      @id @default(cuid())
+  tenancyId   String
+  frameId     String
+  classId     String?
+  subjectId   String?
+  teacherId   String?
+  classroomId String?
+  dayOfWeek   Int
+  startMinute Int
+  endMinute   Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  tenancy     Tenancy     @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  frame       Frame       @relation(fields: [frameId], references: [id], onDelete: Cascade)
+  class       Class?      @relation(fields: [classId], references: [id], onDelete: SetNull)
+  subject     Subject?    @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  teacher     Teacher?    @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  classroom   Classroom?  @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  entries     ScheduleEntry[]
+
+  @@index([tenancyId, frameId, dayOfWeek])
+}
+
+model Schedule {
+  id          String          @id @default(cuid())
+  tenancyId   String
+  frameId     String
+  name        String
+  isPublished Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  tenancy     Tenancy         @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  frame       Frame           @relation(fields: [frameId], references: [id], onDelete: Cascade)
+  entries     ScheduleEntry[]
+
+  @@unique([tenancyId, name])
+}
+
+model ScheduleEntry {
+  id         String    @id @default(cuid())
+  scheduleId String
+  timeslotId String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  schedule   Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  timeslot   Timeslot  @relation(fields: [timeslotId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, timeslotId])
+}
+
+model SyllabusItem {
+  id        String    @id @default(cuid())
+  tenancyId String
+  subjectId String
+  classId   String?
+  week      Int
+  topic     String
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  tenancy   Tenancy   @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  subject   Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  class     Class?    @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  @@index([tenancyId, week])
+}
