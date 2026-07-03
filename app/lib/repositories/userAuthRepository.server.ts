@@ -94,6 +94,24 @@ export async function getUserMembershipsWithTenancy(
   }));
 }
 
+export async function findActiveMembership(args: {
+  userId: string;
+  tenancyId: string;
+}): Promise<{ role: "OWNER" | "ADMIN" | "MEMBER" } | null> {
+  const membership = await prisma.tenancyMember.findUnique({
+    where: {
+      userId_tenancyId: { userId: args.userId, tenancyId: args.tenancyId },
+    },
+    select: { role: true, isActive: true },
+  });
+
+  if (!membership || !membership.isActive) {
+    return null;
+  }
+
+  return { role: membership.role };
+}
+
 export async function createBootstrapAuthData(args: {
   email: string;
   passwordHash: string;

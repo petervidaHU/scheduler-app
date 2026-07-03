@@ -15,7 +15,23 @@ type SessionData = {
   user: UserSessionData;
 };
 
-const sessionSecret = process.env.SESSION_SECRET ?? "dev-insecure-session-secret";
+function resolveSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+
+  if (secret && secret.length >= 32) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_SECRET must be set to a random string of at least 32 characters in production.",
+    );
+  }
+
+  return "dev-insecure-session-secret";
+}
+
+const sessionSecret = resolveSessionSecret();
 
 const sessionStorage = createCookieSessionStorage<SessionData>({
   cookie: {

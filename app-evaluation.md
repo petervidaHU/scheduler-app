@@ -12,16 +12,18 @@ The migration is **functionally complete but not finished**. Phases 0–6 of the
 
 **What works:** cookie-session login/logout, bcrypt hashing, signup → onboarding → tenancy switcher flow, route guards (`requireUserSession`, `requireTenancyUser`, `requireOnboardingUser`), tenancy switch validates membership server-side before committing.
 
-**What to fix:**
+**Hardening applied 2026-07-03:**
 
-| Priority | Issue | Detail |
+| Status | Issue | Resolution |
 |---|---|---|
-| 🔴 High | Stale session authority | `tenancyId` + `role` are baked into a 7-day cookie (`session.server.ts`). Revoking a membership or demoting a role does **nothing** until the cookie expires — the guards never re-check the DB. |
-| 🔴 High | Unused `Session` model | The Prisma `Session` table exists but nothing writes to it. Either implement DB-backed sessions (fixes the point above + enables logout-everywhere) or delete the model. |
-| 🔴 High | Insecure secret fallback | `SESSION_SECRET ?? "dev-insecure-session-secret"` — should **throw at startup in production** instead of silently signing cookies with a known string. |
-| 🟠 Medium | No role enforcement (RBAC) | `role` (OWNER/ADMIN/MEMBER) is carried in the session but no guard checks it — a MEMBER can reach every admin route. Add `requireRole(...)` guard once roles matter. |
-| 🟡 Low | Login error leakage | `login.server.ts` returns `Authentication failed: ${error.message}` to the client — internal errors (e.g. DB connection strings in messages) can leak. Log server-side, return a generic message. |
+| ✅ Fixed | Stale session authority | `requireTenancyUser` now re-validates the membership against the DB on **every request**: revoked/inactive membership → redirect to `/switch-tenancy`; the returned `role` always comes fresh from the DB, so demotions apply immediately. The cookie is now only a claim. |
+| ✅ Fixed | Insecure secret fallback | `session.server.ts` **throws at startup in production** unless `SESSION_SECRET` is set and ≥ 32 chars. Dev fallback remains for local work. |
+| ✅ Fixed | No role enforcement (RBAC) | New `requireTenancyRole({ ..., allowedRoles })` guard — throws 403 for disallowed roles. Not yet applied to any route (no owner/admin-only features exist yet); use it when they do. |
+| ✅ Fixed | Login error leakage | Internal errors are logged server-side; the client gets a generic "Authentication failed. Please try again." |
+| ⏳ Deferred | Unused `Session` model | Per-request re-validation made DB-backed sessions unnecessary for revocation. The unused Prisma `Session` model should be **deleted in a future migration** (or kept only if logout-everywhere/audit is wanted later). |
 | 🟡 Low | Bootstrap defaults | Dev bootstrap user (`admin@example.com` / `admin1234`) is correctly disabled in production, but keep an eye on `AUTH_BOOTSTRAP_ENABLED` semantics (`!== "false"` means it's on by default). |
+
+Cost note: the re-validation adds one indexed `TenancyMember` lookup per protected request — negligible at this scale.
 
 ## 2. Database (Oracle → Postgres) — ✅ migration done
 
@@ -55,9 +57,8 @@ The migration is **functionally complete but not finished**. Phases 0–6 of the
    - Move secrets out (`oldapp/app/wallet/`, `oldapp/githubActionSshKey`) if still needed anywhere, then delete `oldapp/` entirely.
    - Until deletion, add `"exclude": ["oldapp"]` to `tsconfig.json` — right now `npm run typecheck` reports dozens of errors that are all from the archived app, which masks real regressions.
    - Update `README.md` + document required env vars (`DATABASE_URL`, `SESSION_SECRET`, `AUTH_BOOTSTRAP_*`).
-3. **Auth hardening** (the 🔴 items above): fail-fast `SESSION_SECRET`, then decide cookie-only vs DB-backed sessions — this decision gates the stale-role fix and the unused-model cleanup with one stone.
-4. **RBAC guard** — add `requireRole` before building any owner/admin-only features.
-5. **Then** feature work: planner polish, seed script, service worker (explicitly deferred post-migration).
+3. ~~**Auth hardening**~~ ✅ Done 2026-07-03 (see table above). Remaining follow-ups: set a real `SESSION_SECRET` in production env, drop the unused `Session` model in a future migration, apply `requireTenancyRole` when admin-only features arrive.
+4. **Then** feature work: planner polish, seed script, service worker (explicitly deferred post-migration).
 
 ## What NOT to do
 

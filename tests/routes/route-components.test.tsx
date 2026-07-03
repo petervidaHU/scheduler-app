@@ -26,6 +26,10 @@ jest.mock("../../app/lib/auth/session.server", () => ({
   destroyUserSession: jest.fn(),
 }));
 
+jest.mock("../../app/lib/repositories/userAuthRepository.server", () => ({
+  findActiveMembership: jest.fn(),
+}));
+
 jest.mock("../../app/lib/services/tenancy/getTenancyOverview.server", () => ({
   getTenancyOverview: jest.fn(),
 }));

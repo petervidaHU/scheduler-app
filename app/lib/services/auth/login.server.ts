@@ -68,7 +68,7 @@ export async function loginWithEmailPassword(args: {
       },
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown auth error";
-    return { ok: false, message: `Authentication failed: ${message}` };
+    console.error("Login failed:", error);
+    return { ok: false, message: "Authentication failed. Please try again." };
   }
 }
