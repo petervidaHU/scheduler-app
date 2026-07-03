@@ -1,7 +1,8 @@
-import { Button, Group, NumberInput, Select, Stack, Tabs, TextInput } from "@mantine/core";
+import { Button, Group, NumberInput, Select, Stack, Tabs } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useEffect, useState } from "react";
 import { useSubmit } from "react-router";
+import { useTranslation } from "react-i18next";
 import type {
   TimeslotListItem,
   TimeslotOptions,
@@ -18,6 +19,7 @@ type OptionsOnlyProps = {
 
 function SingleTimeslotForm({ options }: OptionsOnlyProps) {
   const submit = useSubmit();
+  const { t } = useTranslation();
   const defaultFrameId = options.frames[0]?.value ?? "";
   const form = useForm({
     mode: "uncontrolled",
@@ -35,11 +37,11 @@ function SingleTimeslotForm({ options }: OptionsOnlyProps) {
       classId: "",
     },
     validate: {
-      frameId: (value) => (value.trim().length === 0 ? "Frame is required" : null),
+      frameId: (value) => (value.trim().length === 0 ? t("timeslotForm.frameRequired") : null),
       endHour: (value, values) => {
         const start = values.startHour * 60 + values.startMinutePart;
         const end = value * 60 + values.endMinutePart;
-        return end <= start ? "End time must be after start time" : null;
+        return end <= start ? t("timeslotForm.endTimeInvalid") : null;
       },
     },
   });
@@ -57,14 +59,14 @@ function SingleTimeslotForm({ options }: OptionsOnlyProps) {
     >
       <Stack gap="sm">
         <Select
-          label="Frame"
-          placeholder="Select frame"
+          label={t("timeslotForm.frameLabel")}
+          placeholder={t("timeslotForm.framePlaceholder")}
           data={options.frames}
           key={form.key("frameId")}
           {...form.getInputProps("frameId")}
         />
         <Select
-          label="Day of week"
+          label={t("timeslotForm.dayOfWeekLabel")}
           data={[
             { value: "1", label: "1" },
             { value: "2", label: "2" },
@@ -79,14 +81,14 @@ function SingleTimeslotForm({ options }: OptionsOnlyProps) {
         />
         <Group grow>
           <NumberInput
-            label="Start hour"
+            label={t("timeslotForm.startHourLabel")}
             min={0}
             max={23}
             key={form.key("startHour")}
             {...form.getInputProps("startHour")}
           />
           <NumberInput
-            label="Start minute"
+            label={t("timeslotForm.startMinuteLabel")}
             min={0}
             max={59}
             step={5}
@@ -96,14 +98,14 @@ function SingleTimeslotForm({ options }: OptionsOnlyProps) {
         </Group>
         <Group grow>
           <NumberInput
-            label="End hour"
+            label={t("timeslotForm.endHourLabel")}
             min={0}
             max={23}
             key={form.key("endHour")}
             {...form.getInputProps("endHour")}
           />
           <NumberInput
-            label="End minute"
+            label={t("timeslotForm.endMinuteLabel")}
             min={0}
             max={59}
             step={5}
@@ -112,39 +114,39 @@ function SingleTimeslotForm({ options }: OptionsOnlyProps) {
           />
         </Group>
         <Select
-          label="Subject"
-          placeholder="Optional"
+          label={t("entities.subject")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.subjects}
           key={form.key("subjectId")}
           {...form.getInputProps("subjectId")}
         />
         <Select
-          label="Teacher"
-          placeholder="Optional"
+          label={t("entities.teacher")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.teachers}
           key={form.key("teacherId")}
           {...form.getInputProps("teacherId")}
         />
         <Select
-          label="Classroom"
-          placeholder="Optional"
+          label={t("entities.classroom")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.classrooms}
           key={form.key("classroomId")}
           {...form.getInputProps("classroomId")}
         />
         <Select
-          label="Class"
-          placeholder="Optional"
+          label={t("entities.class")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.classes}
           key={form.key("classId")}
           {...form.getInputProps("classId")}
         />
         <Group justify="flex-end">
-          <Button type="submit">Create timeslot</Button>
+          <Button type="submit">{t("timeslotForm.createSingle")}</Button>
         </Group>
       </Stack>
     </form>
@@ -153,6 +155,7 @@ function SingleTimeslotForm({ options }: OptionsOnlyProps) {
 
 function TemplateTimeslotForm({ options }: OptionsOnlyProps) {
   const submit = useSubmit();
+  const { t } = useTranslation();
   const defaultFrameId = options.frames[0]?.value ?? "";
   const form = useForm({
     mode: "uncontrolled",
@@ -170,9 +173,9 @@ function TemplateTimeslotForm({ options }: OptionsOnlyProps) {
       classId: "",
     },
     validate: {
-      frameId: (value) => (value.trim().length === 0 ? "Frame is required" : null),
-      slotLength: (value) => (value < 1 ? "Slot length must be positive" : null),
-      slotCount: (value) => (value < 1 || value > 20 ? "Slot count must be 1-20" : null),
+      frameId: (value) => (value.trim().length === 0 ? t("timeslotForm.frameRequired") : null),
+      slotLength: (value) => (value < 1 ? t("timeslotForm.slotLengthInvalid") : null),
+      slotCount: (value) => (value < 1 || value > 20 ? t("timeslotForm.slotCountInvalid") : null),
     },
   });
 
@@ -189,14 +192,14 @@ function TemplateTimeslotForm({ options }: OptionsOnlyProps) {
     >
       <Stack gap="sm">
         <Select
-          label="Frame"
-          placeholder="Select frame"
+          label={t("timeslotForm.frameLabel")}
+          placeholder={t("timeslotForm.framePlaceholder")}
           data={options.frames}
           key={form.key("frameId")}
           {...form.getInputProps("frameId")}
         />
         <Select
-          label="Day of week"
+          label={t("timeslotForm.dayOfWeekLabel")}
           data={[
             { value: "1", label: "1" },
             { value: "2", label: "2" },
@@ -211,14 +214,14 @@ function TemplateTimeslotForm({ options }: OptionsOnlyProps) {
         />
         <Group grow>
           <NumberInput
-            label="Start hour"
+            label={t("timeslotForm.startHourLabel")}
             min={0}
             max={23}
             key={form.key("startHour")}
             {...form.getInputProps("startHour")}
           />
           <NumberInput
-            label="Start minute"
+            label={t("timeslotForm.startMinuteLabel")}
             min={0}
             max={59}
             step={5}
@@ -228,13 +231,13 @@ function TemplateTimeslotForm({ options }: OptionsOnlyProps) {
         </Group>
         <Group grow>
           <NumberInput
-            label="Slot length (minutes)"
+            label={t("timeslotForm.slotLengthLabel")}
             min={1}
             key={form.key("slotLength")}
             {...form.getInputProps("slotLength")}
           />
           <NumberInput
-            label="Number of slots"
+            label={t("timeslotForm.slotCountLabel")}
             min={1}
             max={20}
             key={form.key("slotCount")}
@@ -242,39 +245,39 @@ function TemplateTimeslotForm({ options }: OptionsOnlyProps) {
           />
         </Group>
         <Select
-          label="Subject"
-          placeholder="Optional"
+          label={t("entities.subject")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.subjects}
           key={form.key("subjectId")}
           {...form.getInputProps("subjectId")}
         />
         <Select
-          label="Teacher"
-          placeholder="Optional"
+          label={t("entities.teacher")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.teachers}
           key={form.key("teacherId")}
           {...form.getInputProps("teacherId")}
         />
         <Select
-          label="Classroom"
-          placeholder="Optional"
+          label={t("entities.classroom")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.classrooms}
           key={form.key("classroomId")}
           {...form.getInputProps("classroomId")}
         />
         <Select
-          label="Class"
-          placeholder="Optional"
+          label={t("entities.class")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.classes}
           key={form.key("classId")}
           {...form.getInputProps("classId")}
         />
         <Group justify="flex-end">
-          <Button type="submit">Create template timeslots</Button>
+          <Button type="submit">{t("timeslotForm.createTemplate")}</Button>
         </Group>
       </Stack>
     </form>
@@ -283,6 +286,7 @@ function TemplateTimeslotForm({ options }: OptionsOnlyProps) {
 
 function EditTimeslotForm({ options, timeslots }: Props) {
   const submit = useSubmit();
+  const { t } = useTranslation();
   const defaultTimeslot = timeslots[0] ?? null;
   const [selectedId, setSelectedId] = useState(defaultTimeslot?.id ?? "");
   const form = useForm({
@@ -301,19 +305,19 @@ function EditTimeslotForm({ options, timeslots }: Props) {
       classId: defaultTimeslot?.classId ?? "",
     },
     validate: {
-      timeslotId: (value) => (value.trim().length === 0 ? "Select a timeslot" : null),
-      frameId: (value) => (value.trim().length === 0 ? "Frame is required" : null),
+      timeslotId: (value) => (value.trim().length === 0 ? t("timeslotForm.timeslotRequired") : null),
+      frameId: (value) => (value.trim().length === 0 ? t("timeslotForm.frameRequired") : null),
       endHour: (value, values) => {
         const start = values.startHour * 60 + values.startMinutePart;
         const end = value * 60 + values.endMinutePart;
-        return end <= start ? "End time must be after start time" : null;
+        return end <= start ? t("timeslotForm.endTimeInvalid") : null;
       },
     },
   });
 
   const timeslotOptions = timeslots.map((item) => ({
     value: item.id,
-    label: `${item.id} - day ${item.dayOfWeek} (${String(Math.floor(item.startMinute / 60)).padStart(2, "0")}:${String(item.startMinute % 60).padStart(2, "0")})`,
+    label: `${item.frameName} — ${t("planner.day")} ${item.dayOfWeek} (${String(Math.floor(item.startMinute / 60)).padStart(2, "0")}:${String(item.startMinute % 60).padStart(2, "0")})`,
   }));
 
   useEffect(() => {
@@ -354,8 +358,8 @@ function EditTimeslotForm({ options, timeslots }: Props) {
     >
       <Stack gap="sm">
         <Select
-          label="Timeslot"
-          placeholder="Select timeslot"
+          label={t("timeslotForm.timeslotLabel")}
+          placeholder={t("timeslotForm.timeslotPlaceholder")}
           data={timeslotOptions}
           key={form.key("timeslotId")}
           {...form.getInputProps("timeslotId")}
@@ -366,14 +370,14 @@ function EditTimeslotForm({ options, timeslots }: Props) {
           }}
         />
         <Select
-          label="Frame"
-          placeholder="Select frame"
+          label={t("timeslotForm.frameLabel")}
+          placeholder={t("timeslotForm.framePlaceholder")}
           data={options.frames}
           key={form.key("frameId")}
           {...form.getInputProps("frameId")}
         />
         <Select
-          label="Day of week"
+          label={t("timeslotForm.dayOfWeekLabel")}
           data={[
             { value: "1", label: "1" },
             { value: "2", label: "2" },
@@ -388,14 +392,14 @@ function EditTimeslotForm({ options, timeslots }: Props) {
         />
         <Group grow>
           <NumberInput
-            label="Start hour"
+            label={t("timeslotForm.startHourLabel")}
             min={0}
             max={23}
             key={form.key("startHour")}
             {...form.getInputProps("startHour")}
           />
           <NumberInput
-            label="Start minute"
+            label={t("timeslotForm.startMinuteLabel")}
             min={0}
             max={59}
             step={5}
@@ -405,14 +409,14 @@ function EditTimeslotForm({ options, timeslots }: Props) {
         </Group>
         <Group grow>
           <NumberInput
-            label="End hour"
+            label={t("timeslotForm.endHourLabel")}
             min={0}
             max={23}
             key={form.key("endHour")}
             {...form.getInputProps("endHour")}
           />
           <NumberInput
-            label="End minute"
+            label={t("timeslotForm.endMinuteLabel")}
             min={0}
             max={59}
             step={5}
@@ -421,39 +425,39 @@ function EditTimeslotForm({ options, timeslots }: Props) {
           />
         </Group>
         <Select
-          label="Subject"
-          placeholder="Optional"
+          label={t("entities.subject")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.subjects}
           key={form.key("subjectId")}
           {...form.getInputProps("subjectId")}
         />
         <Select
-          label="Teacher"
-          placeholder="Optional"
+          label={t("entities.teacher")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.teachers}
           key={form.key("teacherId")}
           {...form.getInputProps("teacherId")}
         />
         <Select
-          label="Classroom"
-          placeholder="Optional"
+          label={t("entities.classroom")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.classrooms}
           key={form.key("classroomId")}
           {...form.getInputProps("classroomId")}
         />
         <Select
-          label="Class"
-          placeholder="Optional"
+          label={t("entities.class")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           clearable
           data={options.classes}
           key={form.key("classId")}
           {...form.getInputProps("classId")}
         />
         <Group justify="flex-end">
-          <Button type="submit">Update timeslot</Button>
+          <Button type="submit">{t("timeslotForm.updateTimeslot")}</Button>
         </Group>
       </Stack>
     </form>
@@ -461,12 +465,14 @@ function EditTimeslotForm({ options, timeslots }: Props) {
 }
 
 export default function TimeslotForms({ options, timeslots }: Props) {
+  const { t } = useTranslation();
+
   return (
     <Tabs defaultValue="single">
       <Tabs.List>
-        <Tabs.Tab value="single">Single timeslot</Tabs.Tab>
-        <Tabs.Tab value="template">Timeslot template</Tabs.Tab>
-        <Tabs.Tab value="edit">Edit timeslot</Tabs.Tab>
+        <Tabs.Tab value="single">{t("timeslotForm.tabSingle")}</Tabs.Tab>
+        <Tabs.Tab value="template">{t("timeslotForm.tabTemplate")}</Tabs.Tab>
+        <Tabs.Tab value="edit">{t("timeslotForm.tabEdit")}</Tabs.Tab>
       </Tabs.List>
 
       <Tabs.Panel value="single" pt="md">

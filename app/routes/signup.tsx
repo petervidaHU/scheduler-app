@@ -96,7 +96,7 @@ export default function SignupPage({ loaderData, actionData }: Route.ComponentPr
               required
             />
             {errors?.form ? (
-              <Text c="red" size="sm">
+              <Text c="poppy" size="sm">
                 {errors.form}
               </Text>
             ) : null}

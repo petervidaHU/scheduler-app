@@ -7,7 +7,7 @@ import Logout from "../../app/routes/logout";
 import PublicShell from "../../app/routes/public-shell";
 import TenancyLayout from "../../app/routes/tenancy-layout";
 import MyTenancyLayout from "../../app/routes/my-tenancy-layout";
-import MyTenancyAdmin from "../../app/routes/my-tenancy.admin";
+import MyTenancyAdmin from "../../app/routes/my-tenancy.admin.index";
 import MyTenancyDashboard from "../../app/routes/my-tenancy.index";
 import SchedulesLayout from "../../app/routes/my-tenancy.schedules-layout";
 import ViewSchedulePage from "../../app/routes/my-tenancy.schedules.view";
@@ -41,14 +41,20 @@ jest.mock("../../app/lib/services/tenancy/getTenancyAdminEntityCounts.server", (
 jest.mock("../../app/lib/services/tenancy/manageAdminEntities.server", () => ({
   getAdminFormOptions: jest.fn(),
   getAdminEntityTableData: jest.fn(),
+  getAdminEntityFormValues: jest.fn(),
   createAdminEntity: jest.fn(),
+  updateAdminEntity: jest.fn(),
   deleteAdminEntityForTenancy: jest.fn(),
 }));
 
 jest.mock("../../app/lib/services/timeslots/manageTimeslots.server", () => ({
   getTimeslotOptions: jest.fn(),
-  getTimeslotListForTenancy: jest.fn(),
+  getTimeslotListForTenancy: jest.fn(() => Promise.resolve([])),
   createTimeslotFromForm: jest.fn(),
+}));
+
+jest.mock("../../app/lib/services/schedules/manageSchedules.server", () => ({
+  getScheduleListForTenancy: jest.fn(() => Promise.resolve([])),
 }));
 
 jest.mock("../../app/lib/services/schedules/managePlannerEntries.server", () => ({
@@ -79,11 +85,12 @@ jest.mock("react-router", () => ({
     unstable_mask: undefined,
   })),
   useSearchParams: jest.fn(() => [new URLSearchParams(), jest.fn()]),
+  useNavigate: jest.fn(() => jest.fn()),
   useSubmit: jest.fn(() => jest.fn()),
   useFetcher: jest.fn(() => ({ state: "idle", data: undefined, load: jest.fn(), submit: jest.fn() })),
   useOutletContext: jest.fn(() => ({
     locale: "en",
-    user: { userId: "u1", email: "admin@example.com", tenancyId: "t1", role: "ADMIN" },
+    user: { userId: "u1", email: "admin@example.com", tenancyId: "t1", tenancyName: "Test School", role: "ADMIN" },
   })),
 }));
 
@@ -123,16 +130,16 @@ describe("route component rendering", () => {
       React.createElement(TenancyLayout, {
         loaderData: {
           locale: "en",
-          user: { userId: "u1", email: "admin@example.com", tenancyId: "t1", role: "ADMIN" },
+          user: { userId: "u1", email: "admin@example.com", tenancyId: "t1", tenancyName: "Test School", role: "ADMIN" },
         },
       }),
     );
     expect(html).toContain("admin@example.com");
   });
 
-  test("my tenancy layout renders tenancy nav", () => {
+  test("my tenancy layout forwards outlet context", () => {
     const html = renderWithMantine(React.createElement(MyTenancyLayout));
-    expect(html).toContain("Timeslots");
+    expect(html).toContain("admin@example.com");
   });
 
   test("my tenancy admin renders placeholder", () => {
@@ -151,11 +158,6 @@ describe("route component rendering", () => {
               frame: 1,
             },
           },
-          options: {
-            specialties: [],
-            teachers: [],
-            classrooms: [],
-          },
           tableData: {
             specialty: { headers: ["Id", "Name", "Code"], rows: [] },
             subject: { headers: ["Id", "Name", "Code", "Specialty"], rows: [] },
@@ -170,17 +172,27 @@ describe("route component rendering", () => {
         },
       })
     );
-    expect(html).toContain("Current user role");
+    expect(html).toContain("nav.resources");
   });
 
-  test("my tenancy dashboard renders tenancy id label", () => {
-    const html = renderWithMantine(React.createElement(MyTenancyDashboard));
-    expect(html).toContain("dashboard.tenancyId");
+  test("my tenancy dashboard renders page header and school name", () => {
+    const html = renderWithMantine(
+      React.createElement(MyTenancyDashboard, {
+        loaderData: {
+          tenancyName: "Test School",
+          counts: { classroom: 1, class: 1, specialty: 1, subject: 1, teacher: 1, frame: 1 },
+          scheduleCount: 0,
+          timeslotCount: 0,
+        },
+      }),
+    );
+    expect(html).toContain("nav.dashboard");
+    expect(html).toContain("overview.subtitle");
   });
 
-  test("schedules layout renders nested schedule nav", () => {
+  test("schedules layout forwards outlet context", () => {
     const html = renderWithMantine(React.createElement(SchedulesLayout));
-    expect(html).toContain("Schedules");
+    expect(html).toContain("admin@example.com");
   });
 
   test("schedule view renders schedule name", () => {
@@ -221,13 +233,10 @@ describe("route component rendering", () => {
     expect(html).toContain("Timeslots");
   });
 
-  test("protected dashboard renders loader data", () => {
-    const html = renderWithMantine(
-      React.createElement(ProtectedDashboard, {
-        loaderData: { tenancyOverview: { source: "database" } },
-      }),
-    );
-    expect(html).toContain("overview source");
+  test("protected dashboard renders school and user info", () => {
+    const html = renderWithMantine(React.createElement(ProtectedDashboard));
+    expect(html).toContain("Test School");
+    expect(html).toContain("admin@example.com");
   });
 
   test("login component renders action error", () => {
@@ -240,25 +249,25 @@ describe("route component rendering", () => {
     expect(html).toContain("Invalid email or password.");
   });
 
-  test("home component renders tenancy overview data", () => {
+  test("home component renders sign-in/sign-up CTAs for anonymous visitors", () => {
+    const html = renderWithMantine(
+      React.createElement(Home, {
+        loaderData: { locale: "en", user: null },
+      }),
+    );
+    expect(html).toContain("auth.signUp");
+    expect(html).toContain("auth.signIn");
+  });
+
+  test("home component renders a dashboard CTA for authenticated users", () => {
     const html = renderWithMantine(
       React.createElement(Home, {
         loaderData: {
           locale: "en",
-          serverRenderedAt: "2026-03-30T00:00:00.000Z",
-          tenancyOverview: {
-            source: "database",
-            errorMessage: null,
-            overview: {
-              counts: { tenancies: 1, users: 2, memberships: 2, activeMemberships: 2, teachers: 0, classes: 0, timeslots: 0, schedules: 0 },
-              ratios: { activeMembershipRate: 1, schedulesPerTenancy: 0, timeslotsPerClass: 0 },
-              health: { status: "healthy", score: 100, notes: ["ok"] },
-            },
-          },
-          user: null,
+          user: { userId: "u1", email: "admin@example.com", tenancyId: "t1", role: "ADMIN" },
         },
       }),
     );
-    expect(html).toContain("SSR loader marker");
+    expect(html).toContain("home.goToDashboard");
   });
 });

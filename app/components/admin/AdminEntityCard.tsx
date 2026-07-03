@@ -1,37 +1,50 @@
-import { Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Button, Card, Group, Stack, Text, ThemeIcon, Title } from "@mantine/core";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
+import { entityMeta, type EntityKind } from "~/ui";
+
+export type ResourcePluralLabelKey =
+  | "nav.classrooms"
+  | "nav.classes"
+  | "nav.specialties"
+  | "nav.subjects"
+  | "nav.teachers"
+  | "nav.frames";
 
 type AdminEntityCardProps = {
-  title: string;
-  description: string;
+  kind: EntityKind;
+  pluralLabelKey: ResourcePluralLabelKey;
   count: number;
-  createLabel: string;
   createTo: string;
 };
 
 export default function AdminEntityCard({
-  title,
-  description,
+  kind,
+  pluralLabelKey,
   count,
-  createLabel,
   createTo,
 }: AdminEntityCardProps) {
+  const { t } = useTranslation();
+  const meta = entityMeta[kind];
+  const IconComponent = meta.icon;
+
   return (
     <Card shadow="md" radius="lg" p="lg" withBorder>
       <Stack gap="sm">
         <Group justify="space-between" align="center">
-          <Title order={4}>{title}</Title>
+          <Group gap="xs">
+            <ThemeIcon variant="light" color={meta.colorKey} radius="xl">
+              <IconComponent size={18} aria-hidden />
+            </ThemeIcon>
+            <Title order={4}>{t(pluralLabelKey)}</Title>
+          </Group>
           <Text size="sm" c="dimmed">
             {count}
           </Text>
         </Group>
 
-        <Text size="sm" c="dimmed">
-          {description}
-        </Text>
-
-        <Button component={Link} to={createTo} variant="light" fullWidth>
-          {createLabel}
+        <Button component={Link} to={createTo} variant="light" color={meta.colorKey} fullWidth>
+          {t("adminForm.createLabel", { entity: t(meta.labelKey) })}
         </Button>
       </Stack>
     </Card>

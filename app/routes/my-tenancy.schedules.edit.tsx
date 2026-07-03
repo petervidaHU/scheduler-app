@@ -1,15 +1,6 @@
-import {
-  Alert,
-  Button,
-  Checkbox,
-  Paper,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+import { Button, Checkbox, Paper, Select, Stack, Text, TextInput } from "@mantine/core";
 import { Form, redirect } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { Route } from "./+types/my-tenancy.schedules.edit";
 import { requireTenancyUser } from "../lib/services/auth/guards.server";
 import {
@@ -17,6 +8,7 @@ import {
   getScheduleForEdit,
   updateSchedule,
 } from "../lib/services/schedules/manageSchedules.server";
+import { PageHeader } from "~/ui";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const user = await requireTenancyUser({
@@ -79,6 +71,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function EditSchedulePage({ loaderData, actionData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const failedAction = actionData && !actionData.ok ? actionData : null;
   const nameValue = failedAction?.values.name ?? loaderData.schedule.name;
   const frameIdValue = failedAction?.values.frameId ?? loaderData.schedule.frameId;
@@ -86,24 +79,21 @@ export default function EditSchedulePage({ loaderData, actionData }: Route.Compo
     failedAction?.values.isPublished ?? loaderData.schedule.isPublished;
 
   return (
-    <Stack gap="md">
-      <Title order={3}>Edit schedule</Title>
-      <Alert color="blue" variant="light">
-        Update schedule persists to Prisma for schedule ID {loaderData.schedule.id}.
-      </Alert>
-      <Paper withBorder radius="md" p="md">
+    <Stack gap="lg">
+      <PageHeader title={loaderData.schedule.name} />
+      <Paper withBorder radius="lg" p="md" maw={480}>
         <Form method="post">
           <Stack gap="sm">
             <TextInput
               name="name"
-              label="Name"
+              label={t("schedule.name")}
               defaultValue={nameValue}
               error={failedAction?.error.fieldErrors.name}
               required
             />
             <Select
               name="frameId"
-              label="Frame"
+              label={t("schedule.frame")}
               data={loaderData.frames.map((frame: { id: string; label: string }) => ({
                 value: frame.id,
                 label: frame.label,
@@ -115,15 +105,15 @@ export default function EditSchedulePage({ loaderData, actionData }: Route.Compo
             />
             <Checkbox
               name="isPublished"
-              label="Published"
+              label={t("schedule.published")}
               defaultChecked={isPublishedValue}
             />
             {failedAction?.error.formError ? (
-              <Text c="red" size="sm">
+              <Text c="poppy" size="sm">
                 {failedAction.error.formError}
               </Text>
             ) : null}
-            <Button type="submit">Save changes</Button>
+            <Button type="submit">{t("schedule.saveChanges")}</Button>
           </Stack>
         </Form>
       </Paper>

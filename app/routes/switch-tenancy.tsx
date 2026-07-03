@@ -79,7 +79,7 @@ export default function SwitchTenancyPage({ loaderData, actionData }: Route.Comp
       </Text>
 
       {actionData && !actionData.ok ? (
-        <Alert color="red" variant="light">
+        <Alert color="poppy" variant="light">
           {actionData.error}
         </Alert>
       ) : null}
@@ -104,7 +104,7 @@ export default function SwitchTenancyPage({ loaderData, actionData }: Route.Comp
                     {membership.role}
                   </Badge>
                   {isCurrent ? (
-                    <Badge variant="dot" color="green">
+                    <Badge variant="dot" color="tiffany">
                       {t("switchTenancy.current")}
                     </Badge>
                   ) : (

@@ -35,7 +35,7 @@ module.exports = {
       lines: 80,
       statements: 80,
     },
-    'app/components/ColorModeSwitcher.tsx': {
+    'app/ui/ColorSchemeToggle.tsx': {
       branches: 80,
       functions: 80,
       lines: 80,

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sk https://schedule.fromthe.test:8443/en)",
+      "Bash(curl -sk https://schedule.fromthe.test:8443/en -o /tmp/verify.html -w \"http:%{http_code}\\\\n\")",
+      "Bash(curl -sk -b /tmp/claude-1000/-home-petervida-scheduler-app/9d9994e7-0ca9-423d-8581-9b3ed903e4cd/scratchpad/cookies.txt https://schedule.fromthe.test:8443/en/my-tenancy -o /tmp/verify_shell.html -w \"shell-http:%{http_code}\\\\n\")"
+    ]
+  }
+}

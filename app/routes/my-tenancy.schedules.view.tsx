@@ -64,7 +64,7 @@ export default function ViewSchedulePage({ loaderData }: Route.ComponentProps) {
           </Text>
         </Stack>
         <Group gap="xs">
-          <Badge variant="light" color={schedule.isPublished ? "green" : "gray"}>
+          <Badge variant="light" color={schedule.isPublished ? "tiffany" : "gray"}>
             {schedule.isPublished ? t("planner.published") : t("planner.draft")}
           </Badge>
           <Anchor
@@ -84,7 +84,7 @@ export default function ViewSchedulePage({ loaderData }: Route.ComponentProps) {
         </Group>
       </Group>
 
-      <Alert color="blue" variant="light">
+      <Alert color="cambridge" variant="light">
         {t("planner.clickHint")}
       </Alert>
 

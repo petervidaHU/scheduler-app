@@ -5,12 +5,10 @@ import { loader as localeLayoutLoader } from "../../app/routes/locale-layout";
 import { action as loginAction, loader as loginLoader } from "../../app/routes/login";
 import { action as logoutAction, loader as logoutLoader } from "../../app/routes/logout";
 import { loader as publicShellLoader } from "../../app/routes/public-shell";
-import { loader as protectedDashboardLoader } from "../../app/routes/protected-dashboard";
 import { loader as rootRedirectLoader } from "../../app/routes/root-redirect";
 import { loader as tenancyLayoutLoader } from "../../app/routes/tenancy-layout";
 import { loader as schedulesViewLoader } from "../../app/routes/my-tenancy.schedules.view";
 import { getOptionalUserSession, commitUserSession, destroyUserSession } from "../../app/lib/auth/session.server";
-import { getTenancyOverview } from "../../app/lib/services/tenancy/getTenancyOverview.server";
 import { loginWithEmailPassword } from "../../app/lib/services/auth/login.server";
 import { requireTenancyUser } from "../../app/lib/services/auth/guards.server";
 import { loadPlannerData } from "../../app/lib/services/schedules/managePlannerEntries.server";
@@ -19,10 +17,6 @@ jest.mock("../../app/lib/auth/session.server", () => ({
   getOptionalUserSession: jest.fn(),
   commitUserSession: jest.fn(),
   destroyUserSession: jest.fn(),
-}));
-
-jest.mock("../../app/lib/services/tenancy/getTenancyOverview.server", () => ({
-  getTenancyOverview: jest.fn(),
 }));
 
 jest.mock("../../app/lib/services/auth/login.server", () => ({
@@ -44,7 +38,6 @@ const mockedGetOptionalUserSession = getOptionalUserSession as jest.MockedFuncti
 >;
 const mockedCommitUserSession = commitUserSession as jest.MockedFunction<typeof commitUserSession>;
 const mockedDestroyUserSession = destroyUserSession as jest.MockedFunction<typeof destroyUserSession>;
-const mockedGetTenancyOverview = getTenancyOverview as jest.MockedFunction<typeof getTenancyOverview>;
 const mockedLoginWithEmailPassword = loginWithEmailPassword as jest.MockedFunction<
   typeof loginWithEmailPassword
 >;
@@ -91,21 +84,12 @@ describe("core route loaders and actions", () => {
 
   test("home meta returns title and description", () => {
     expect(homeMeta({} as never)).toEqual([
-      { title: "Scheduler App - React Router v7" },
-      { name: "description", content: "Phase 1 migration bootstrap" },
+      { title: "Scheduler App" },
+      { name: "description", content: "Plan and manage class schedules for your school." },
     ]);
   });
 
-  test("home loader returns tenancy overview and optional user", async () => {
-    mockedGetTenancyOverview.mockResolvedValue({
-      source: "database",
-      errorMessage: null,
-      overview: {
-        counts: { tenancies: 1, users: 1, memberships: 1, activeMemberships: 1, teachers: 0, classes: 0, timeslots: 0, schedules: 0 },
-        ratios: { activeMembershipRate: 1, schedulesPerTenancy: 0, timeslotsPerClass: 0 },
-        health: { status: "healthy", score: 100, notes: [] },
-      },
-    } as never);
+  test("home loader returns safe locale and optional user", async () => {
     mockedGetOptionalUserSession.mockResolvedValue(null);
 
     const result = await homeLoader({
@@ -183,12 +167,6 @@ describe("core route loaders and actions", () => {
     expect(result.locale).toBe("en");
   });
 
-  test("protected dashboard loader returns tenancy overview", async () => {
-    mockedGetTenancyOverview.mockResolvedValue({ source: "database" } as never);
-    const result = await protectedDashboardLoader({} as never);
-    expect(result).toEqual({ tenancyOverview: { source: "database" } });
-  });
-
   test("root redirect loader redirects to default locale", async () => {
     await expect(rootRedirectLoader()).rejects.toMatchObject({ status: 302 });
   });
@@ -198,6 +176,7 @@ describe("core route loaders and actions", () => {
       userId: "u1",
       email: "a@example.com",
       tenancyId: "t1",
+      tenancyName: "Test School",
       role: "ADMIN",
     });
 
@@ -215,6 +194,7 @@ describe("core route loaders and actions", () => {
       userId: "u1",
       email: "a@example.com",
       tenancyId: "t1",
+      tenancyName: "Test School",
       role: "ADMIN",
     });
     const fakeData = {

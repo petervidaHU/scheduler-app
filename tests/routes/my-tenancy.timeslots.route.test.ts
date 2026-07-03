@@ -38,6 +38,7 @@ describe("my-tenancy.timeslots route", () => {
       userId: "u1",
       email: "admin@example.com",
       tenancyId: "t1",
+      tenancyName: "Test School",
       role: "ADMIN",
     });
   });

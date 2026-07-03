@@ -1,5 +1,6 @@
 import { SimpleGrid } from "@mantine/core";
-import AdminEntityCard from "./AdminEntityCard";
+import AdminEntityCard, { type ResourcePluralLabelKey } from "./AdminEntityCard";
+import type { EntityKind } from "~/ui";
 
 export type AdminEntityCounts = {
   classroom: number;
@@ -15,68 +16,29 @@ type AdminClientComponentProps = {
   counts: AdminEntityCounts;
 };
 
-const entityData: Array<{
+const RESOURCE_CARDS: Array<{
   key: keyof AdminEntityCounts;
-  title: string;
-  description: string;
-  createLabel: string;
-  entity: string;
+  kind: EntityKind;
+  pluralLabelKey: ResourcePluralLabelKey;
 }> = [
-  {
-    key: "classroom",
-    title: "Classrooms",
-    description: "Manage all classrooms in your tenancy.",
-    createLabel: "Create classroom",
-    entity: "classroom",
-  },
-  {
-    key: "class",
-    title: "Classes",
-    description: "Manage all student classes.",
-    createLabel: "Create class",
-    entity: "class",
-  },
-  {
-    key: "specialty",
-    title: "Specialties",
-    description: "Manage specialization categories.",
-    createLabel: "Create specialty",
-    entity: "specialty",
-  },
-  {
-    key: "subject",
-    title: "Subjects",
-    description: "Manage all subjects taught in this tenancy.",
-    createLabel: "Create subject",
-    entity: "subject",
-  },
-  {
-    key: "teacher",
-    title: "Teachers",
-    description: "Manage teacher records and assignments.",
-    createLabel: "Create teacher",
-    entity: "teacher",
-  },
-  {
-    key: "frame",
-    title: "Frames",
-    description: "Manage schedule frames and date ranges.",
-    createLabel: "Create frame",
-    entity: "frame",
-  },
+  { key: "classroom", kind: "classroom", pluralLabelKey: "nav.classrooms" },
+  { key: "class", kind: "class", pluralLabelKey: "nav.classes" },
+  { key: "specialty", kind: "specialty", pluralLabelKey: "nav.specialties" },
+  { key: "subject", kind: "subject", pluralLabelKey: "nav.subjects" },
+  { key: "teacher", kind: "teacher", pluralLabelKey: "nav.teachers" },
+  { key: "frame", kind: "frame", pluralLabelKey: "nav.frames" },
 ];
 
 export default function AdminClientComponent({ locale, counts }: AdminClientComponentProps) {
   return (
     <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-      {entityData.map((item) => (
+      {RESOURCE_CARDS.map((item) => (
         <AdminEntityCard
           key={item.key}
-          title={item.title}
-          description={item.description}
+          kind={item.kind}
+          pluralLabelKey={item.pluralLabelKey}
           count={counts[item.key]}
-          createLabel={item.createLabel}
-          createTo={`/${locale}/my-tenancy/admin?entity=${item.entity}`}
+          createTo={`/${locale}/my-tenancy/admin/${item.key}/new`}
         />
       ))}
     </SimpleGrid>

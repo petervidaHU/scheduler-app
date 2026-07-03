@@ -7,11 +7,24 @@ import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import AdminClientComponent from "../../app/components/admin/AdminClientComponent";
+import enTranslation from "../../app/locales/en/translation";
 
 jest.mock("react-router", () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),
+}));
+
+jest.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, string>) => {
+      const value = key
+        .split(".")
+        .reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], enTranslation);
+      if (typeof value !== "string") return key;
+      return value.replace(/\{\{(\w+)\}\}/g, (_, name) => options?.[name] ?? "");
+    },
+  }),
 }));
 
 describe("AdminClientComponent", () => {
@@ -29,7 +42,7 @@ describe("AdminClientComponent", () => {
             frame: 2,
           }}
         />
-      </MantineProvider>
+      </MantineProvider>,
     );
 
     expect(screen.getByText("Classrooms")).toBeInTheDocument();
@@ -61,17 +74,17 @@ describe("AdminClientComponent", () => {
             frame: 0,
           }}
         />
-      </MantineProvider>
+      </MantineProvider>,
     );
 
     const links = screen.getAllByRole("link");
     const hrefs = links.map((link) => link.getAttribute("href"));
 
-    expect(hrefs).toContain("/hu/my-tenancy/admin?entity=classroom");
-    expect(hrefs).toContain("/hu/my-tenancy/admin?entity=class");
-    expect(hrefs).toContain("/hu/my-tenancy/admin?entity=specialty");
-    expect(hrefs).toContain("/hu/my-tenancy/admin?entity=subject");
-    expect(hrefs).toContain("/hu/my-tenancy/admin?entity=teacher");
-    expect(hrefs).toContain("/hu/my-tenancy/admin?entity=frame");
+    expect(hrefs).toContain("/hu/my-tenancy/admin/classroom/new");
+    expect(hrefs).toContain("/hu/my-tenancy/admin/class/new");
+    expect(hrefs).toContain("/hu/my-tenancy/admin/specialty/new");
+    expect(hrefs).toContain("/hu/my-tenancy/admin/subject/new");
+    expect(hrefs).toContain("/hu/my-tenancy/admin/teacher/new");
+    expect(hrefs).toContain("/hu/my-tenancy/admin/frame/new");
   });
 });

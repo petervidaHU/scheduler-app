@@ -7,11 +7,24 @@ import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import TimeslotForms from "../../app/components/forms/TimeslotForms";
+import enTranslation from "../../app/locales/en/translation";
 
 const submitMock = jest.fn();
 
 jest.mock("react-router", () => ({
   useSubmit: () => submitMock,
+}));
+
+jest.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, string>) => {
+      const value = key
+        .split(".")
+        .reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], enTranslation);
+      if (typeof value !== "string") return key;
+      return value.replace(/\{\{(\w+)\}\}/g, (_, name) => options?.[name] ?? "");
+    },
+  }),
 }));
 
 describe("TimeslotForms", () => {

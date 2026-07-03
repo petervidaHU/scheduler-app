@@ -219,7 +219,7 @@ describe("auth guards", () => {
   });
 
   test("requireTenancyUser returns fresh role from DB, not the stale cookie role", async () => {
-    mockedFindActiveMembership.mockResolvedValue({ role: "MEMBER" });
+    mockedFindActiveMembership.mockResolvedValue({ role: "MEMBER", tenancyName: "Test School" });
 
     const cookie = await getSessionCookieFromRedirect(() =>
       commitUserSession({
@@ -249,7 +249,7 @@ describe("auth guards", () => {
   });
 
   test("requireTenancyRole throws 403 when role is not allowed", async () => {
-    mockedFindActiveMembership.mockResolvedValue({ role: "MEMBER" });
+    mockedFindActiveMembership.mockResolvedValue({ role: "MEMBER", tenancyName: "Test School" });
 
     const cookie = await getSessionCookieFromRedirect(() =>
       commitUserSession({
@@ -276,7 +276,7 @@ describe("auth guards", () => {
   });
 
   test("requireTenancyRole passes through an allowed role", async () => {
-    mockedFindActiveMembership.mockResolvedValue({ role: "ADMIN" });
+    mockedFindActiveMembership.mockResolvedValue({ role: "ADMIN", tenancyName: "Test School" });
 
     const cookie = await getSessionCookieFromRedirect(() =>
       commitUserSession({

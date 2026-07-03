@@ -1,4 +1,13 @@
 import "@testing-library/jest-dom";
+import { TextDecoder, TextEncoder } from "node:util";
+
+// jsdom doesn't expose these globally; react-router's ESM entry needs them.
+if (typeof globalThis.TextEncoder === "undefined") {
+  globalThis.TextEncoder = TextEncoder as typeof globalThis.TextEncoder;
+}
+if (typeof globalThis.TextDecoder === "undefined") {
+  globalThis.TextDecoder = TextDecoder as typeof globalThis.TextDecoder;
+}
 
 if (typeof window !== "undefined" && !window.matchMedia) {
   Object.defineProperty(window, "matchMedia", {

@@ -97,19 +97,19 @@ export async function getUserMembershipsWithTenancy(
 export async function findActiveMembership(args: {
   userId: string;
   tenancyId: string;
-}): Promise<{ role: "OWNER" | "ADMIN" | "MEMBER" } | null> {
+}): Promise<{ role: "OWNER" | "ADMIN" | "MEMBER"; tenancyName: string } | null> {
   const membership = await prisma.tenancyMember.findUnique({
     where: {
       userId_tenancyId: { userId: args.userId, tenancyId: args.tenancyId },
     },
-    select: { role: true, isActive: true },
+    select: { role: true, isActive: true, tenancy: { select: { name: true } } },
   });
 
   if (!membership || !membership.isActive) {
     return null;
   }
 
-  return { role: membership.role };
+  return { role: membership.role, tenancyName: membership.tenancy.name };
 }
 
 export async function createBootstrapAuthData(args: {

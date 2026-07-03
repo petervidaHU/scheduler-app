@@ -1,9 +1,15 @@
-import { Anchor, Paper, Stack, Table, Text } from "@mantine/core";
+import { ActionIcon, Alert, Badge, Button, Group, Paper, Stack, Table, Text } from "@mantine/core";
+import { IconCalendarWeek, IconEye, IconPencil, IconPlus } from "@tabler/icons-react";
 import { Link, useOutletContext } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { SchedulesOutletContext } from "./my-tenancy.schedules-layout";
 import type { Route } from "./+types/my-tenancy.schedules.index";
 import { requireTenancyUser } from "../lib/services/auth/guards.server";
-import { getScheduleListForTenancy } from "../lib/services/schedules/manageSchedules.server";
+import {
+  getScheduleListForTenancy,
+  type ScheduleListItem,
+} from "../lib/services/schedules/manageSchedules.server";
+import { EmptyState, PageHeader } from "~/ui";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const user = await requireTenancyUser({
@@ -23,77 +29,87 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export default function SchedulesIndex({ loaderData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const { locale } = useOutletContext<SchedulesOutletContext>();
 
   return (
-    <Stack gap="md">
-      <Paper withBorder radius="md" p="md">
-        {loaderData.error ? (
-          <Text size="sm" c="orange" mb="sm">
-            Failed to load schedules from database: {loaderData.error}
-          </Text>
-        ) : (
-          <Text size="sm" c="dimmed" mb="sm">
-            Schedules loaded from Prisma by tenancy.
-          </Text>
-        )}
-        <Table striped withTableBorder>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>ID</Table.Th>
-              <Table.Th>Name</Table.Th>
-              <Table.Th>Frame</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Entries</Table.Th>
-              <Table.Th>Updated</Table.Th>
-              <Table.Th>Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {loaderData.schedules.map(
-              (schedule: {
-                id: string;
-                name: string;
-                frameName: string;
-                isPublished: boolean;
-                entryCount: number;
-                updatedAtIso: string;
-              }) => (
-              <Table.Tr key={schedule.id}>
-                <Table.Td>{schedule.id}</Table.Td>
-                <Table.Td>{schedule.name}</Table.Td>
-                <Table.Td>{schedule.frameName}</Table.Td>
-                <Table.Td>{schedule.isPublished ? "PUBLISHED" : "DRAFT"}</Table.Td>
-                <Table.Td>{schedule.entryCount}</Table.Td>
-                <Table.Td>{new Date(schedule.updatedAtIso).toLocaleString()}</Table.Td>
-                <Table.Td>
-                  <Stack gap={2}>
-                    <Anchor component={Link} to={`/${locale}/my-tenancy/schedules/${schedule.id}`}>
-                      Edit
-                    </Anchor>
-                    <Anchor
-                      component={Link}
-                      to={`/${locale}/my-tenancy/schedules/view/${schedule.id}`}
-                    >
-                      View
-                    </Anchor>
-                  </Stack>
-                </Table.Td>
-              </Table.Tr>
-              ),
-            )}
-            {loaderData.schedules.length === 0 ? (
+    <Stack gap="lg">
+      <PageHeader
+        title={t("schedule.schedules")}
+        actions={
+          <Button
+            component={Link}
+            to={`/${locale}/my-tenancy/schedules/new`}
+            leftSection={<IconPlus size={16} aria-hidden />}
+          >
+            {t("schedule.createNewSchedule")}
+          </Button>
+        }
+      />
+
+      {loaderData.error ? (
+        <Alert color="khaki" variant="light">
+          {t("schedule.loadErrorMessage")}
+        </Alert>
+      ) : null}
+
+      {loaderData.schedules.length === 0 ? (
+        <EmptyState icon={IconCalendarWeek} title={t("schedule.noSchedulesTitle")} message={t("schedule.noSchedulesMessage")} />
+      ) : (
+        <Paper withBorder radius="lg" p="md">
+          <Table striped withTableBorder>
+            <Table.Thead>
               <Table.Tr>
-                <Table.Td colSpan={7}>
-                  <Text size="sm" c="dimmed">
-                    No schedules found for this tenancy.
-                  </Text>
-                </Table.Td>
+                <Table.Th>{t("schedule.name")}</Table.Th>
+                <Table.Th>{t("schedule.frame")}</Table.Th>
+                <Table.Th>{t("schedule.status")}</Table.Th>
+                <Table.Th>{t("schedule.entries")}</Table.Th>
+                <Table.Th>{t("schedule.updated")}</Table.Th>
+                <Table.Th>{t("schedule.actions")}</Table.Th>
               </Table.Tr>
-            ) : null}
-          </Table.Tbody>
-        </Table>
-      </Paper>
+            </Table.Thead>
+            <Table.Tbody>
+              {loaderData.schedules.map((schedule: ScheduleListItem) => (
+                <Table.Tr key={schedule.id}>
+                  <Table.Td>{schedule.name}</Table.Td>
+                  <Table.Td>{schedule.frameName}</Table.Td>
+                  <Table.Td>
+                    <Badge variant="light" color={schedule.isPublished ? "tiffany" : "gray"}>
+                      {schedule.isPublished ? t("planner.published") : t("schedule.draft")}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>{schedule.entryCount}</Table.Td>
+                  <Table.Td>
+                    <Text size="sm" c="dimmed">
+                      {new Date(schedule.updatedAtIso).toLocaleDateString()}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Group gap="xs" justify="flex-end">
+                      <ActionIcon
+                        variant="light"
+                        component={Link}
+                        to={`/${locale}/my-tenancy/schedules/view/${schedule.id}`}
+                        aria-label={`${t("schedule.view")} ${schedule.name}`}
+                      >
+                        <IconEye size={16} aria-hidden />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="light"
+                        component={Link}
+                        to={`/${locale}/my-tenancy/schedules/${schedule.id}`}
+                        aria-label={`${t("schedule.edit")} ${schedule.name}`}
+                      >
+                        <IconPencil size={16} aria-hidden />
+                      </ActionIcon>
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Paper>
+      )}
     </Stack>
   );
 }

@@ -1,6 +1,11 @@
-import { Alert, Paper, Stack, Table, Text, Title } from "@mantine/core";
-import { Form } from "react-router";
+import { useEffect, useState } from "react";
+import { ActionIcon, Group, Paper, Stack, Table, Text } from "@mantine/core";
+import { IconClock, IconTrash } from "@tabler/icons-react";
+import { notifications } from "@mantine/notifications";
+import { Link, useOutletContext, useSubmit } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { Route } from "./+types/my-tenancy.timeslots";
+import type { MyTenancyOutletContext } from "./my-tenancy-layout";
 import { requireTenancyUser } from "../lib/services/auth/guards.server";
 import {
   createTimeslotFromForm,
@@ -11,6 +16,7 @@ import {
   updateTimeslotFromForm,
 } from "../lib/services/timeslots/manageTimeslots.server";
 import TimeslotForms from "../components/forms/TimeslotForms";
+import { ConfirmModal, EmptyState, PageHeader } from "~/ui";
 
 function toHHMM(totalMinutes: number) {
   const hour = Math.floor(totalMinutes / 60);
@@ -77,56 +83,103 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function TimeslotsPage({ loaderData, actionData }: Route.ComponentProps) {
+  const { t } = useTranslation();
+  const { locale } = useOutletContext<MyTenancyOutletContext>();
+  const submit = useSubmit();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!actionData) return;
+
+    if (actionData.ok) {
+      notifications.show({ color: "tiffany", message: actionData.message });
+    } else {
+      notifications.show({ color: "poppy", message: actionData.message });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actionData]);
+
+  const confirmDelete = () => {
+    if (!pendingDeleteId) return;
+    submit({ intent: "delete", timeslotId: pendingDeleteId }, { method: "post" });
+    setPendingDeleteId(null);
+  };
+
   return (
-    <Stack gap="md">
-      <Title order={3}>Timeslots</Title>
-      <Alert color="blue" variant="light">
-        Timeslot and template forms were migrated with Mantine useForm and React Router
-        route actions.
-      </Alert>
-      {actionData ? (
-        <Alert color={actionData.ok ? "green" : "red"} variant="light">
-          {actionData.message}
-        </Alert>
-      ) : null}
-      <Paper withBorder radius="md" p="md">
+    <Stack gap="lg">
+      <PageHeader title={t("nav.timeslots")} />
+
+      <Paper withBorder radius="lg" p="md">
         <TimeslotForms options={loaderData.options} timeslots={loaderData.timeslots} />
       </Paper>
-      <Paper withBorder radius="md" p="md">
+
+      <Paper withBorder radius="lg" p="md">
         <Text size="sm" c="dimmed" mb="sm">
-          Latest 50 timeslots for this tenancy
+          {t("timeslotForm.latestTimeslots")}
         </Text>
-        <Table striped withTableBorder>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>ID</Table.Th>
-              <Table.Th>Frame</Table.Th>
-              <Table.Th>Day</Table.Th>
-              <Table.Th>Start</Table.Th>
-              <Table.Th>End</Table.Th>
-              <Table.Th>Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {loaderData.timeslots.map((item: TimeslotListItem) => (
-              <Table.Tr key={item.id}>
-                <Table.Td>{item.id}</Table.Td>
-                <Table.Td>{item.frameName}</Table.Td>
-                <Table.Td>{item.dayOfWeek}</Table.Td>
-                <Table.Td>{toHHMM(item.startMinute)}</Table.Td>
-                <Table.Td>{toHHMM(item.endMinute)}</Table.Td>
-                <Table.Td>
-                  <Form method="post">
-                    <input type="hidden" name="intent" value="delete" />
-                    <input type="hidden" name="timeslotId" value={item.id} />
-                    <button type="submit">Delete</button>
-                  </Form>
-                </Table.Td>
+
+        {loaderData.timeslots.length === 0 ? (
+          <EmptyState
+            icon={IconClock}
+            title={t("timeslotForm.noTimeslots")}
+            action={
+              <Text
+                component={Link}
+                to={`/${locale}/my-tenancy/admin`}
+                size="sm"
+                fw={500}
+                c="var(--mantine-primary-color-filled)"
+              >
+                {t("timeslotForm.goToResources")}
+              </Text>
+            }
+          />
+        ) : (
+          <Table striped withTableBorder>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{t("timeslotForm.frameLabel")}</Table.Th>
+                <Table.Th>{t("planner.day")}</Table.Th>
+                <Table.Th>{t("planner.startTime")}</Table.Th>
+                <Table.Th>{t("planner.endTime")}</Table.Th>
+                <Table.Th>{t("ui.actions")}</Table.Th>
               </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+            </Table.Thead>
+            <Table.Tbody>
+              {loaderData.timeslots.map((item: TimeslotListItem) => (
+                <Table.Tr key={item.id}>
+                  <Table.Td>{item.frameName}</Table.Td>
+                  <Table.Td>{item.dayOfWeek}</Table.Td>
+                  <Table.Td>{toHHMM(item.startMinute)}</Table.Td>
+                  <Table.Td>{toHHMM(item.endMinute)}</Table.Td>
+                  <Table.Td>
+                    <Group gap="xs" justify="flex-end">
+                      <ActionIcon
+                        variant="light"
+                        color="poppy"
+                        onClick={() => setPendingDeleteId(item.id)}
+                        aria-label={`${t("ui.delete")} ${item.frameName} ${item.dayOfWeek}`}
+                      >
+                        <IconTrash size={16} aria-hidden />
+                      </ActionIcon>
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        )}
       </Paper>
+
+      <ConfirmModal
+        opened={pendingDeleteId !== null}
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={confirmDelete}
+        title={t("ui.deleteConfirmTitle", { name: t("entities.timeslot") })}
+        danger
+      >
+        {t("timeslotForm.deleteConfirmMessage")}
+      </ConfirmModal>
     </Stack>
   );
 }

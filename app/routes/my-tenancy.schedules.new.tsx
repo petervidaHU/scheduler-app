@@ -1,15 +1,6 @@
-import {
-  Alert,
-  Button,
-  Checkbox,
-  Paper,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+import { Button, Checkbox, Paper, Select, Stack, Text, TextInput } from "@mantine/core";
 import { Form, redirect, useOutletContext } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { SchedulesOutletContext } from "./my-tenancy.schedules-layout";
 import type { Route } from "./+types/my-tenancy.schedules.new";
 import { requireTenancyUser } from "../lib/services/auth/guards.server";
@@ -17,6 +8,7 @@ import {
   createSchedule,
   getFrameOptionsForTenancy,
 } from "../lib/services/schedules/manageSchedules.server";
+import { PageHeader } from "~/ui";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const user = await requireTenancyUser({
@@ -72,30 +64,28 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function NewSchedulePage({ loaderData, actionData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const { locale } = useOutletContext<SchedulesOutletContext>();
   const failedAction = actionData && !actionData.ok ? actionData : null;
   const values = failedAction?.values ?? loaderData.defaults;
 
   return (
-    <Stack gap="md">
-      <Title order={3}>Create schedule</Title>
-      <Alert color="blue" variant="light">
-        Create schedule persists to Prisma and then redirects back to the schedule list.
-      </Alert>
-      <Paper withBorder radius="md" p="md">
+    <Stack gap="lg">
+      <PageHeader title={t("schedule.createNewSchedule")} />
+      <Paper withBorder radius="lg" p="md" maw={480}>
         <Form method="post" action={`/${locale}/my-tenancy/schedules/new`}>
           <Stack gap="sm">
             <TextInput
               name="name"
-              label="Name"
-              placeholder="Semester C"
+              label={t("schedule.name")}
+              placeholder={t("schedule.namePlaceholder")}
               defaultValue={values.name}
               error={failedAction?.error.fieldErrors.name}
               required
             />
             <Select
               name="frameId"
-              label="Frame"
+              label={t("schedule.frame")}
               data={loaderData.frames.map((frame: { id: string; label: string }) => ({
                 value: frame.id,
                 label: frame.label,
@@ -107,15 +97,15 @@ export default function NewSchedulePage({ loaderData, actionData }: Route.Compon
             />
             <Checkbox
               name="isPublished"
-              label="Published"
+              label={t("schedule.published")}
               defaultChecked={values.isPublished}
             />
             {failedAction?.error.formError ? (
-              <Text c="red" size="sm">
+              <Text c="poppy" size="sm">
                 {failedAction.error.formError}
               </Text>
             ) : null}
-            <Button type="submit">Create schedule</Button>
+            <Button type="submit">{t("schedule.createNewSchedule")}</Button>
           </Stack>
         </Form>
       </Paper>

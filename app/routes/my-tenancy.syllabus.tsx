@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Alert,
   Badge,
   Button,
   Drawer,
@@ -14,7 +13,9 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import { IconBook2 } from "@tabler/icons-react";
 import { useForm } from "@mantine/form";
+import { notifications } from "@mantine/notifications";
 import { useFetcher, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { Route } from "./+types/my-tenancy.syllabus";
@@ -27,6 +28,7 @@ import {
   type SyllabusItemRow,
   type SyllabusEntityOption,
 } from "../lib/services/syllabus/manageSyllabus.server";
+import { ConfirmModal, EmptyState, PageHeader } from "~/ui";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const user = await requireTenancyUser({ request, locale: params.locale });
@@ -39,27 +41,30 @@ export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = String(formData.get("intent") ?? "");
 
-  if (intent === "create-item") return createSyllabusEntry(user.tenancyId, formData);
-  if (intent === "update-item") return updateSyllabusEntry(user.tenancyId, formData);
-  if (intent === "delete-item") return deleteSyllabusEntry(user.tenancyId, formData);
-  return { ok: false as const, errors: { form: `Unknown intent: ${intent}` } };
+  if (intent === "create-item") return { ...(await createSyllabusEntry(user.tenancyId, formData)), intent };
+  if (intent === "update-item") return { ...(await updateSyllabusEntry(user.tenancyId, formData)), intent };
+  if (intent === "delete-item") return { ...(await deleteSyllabusEntry(user.tenancyId, formData)), intent };
+  return { ok: false as const, errors: { form: `Unknown intent: ${intent}` }, intent };
 }
 
 // ─── Drawer form ─────────────────────────────────────────────────────────────
 
 type DrawerMode = { mode: "create" } | { mode: "edit"; item: SyllabusItemRow };
 
+type SyllabusMutationResult =
+  | { ok: true; intent: string }
+  | { ok: false; errors: Record<string, string>; intent: string };
+
 interface SyllabusDrawerProps {
   opened: boolean;
   drawerMode: DrawerMode;
   options: { subjects: SyllabusEntityOption[]; classes: SyllabusEntityOption[] };
   onClose: () => void;
-  actionData: { ok: false; errors: Record<string, string> } | undefined;
 }
 
-function SyllabusDrawer({ opened, drawerMode, options, onClose, actionData }: SyllabusDrawerProps) {
+function SyllabusDrawer({ opened, drawerMode, options, onClose }: SyllabusDrawerProps) {
   const { t } = useTranslation();
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<SyllabusMutationResult>();
   const isEditing = drawerMode.mode === "edit";
   const editItem = isEditing ? drawerMode.item : null;
 
@@ -73,7 +78,6 @@ function SyllabusDrawer({ opened, drawerMode, options, onClose, actionData }: Sy
     },
   });
 
-  // Reset form when drawer opens
   const handleClose = () => {
     form.reset();
     onClose();
@@ -89,10 +93,24 @@ function SyllabusDrawer({ opened, drawerMode, options, onClose, actionData }: Sy
     data.set("topic", values.topic);
     data.set("notes", values.notes);
     fetcher.submit(data, { method: "post" });
-    handleClose();
   });
 
-  const errors = actionData?.errors ?? {};
+  // Close and toast only once the server confirms success; keep the drawer
+  // open with inline errors if validation fails (UX-UI-principles §7).
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !fetcher.data) return;
+
+    if (fetcher.data.ok) {
+      notifications.show({
+        color: "tiffany",
+        message: isEditing ? t("syllabus.entryUpdated") : t("syllabus.entryCreated"),
+      });
+      handleClose();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state, fetcher.data]);
+
+  const errors = fetcher.data && !fetcher.data.ok ? fetcher.data.errors : {};
 
   return (
     <Drawer
@@ -149,7 +167,7 @@ function SyllabusDrawer({ opened, drawerMode, options, onClose, actionData }: Sy
             <Button variant="default" type="button" onClick={handleClose}>
               {t("syllabus.cancel")}
             </Button>
-            <Button type="submit">
+            <Button type="submit" loading={fetcher.state !== "idle"}>
               {isEditing ? t("syllabus.saveChanges") : t("syllabus.addEntry")}
             </Button>
           </Group>
@@ -161,14 +179,15 @@ function SyllabusDrawer({ opened, drawerMode, options, onClose, actionData }: Sy
 
 // ─── Page component ───────────────────────────────────────────────────────────
 
-export default function SyllabusPage({ loaderData, actionData }: Route.ComponentProps) {
+export default function SyllabusPage({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation();
   const { items, options, filters } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
-  const deleteFetcher = useFetcher();
+  const deleteFetcher = useFetcher<SyllabusMutationResult>();
 
   const [drawerOpened, setDrawerOpened] = useState(false);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>({ mode: "create" });
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const openCreate = () => {
     setDrawerMode({ mode: "create" });
@@ -180,12 +199,28 @@ export default function SyllabusPage({ loaderData, actionData }: Route.Component
     setDrawerOpened(true);
   };
 
-  const handleDelete = (id: string) => {
+  const confirmDelete = () => {
+    if (!pendingDeleteId) return;
     const data = new FormData();
     data.set("intent", "delete-item");
-    data.set("id", id);
+    data.set("id", pendingDeleteId);
     deleteFetcher.submit(data, { method: "post" });
+    setPendingDeleteId(null);
   };
+
+  useEffect(() => {
+    if (deleteFetcher.state !== "idle" || !deleteFetcher.data) return;
+
+    if (deleteFetcher.data.ok) {
+      notifications.show({ color: "tiffany", message: t("syllabus.entryDeleted") });
+    } else {
+      notifications.show({
+        color: "poppy",
+        message: Object.values(deleteFetcher.data.errors).join(" "),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deleteFetcher.state, deleteFetcher.data]);
 
   const updateFilter = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams);
@@ -193,20 +228,12 @@ export default function SyllabusPage({ loaderData, actionData }: Route.Component
     setSearchParams(next);
   };
 
-  const failedResult = actionData && !actionData.ok ? actionData : undefined;
-
   return (
-    <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Title order={3}>{t("syllabus.title")}</Title>
-        <Button onClick={openCreate}>{t("syllabus.addEntry")}</Button>
-      </Group>
-
-      {failedResult && (
-        <Alert color="red" variant="light">
-          {Object.values(failedResult.errors).join(" ")}
-        </Alert>
-      )}
+    <Stack gap="lg">
+      <PageHeader
+        title={t("syllabus.title")}
+        actions={<Button onClick={openCreate}>{t("syllabus.addEntry")}</Button>}
+      />
 
       <Group gap="sm">
         <Select
@@ -230,7 +257,7 @@ export default function SyllabusPage({ loaderData, actionData }: Route.Component
       </Group>
 
       {items.length === 0 ? (
-        <Text c="dimmed">{t("syllabus.noItems")}</Text>
+        <EmptyState icon={IconBook2} title={t("syllabus.noItems")} />
       ) : (
         <Table striped highlightOnHover withTableBorder>
           <Table.Thead>
@@ -265,9 +292,9 @@ export default function SyllabusPage({ loaderData, actionData }: Route.Component
                     <Button
                       size="xs"
                       variant="subtle"
-                      color="red"
+                      color="poppy"
                       loading={deleteFetcher.state !== "idle"}
-                      onClick={() => handleDelete(item.id)}
+                      onClick={() => setPendingDeleteId(item.id)}
                     >
                       {t("syllabus.delete")}
                     </Button>
@@ -284,8 +311,17 @@ export default function SyllabusPage({ loaderData, actionData }: Route.Component
         drawerMode={drawerMode}
         options={options}
         onClose={() => setDrawerOpened(false)}
-        actionData={failedResult}
       />
+
+      <ConfirmModal
+        opened={pendingDeleteId !== null}
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={confirmDelete}
+        title={t("syllabus.deleteConfirmTitle")}
+        danger
+      >
+        {t("syllabus.deleteConfirmMessage")}
+      </ConfirmModal>
     </Stack>
   );
 }

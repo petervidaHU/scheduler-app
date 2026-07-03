@@ -85,7 +85,7 @@ export default function OnboardingPage({ loaderData, actionData }: Route.Compone
               required
             />
             {errors?.form ? (
-              <Alert color="red" variant="light">
+              <Alert color="poppy" variant="light">
                 {errors.form}
               </Alert>
             ) : null}

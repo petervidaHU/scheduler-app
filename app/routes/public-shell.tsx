@@ -1,11 +1,11 @@
-import { Anchor, Group, Stack, Text } from "@mantine/core";
+import { Anchor, Button, Group, Stack, Text } from "@mantine/core";
 import { Form, Link, Outlet } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { Route } from "./+types/public-shell";
 import { getOptionalUserSession } from "../lib/auth/session.server";
 import { isSupportedLocale } from "../lib/i18n";
 import LocaleSwitcher from "../components/LocaleSwitcher";
-import ColorModeSwitcher from "../components/ColorModeSwitcher";
+import { ColorSchemeToggle } from "~/ui";
 
 function toSafeLocale(locale: string | undefined) {
   return isSupportedLocale(locale) ? locale : "en";
@@ -29,7 +29,7 @@ export default function PublicShell({ loaderData }: Route.ComponentProps) {
       <Group justify="space-between" wrap="wrap" pt="sm">
         <Group gap="xs" wrap="wrap">
           <Anchor component={Link} to={`/${loaderData.locale}`}>
-            Home
+            {t("nav.home")}
           </Anchor>
           <Anchor component={Link} to={`/${loaderData.locale}/pricing`}>
             {t("pricing.message1")}
@@ -41,7 +41,7 @@ export default function PublicShell({ loaderData }: Route.ComponentProps) {
 
         <LocaleSwitcher locale={loaderData.locale} />
 
-        <ColorModeSwitcher />
+        <ColorSchemeToggle />
 
         <Group gap="xs" wrap="wrap">
           {loaderData.user ? (
@@ -60,7 +60,9 @@ export default function PublicShell({ loaderData }: Route.ComponentProps) {
                 {t("home.goToDashboard")}
               </Anchor>
               <Form method="post" action={`/${loaderData.locale}/logout`}>
-                <button type="submit">{t("common.logOut")}</button>
+                <Button type="submit" variant="subtle" size="xs" color="gray">
+                  {t("common.logOut")}
+                </Button>
               </Form>
             </>
           ) : (

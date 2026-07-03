@@ -227,6 +227,200 @@ export async function getAdminEntityTableData(
   };
 }
 
+export type AdminEntityFormValues = Record<string, string>;
+
+export async function getAdminEntityFormValues(
+  tenancyId: string,
+  entity: AdminEntityKey,
+  entityId: string,
+): Promise<AdminEntityFormValues | null> {
+  switch (entity) {
+    case "specialty": {
+      const row = await prisma.specialty.findFirst({
+        where: { id: entityId, tenancyId },
+        select: { name: true, code: true },
+      });
+      if (!row) return null;
+      return { name: row.name, code: row.code ?? "" };
+    }
+    case "subject": {
+      const row = await prisma.subject.findFirst({
+        where: { id: entityId, tenancyId },
+        select: { name: true, code: true, specialtyId: true },
+      });
+      if (!row) return null;
+      return { name: row.name, code: row.code ?? "", specialtyId: row.specialtyId ?? "" };
+    }
+    case "teacher": {
+      const row = await prisma.teacher.findFirst({
+        where: { id: entityId, tenancyId },
+        select: { name: true, email: true, code: true },
+      });
+      if (!row) return null;
+      return { name: row.name, email: row.email ?? "", code: row.code ?? "" };
+    }
+    case "classroom": {
+      const row = await prisma.classroom.findFirst({
+        where: { id: entityId, tenancyId },
+        select: { name: true, capacity: true },
+      });
+      if (!row) return null;
+      return { name: row.name, capacity: row.capacity != null ? String(row.capacity) : "" };
+    }
+    case "class": {
+      const row = await prisma.class.findFirst({
+        where: { id: entityId, tenancyId },
+        select: { name: true, code: true, specialtyId: true, teacherId: true, classroomId: true },
+      });
+      if (!row) return null;
+      return {
+        name: row.name,
+        code: row.code ?? "",
+        specialtyId: row.specialtyId ?? "",
+        teacherId: row.teacherId ?? "",
+        classroomId: row.classroomId ?? "",
+      };
+    }
+    case "frame": {
+      const row = await prisma.frame.findFirst({
+        where: { id: entityId, tenancyId },
+        select: { name: true, startDate: true, endDate: true },
+      });
+      if (!row) return null;
+      return {
+        name: row.name,
+        startDate: row.startDate.toISOString().slice(0, 10),
+        endDate: row.endDate.toISOString().slice(0, 10),
+      };
+    }
+  }
+}
+
+export async function updateAdminEntity(args: {
+  tenancyId: string;
+  entityId: string;
+  formData: FormData;
+}): Promise<AdminEntityActionResult> {
+  const entity = parseEntity(args.formData.get("entity"));
+  const where = { id: args.entityId, tenancyId: args.tenancyId };
+
+  const assertUpdated = (count: number) => {
+    if (count === 0) {
+      throw new Error("Entity not found for this tenancy.");
+    }
+  };
+
+  switch (entity) {
+    case "specialty": {
+      assertUpdated(
+        (
+          await prisma.specialty.updateMany({
+            where,
+            data: {
+              name: asRequiredString(args.formData.get("name"), "Specialty name"),
+              code: asOptionalString(args.formData.get("code")),
+            },
+          })
+        ).count,
+      );
+      return { ok: true, entity, message: "Specialty updated." };
+    }
+    case "subject": {
+      assertUpdated(
+        (
+          await prisma.subject.updateMany({
+            where,
+            data: {
+              name: asRequiredString(args.formData.get("name"), "Subject name"),
+              code: asOptionalString(args.formData.get("code")),
+              specialtyId: asOptionalString(args.formData.get("specialtyId")),
+            },
+          })
+        ).count,
+      );
+      return { ok: true, entity, message: "Subject updated." };
+    }
+    case "teacher": {
+      assertUpdated(
+        (
+          await prisma.teacher.updateMany({
+            where,
+            data: {
+              name: asRequiredString(args.formData.get("name"), "Teacher name"),
+              email: asOptionalString(args.formData.get("email")),
+              code: asOptionalString(args.formData.get("code")),
+            },
+          })
+        ).count,
+      );
+      return { ok: true, entity, message: "Teacher updated." };
+    }
+    case "classroom": {
+      const capacityRaw = asOptionalString(args.formData.get("capacity"));
+      const parsedCapacity = capacityRaw ? Number(capacityRaw) : null;
+
+      if (
+        capacityRaw &&
+        (parsedCapacity === null || !Number.isFinite(parsedCapacity) || parsedCapacity < 1)
+      ) {
+        throw new Error("Classroom capacity must be a positive number.");
+      }
+
+      assertUpdated(
+        (
+          await prisma.classroom.updateMany({
+            where,
+            data: {
+              name: asRequiredString(args.formData.get("name"), "Classroom name"),
+              capacity: parsedCapacity,
+            },
+          })
+        ).count,
+      );
+      return { ok: true, entity, message: "Classroom updated." };
+    }
+    case "class": {
+      assertUpdated(
+        (
+          await prisma.class.updateMany({
+            where,
+            data: {
+              name: asRequiredString(args.formData.get("name"), "Class name"),
+              code: asOptionalString(args.formData.get("code")),
+              specialtyId: asOptionalString(args.formData.get("specialtyId")),
+              teacherId: asOptionalString(args.formData.get("teacherId")),
+              classroomId: asOptionalString(args.formData.get("classroomId")),
+            },
+          })
+        ).count,
+      );
+      return { ok: true, entity, message: "Class updated." };
+    }
+    case "frame": {
+      const startDate = toDate(args.formData.get("startDate"), "Start date");
+      const endDate = toDate(args.formData.get("endDate"), "End date");
+
+      if (endDate < startDate) {
+        throw new Error("End date must be greater than or equal to start date.");
+      }
+
+      assertUpdated(
+        (
+          await prisma.frame.updateMany({
+            where,
+            data: {
+              name: asRequiredString(args.formData.get("name"), "Frame name"),
+              startDate,
+              endDate,
+            },
+          })
+        ).count,
+      );
+      return { ok: true, entity, message: "Frame updated." };
+    }
+  }
+}
+
 export async function createAdminEntity(args: {
   tenancyId: string;
   formData: FormData;

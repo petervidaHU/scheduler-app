@@ -30,7 +30,7 @@ export default function Logout() {
         This route clears the session cookie.
       </Text>
       <Form method="post">
-        <Button type="submit" color="red">
+        <Button type="submit" color="poppy">
           Confirm sign out
         </Button>
       </Form>

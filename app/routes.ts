@@ -22,7 +22,11 @@ export default [
       route("app", "routes/protected-dashboard.tsx"),
       route("my-tenancy", "routes/my-tenancy-layout.tsx", [
         index("routes/my-tenancy.index.tsx"),
-        route("admin", "routes/my-tenancy.admin.tsx"),
+        route("admin", "routes/my-tenancy.admin-layout.tsx", [
+          index("routes/my-tenancy.admin.index.tsx"),
+          route(":entity/new", "routes/my-tenancy.admin.new.tsx"),
+          route(":entity/:id/edit", "routes/my-tenancy.admin.edit.tsx"),
+        ]),
         route("schedules", "routes/my-tenancy.schedules-layout.tsx", [
           index("routes/my-tenancy.schedules.index.tsx"),
           route("new", "routes/my-tenancy.schedules.new.tsx"),

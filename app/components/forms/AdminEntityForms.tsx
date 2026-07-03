@@ -1,19 +1,27 @@
 import { Button, Group, Select, Stack, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useSubmit } from "react-router";
-import type { AdminEntityKey, AdminFormOptions } from "../../lib/services/tenancy/manageAdminEntities.server";
+import { useTranslation } from "react-i18next";
+import type {
+  AdminEntityFormValues,
+  AdminEntityKey,
+  AdminFormOptions,
+} from "../../lib/services/tenancy/manageAdminEntities.server";
 
 type CommonProps = {
   entity: AdminEntityKey;
   options: AdminFormOptions;
+  initialValues?: AdminEntityFormValues;
+  entityId?: string;
 };
 
-function useEntitySubmit(entity: AdminEntityKey) {
+function useEntitySubmit(entity: AdminEntityKey, entityId?: string) {
   const submit = useSubmit();
 
   return (payload: Record<string, string>) => {
     const formData = new FormData();
     formData.set("entity", entity);
+    if (entityId) formData.set("entityId", entityId);
 
     Object.entries(payload).forEach(([key, value]) => {
       formData.set(key, value);
@@ -23,226 +31,233 @@ function useEntitySubmit(entity: AdminEntityKey) {
   };
 }
 
-function SpecialtyForm() {
-  const submitEntity = useEntitySubmit("specialty");
+function SubmitButton({ entityId, entityLabel }: { entityId?: string; entityLabel: string }) {
+  const { t } = useTranslation();
+  return (
+    <Group justify="flex-end">
+      <Button type="submit">
+        {entityId ? t("adminForm.saveChangesLabel") : t("adminForm.createLabel", { entity: entityLabel })}
+      </Button>
+    </Group>
+  );
+}
+
+function SpecialtyForm({ initialValues, entityId }: CommonProps) {
+  const { t } = useTranslation();
+  const entityLabel = t("entities.specialty");
+  const submitEntity = useEntitySubmit("specialty", entityId);
   const form = useForm({
     mode: "uncontrolled",
     initialValues: {
-      name: "",
-      code: "",
+      name: initialValues?.name ?? "",
+      code: initialValues?.code ?? "",
     },
     validate: {
-      name: (value) => (value.trim().length === 0 ? "Specialty name is required" : null),
+      name: (value) => (value.trim().length === 0 ? t("adminForm.nameRequired", { entity: entityLabel }) : null),
     },
   });
 
   return (
-    <form
-      onSubmit={form.onSubmit((values) => {
-        submitEntity(values);
-      })}
-    >
+    <form onSubmit={form.onSubmit((values) => submitEntity(values))}>
       <Stack gap="sm">
-        <TextInput label="Specialty name" key={form.key("name")} {...form.getInputProps("name")} />
-        <TextInput label="Code" key={form.key("code")} {...form.getInputProps("code")} />
-        <Group justify="flex-end">
-          <Button type="submit">Create specialty</Button>
-        </Group>
+        <TextInput
+          label={t("adminForm.nameLabel", { entity: entityLabel })}
+          key={form.key("name")}
+          {...form.getInputProps("name")}
+        />
+        <TextInput label={t("adminForm.codeLabel")} key={form.key("code")} {...form.getInputProps("code")} />
+        <SubmitButton entityId={entityId} entityLabel={entityLabel} />
       </Stack>
     </form>
   );
 }
 
-function SubjectForm({ options }: { options: AdminFormOptions }) {
-  const submitEntity = useEntitySubmit("subject");
+function SubjectForm({ options, initialValues, entityId }: CommonProps) {
+  const { t } = useTranslation();
+  const entityLabel = t("entities.subject");
+  const submitEntity = useEntitySubmit("subject", entityId);
   const form = useForm({
     mode: "uncontrolled",
     initialValues: {
-      name: "",
-      code: "",
-      specialtyId: "",
+      name: initialValues?.name ?? "",
+      code: initialValues?.code ?? "",
+      specialtyId: initialValues?.specialtyId ?? "",
     },
     validate: {
-      name: (value) => (value.trim().length === 0 ? "Subject name is required" : null),
+      name: (value) => (value.trim().length === 0 ? t("adminForm.nameRequired", { entity: entityLabel }) : null),
     },
   });
 
   return (
-    <form
-      onSubmit={form.onSubmit((values) => {
-        submitEntity(values);
-      })}
-    >
+    <form onSubmit={form.onSubmit((values) => submitEntity(values))}>
       <Stack gap="sm">
-        <TextInput label="Subject name" key={form.key("name")} {...form.getInputProps("name")} />
-        <TextInput label="Code" key={form.key("code")} {...form.getInputProps("code")} />
+        <TextInput
+          label={t("adminForm.nameLabel", { entity: entityLabel })}
+          key={form.key("name")}
+          {...form.getInputProps("name")}
+        />
+        <TextInput label={t("adminForm.codeLabel")} key={form.key("code")} {...form.getInputProps("code")} />
         <Select
-          label="Specialty"
-          placeholder="Optional"
+          label={t("entities.specialty")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           data={options.specialties}
           key={form.key("specialtyId")}
           clearable
           {...form.getInputProps("specialtyId")}
         />
-        <Group justify="flex-end">
-          <Button type="submit">Create subject</Button>
-        </Group>
+        <SubmitButton entityId={entityId} entityLabel={entityLabel} />
       </Stack>
     </form>
   );
 }
 
-function TeacherForm() {
-  const submitEntity = useEntitySubmit("teacher");
+function TeacherForm({ initialValues, entityId }: CommonProps) {
+  const { t } = useTranslation();
+  const entityLabel = t("entities.teacher");
+  const submitEntity = useEntitySubmit("teacher", entityId);
   const form = useForm({
     mode: "uncontrolled",
     initialValues: {
-      name: "",
-      email: "",
-      code: "",
+      name: initialValues?.name ?? "",
+      email: initialValues?.email ?? "",
+      code: initialValues?.code ?? "",
     },
     validate: {
-      name: (value) => (value.trim().length === 0 ? "Teacher name is required" : null),
+      name: (value) => (value.trim().length === 0 ? t("adminForm.nameRequired", { entity: entityLabel }) : null),
     },
   });
 
   return (
-    <form
-      onSubmit={form.onSubmit((values) => {
-        submitEntity(values);
-      })}
-    >
+    <form onSubmit={form.onSubmit((values) => submitEntity(values))}>
       <Stack gap="sm">
-        <TextInput label="Teacher name" key={form.key("name")} {...form.getInputProps("name")} />
-        <TextInput label="Email" key={form.key("email")} {...form.getInputProps("email")} />
-        <TextInput label="Code" key={form.key("code")} {...form.getInputProps("code")} />
-        <Group justify="flex-end">
-          <Button type="submit">Create teacher</Button>
-        </Group>
+        <TextInput
+          label={t("adminForm.nameLabel", { entity: entityLabel })}
+          key={form.key("name")}
+          {...form.getInputProps("name")}
+        />
+        <TextInput label={t("adminForm.emailLabel")} key={form.key("email")} {...form.getInputProps("email")} />
+        <TextInput label={t("adminForm.codeLabel")} key={form.key("code")} {...form.getInputProps("code")} />
+        <SubmitButton entityId={entityId} entityLabel={entityLabel} />
       </Stack>
     </form>
   );
 }
 
-function ClassroomForm() {
-  const submitEntity = useEntitySubmit("classroom");
+function ClassroomForm({ initialValues, entityId }: CommonProps) {
+  const { t } = useTranslation();
+  const entityLabel = t("entities.classroom");
+  const submitEntity = useEntitySubmit("classroom", entityId);
   const form = useForm({
     mode: "uncontrolled",
     initialValues: {
-      name: "",
-      capacity: "",
+      name: initialValues?.name ?? "",
+      capacity: initialValues?.capacity ?? "",
     },
     validate: {
-      name: (value) => (value.trim().length === 0 ? "Classroom name is required" : null),
+      name: (value) => (value.trim().length === 0 ? t("adminForm.nameRequired", { entity: entityLabel }) : null),
       capacity: (value) => {
-        if (!value) {
-          return null;
-        }
+        if (!value) return null;
         const parsed = Number(value);
-        return Number.isFinite(parsed) && parsed > 0
-          ? null
-          : "Capacity must be a positive number";
+        return Number.isFinite(parsed) && parsed > 0 ? null : t("adminForm.capacityInvalid");
       },
     },
   });
 
   return (
-    <form
-      onSubmit={form.onSubmit((values) => {
-        submitEntity(values);
-      })}
-    >
+    <form onSubmit={form.onSubmit((values) => submitEntity(values))}>
       <Stack gap="sm">
-        <TextInput label="Classroom name" key={form.key("name")} {...form.getInputProps("name")} />
         <TextInput
-          label="Capacity"
-          placeholder="Optional"
+          label={t("adminForm.nameLabel", { entity: entityLabel })}
+          key={form.key("name")}
+          {...form.getInputProps("name")}
+        />
+        <TextInput
+          label={t("adminForm.capacityLabel")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           key={form.key("capacity")}
           {...form.getInputProps("capacity")}
         />
-        <Group justify="flex-end">
-          <Button type="submit">Create classroom</Button>
-        </Group>
+        <SubmitButton entityId={entityId} entityLabel={entityLabel} />
       </Stack>
     </form>
   );
 }
 
-function ClassForm({ options }: { options: AdminFormOptions }) {
-  const submitEntity = useEntitySubmit("class");
+function ClassForm({ options, initialValues, entityId }: CommonProps) {
+  const { t } = useTranslation();
+  const entityLabel = t("entities.class");
+  const submitEntity = useEntitySubmit("class", entityId);
   const form = useForm({
     mode: "uncontrolled",
     initialValues: {
-      name: "",
-      code: "",
-      specialtyId: "",
-      teacherId: "",
-      classroomId: "",
+      name: initialValues?.name ?? "",
+      code: initialValues?.code ?? "",
+      specialtyId: initialValues?.specialtyId ?? "",
+      teacherId: initialValues?.teacherId ?? "",
+      classroomId: initialValues?.classroomId ?? "",
     },
     validate: {
-      name: (value) => (value.trim().length === 0 ? "Class name is required" : null),
+      name: (value) => (value.trim().length === 0 ? t("adminForm.nameRequired", { entity: entityLabel }) : null),
     },
   });
 
   return (
-    <form
-      onSubmit={form.onSubmit((values) => {
-        submitEntity(values);
-      })}
-    >
+    <form onSubmit={form.onSubmit((values) => submitEntity(values))}>
       <Stack gap="sm">
-        <TextInput label="Class name" key={form.key("name")} {...form.getInputProps("name")} />
-        <TextInput label="Code" key={form.key("code")} {...form.getInputProps("code")} />
+        <TextInput
+          label={t("adminForm.nameLabel", { entity: entityLabel })}
+          key={form.key("name")}
+          {...form.getInputProps("name")}
+        />
+        <TextInput label={t("adminForm.codeLabel")} key={form.key("code")} {...form.getInputProps("code")} />
         <Select
-          label="Specialty"
-          placeholder="Optional"
+          label={t("entities.specialty")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           data={options.specialties}
           clearable
           key={form.key("specialtyId")}
           {...form.getInputProps("specialtyId")}
         />
         <Select
-          label="Teacher"
-          placeholder="Optional"
+          label={t("entities.teacher")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           data={options.teachers}
           clearable
           key={form.key("teacherId")}
           {...form.getInputProps("teacherId")}
         />
         <Select
-          label="Classroom"
-          placeholder="Optional"
+          label={t("entities.classroom")}
+          placeholder={t("adminForm.optionalPlaceholder")}
           data={options.classrooms}
           clearable
           key={form.key("classroomId")}
           {...form.getInputProps("classroomId")}
         />
-        <Group justify="flex-end">
-          <Button type="submit">Create class</Button>
-        </Group>
+        <SubmitButton entityId={entityId} entityLabel={entityLabel} />
       </Stack>
     </form>
   );
 }
 
-function FrameForm() {
-  const submitEntity = useEntitySubmit("frame");
+function FrameForm({ initialValues, entityId }: CommonProps) {
+  const { t } = useTranslation();
+  const entityLabel = t("entities.frame");
+  const submitEntity = useEntitySubmit("frame", entityId);
   const form = useForm({
     mode: "uncontrolled",
     initialValues: {
-      name: "",
-      startDate: "",
-      endDate: "",
+      name: initialValues?.name ?? "",
+      startDate: initialValues?.startDate ?? "",
+      endDate: initialValues?.endDate ?? "",
     },
     validate: {
-      name: (value) => (value.trim().length === 0 ? "Frame name is required" : null),
-      startDate: (value) => (value ? null : "Start date is required"),
+      name: (value) => (value.trim().length === 0 ? t("adminForm.nameRequired", { entity: entityLabel }) : null),
+      startDate: (value) => (value ? null : t("adminForm.startDateRequired")),
       endDate: (value, values) => {
-        if (!value) {
-          return "End date is required";
-        }
+        if (!value) return t("adminForm.endDateRequired");
         if (values.startDate && new Date(value) < new Date(values.startDate)) {
-          return "End date must be after start date";
+          return t("adminForm.endDateBeforeStart");
         }
         return null;
       },
@@ -251,56 +266,47 @@ function FrameForm() {
 
   return (
     <form
-      onSubmit={form.onSubmit((values) => {
-        submitEntity({
-          name: values.name,
-          startDate: values.startDate,
-          endDate: values.endDate,
-        });
-      })}
+      onSubmit={form.onSubmit((values) =>
+        submitEntity({ name: values.name, startDate: values.startDate, endDate: values.endDate }),
+      )}
     >
       <Stack gap="sm">
-        <TextInput label="Frame name" key={form.key("name")} {...form.getInputProps("name")} />
+        <TextInput
+          label={t("adminForm.nameLabel", { entity: entityLabel })}
+          key={form.key("name")}
+          {...form.getInputProps("name")}
+        />
         <TextInput
           type="date"
-          label="Start date"
+          label={t("adminForm.startDateLabel")}
           key={form.key("startDate")}
           {...form.getInputProps("startDate")}
         />
         <TextInput
           type="date"
-          label="End date"
+          label={t("adminForm.endDateLabel")}
           key={form.key("endDate")}
           {...form.getInputProps("endDate")}
         />
-        <Group justify="flex-end">
-          <Button type="submit">Create frame</Button>
-        </Group>
+        <SubmitButton entityId={entityId} entityLabel={entityLabel} />
       </Stack>
     </form>
   );
 }
 
-export default function AdminEntityForms({ entity, options }: CommonProps) {
-  if (entity === "specialty") {
-    return <SpecialtyForm />;
+export default function AdminEntityForms(props: CommonProps) {
+  switch (props.entity) {
+    case "specialty":
+      return <SpecialtyForm {...props} />;
+    case "subject":
+      return <SubjectForm {...props} />;
+    case "teacher":
+      return <TeacherForm {...props} />;
+    case "classroom":
+      return <ClassroomForm {...props} />;
+    case "class":
+      return <ClassForm {...props} />;
+    case "frame":
+      return <FrameForm {...props} />;
   }
-
-  if (entity === "subject") {
-    return <SubjectForm options={options} />;
-  }
-
-  if (entity === "teacher") {
-    return <TeacherForm />;
-  }
-
-  if (entity === "classroom") {
-    return <ClassroomForm />;
-  }
-
-  if (entity === "class") {
-    return <ClassForm options={options} />;
-  }
-
-  return <FrameForm />;
 }

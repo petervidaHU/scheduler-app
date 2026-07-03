@@ -75,7 +75,7 @@ export default function Login({ loaderData, actionData }: Route.ComponentProps) 
       <Title order={2}>{t("auth.signIn")}</Title>
 
       {justRegistered ? (
-        <Alert color="green" variant="light">
+        <Alert color="tiffany" variant="light">
           {t("auth.registrationSuccess")}
         </Alert>
       ) : null}
@@ -91,7 +91,7 @@ export default function Login({ loaderData, actionData }: Route.ComponentProps) 
               required
             />
             {error ? (
-              <Text c="red" size="sm">
+              <Text c="poppy" size="sm">
                 {error}
               </Text>
             ) : null}

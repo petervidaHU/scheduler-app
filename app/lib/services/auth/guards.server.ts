@@ -7,6 +7,7 @@ export type TenancyRole = "OWNER" | "ADMIN" | "MEMBER";
 
 export type TenancyUserSessionData = Omit<UserSessionData, "tenancyId" | "role"> & {
   tenancyId: string;
+  tenancyName: string;
   role: TenancyRole;
 };
 
@@ -43,6 +44,7 @@ export async function requireTenancyUser(args: {
     userId: user.userId,
     email: user.email,
     tenancyId: user.tenancyId,
+    tenancyName: membership.tenancyName,
     role: membership.role,
   };
 }

@@ -7,16 +7,24 @@ import {
   ScrollRestoration,
 } from "react-router";
 import {
+  Code,
   ColorSchemeScript,
+  Container,
   MantineProvider,
   mantineHtmlProps,
+  ScrollArea,
+  Stack,
+  Text,
+  Title,
 } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { Route } from "./+types/root";
 import "./app.css";
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 import { getLocale, i18nextMiddleware } from "~/middleware/i18next";
 import { appTheme } from "./theme";
 
@@ -55,6 +63,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <MantineProvider theme={appTheme} defaultColorScheme="auto">
+          <Notifications position="bottom-right" autoClose={4000} />
           {children}
         </MantineProvider>
         <ScrollRestoration />
@@ -95,14 +104,16 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <Container component="main" size="sm" pt={64} pb="xl">
+      <Stack gap="md">
+        <Title order={1}>{message}</Title>
+        <Text c="dimmed">{details}</Text>
+        {stack && (
+          <ScrollArea type="auto">
+            <Code block>{stack}</Code>
+          </ScrollArea>
+        )}
+      </Stack>
+    </Container>
   );
 }

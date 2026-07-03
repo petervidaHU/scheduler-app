@@ -13,11 +13,12 @@ import {
 } from "@mantine/core";
 import { useFetcher } from "react-router";
 import { useForm } from "@mantine/form";
+import { useTranslation } from "react-i18next";
 import type { PlannerEntityOption } from "../../lib/repositories/plannerRepository.server";
 
-export const DAY_LABELS = [
-  "Monday", "Tuesday", "Wednesday", "Thursday",
-  "Friday", "Saturday", "Sunday",
+export const DAY_KEYS = [
+  "monday", "tuesday", "wednesday", "thursday",
+  "friday", "saturday", "sunday",
 ] as const;
 
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
@@ -70,6 +71,7 @@ export function AddLessonDrawer({
   options,
   actionError,
 }: Props) {
+  const { t } = useTranslation();
   const availabilityFetcher = useFetcher<AvailabilityData>();
   const prevTimeKey = useRef<string>("");
 
@@ -128,15 +130,19 @@ export function AddLessonDrawer({
     bookedClassroomIds: [],
   };
 
-  const teacherOptions = options.teachers.map((t) => ({
-    value: t.id,
-    label: booked.bookedTeacherIds.includes(t.id) ? `${t.name} (booked)` : t.name,
-    disabled: booked.bookedTeacherIds.includes(t.id),
+  const teacherOptions = options.teachers.map((teacher) => ({
+    value: teacher.id,
+    label: booked.bookedTeacherIds.includes(teacher.id)
+      ? `${teacher.name} (${t("planner.bookedSuffix")})`
+      : teacher.name,
+    disabled: booked.bookedTeacherIds.includes(teacher.id),
   }));
 
   const classroomOptions = options.classrooms.map((r) => ({
     value: r.id,
-    label: booked.bookedClassroomIds.includes(r.id) ? `${r.name} (booked)` : r.name,
+    label: booked.bookedClassroomIds.includes(r.id)
+      ? `${r.name} (${t("planner.bookedSuffix")})`
+      : r.name,
     disabled: booked.bookedClassroomIds.includes(r.id),
   }));
 
@@ -162,36 +168,36 @@ export function AddLessonDrawer({
     <Drawer
       opened={opened}
       onClose={onClose}
-      title={<Title order={4}>Add lesson</Title>}
+      title={<Title order={4}>{t("planner.addLesson")}</Title>}
       position="right"
       size="md"
     >
       <Stack gap="md">
         {actionError ? (
-          <Alert color="red" variant="light">
+          <Alert color="poppy" variant="light">
             {actionError}
           </Alert>
         ) : null}
 
         <Select
-          label="Day"
-          data={DAY_LABELS.map((d, i) => ({ value: String(i), label: d }))}
+          label={t("planner.day")}
+          data={DAY_KEYS.map((d, i) => ({ value: String(i), label: t(`planner.days.${d}`) }))}
           {...form.getInputProps("dayOfWeek")}
         />
 
         <Group grow align="flex-start">
           <Stack gap={4}>
-            <Text size="sm" fw={500}>Start time</Text>
+            <Text size="sm" fw={500}>{t("planner.startTime")}</Text>
             <Group gap="xs">
               <Select
-                aria-label="Start hour"
+                aria-label={`${t("planner.startTime")} (h)`}
                 data={HOUR_OPTIONS}
                 style={{ width: 90 }}
                 {...form.getInputProps("startHour")}
               />
               <Text mt={6}>:</Text>
               <Select
-                aria-label="Start minute"
+                aria-label={`${t("planner.startTime")} (m)`}
                 data={MINUTE_OPTIONS}
                 style={{ width: 80 }}
                 {...form.getInputProps("startMinute")}
@@ -199,17 +205,17 @@ export function AddLessonDrawer({
             </Group>
           </Stack>
           <Stack gap={4}>
-            <Text size="sm" fw={500}>End time</Text>
+            <Text size="sm" fw={500}>{t("planner.endTime")}</Text>
             <Group gap="xs">
               <Select
-                aria-label="End hour"
+                aria-label={`${t("planner.endTime")} (h)`}
                 data={HOUR_OPTIONS}
                 style={{ width: 90 }}
                 {...form.getInputProps("endHour")}
               />
               <Text mt={6}>:</Text>
               <Select
-                aria-label="End minute"
+                aria-label={`${t("planner.endTime")} (m)`}
                 data={MINUTE_OPTIONS}
                 style={{ width: 80 }}
                 {...form.getInputProps("endMinute")}
@@ -219,23 +225,23 @@ export function AddLessonDrawer({
         </Group>
 
         {timeInvalid && (
-          <Alert color="orange" variant="light">
-            End time must be after start time.
+          <Alert color="khaki" variant="light">
+            {t("planner.timeInvalid")}
           </Alert>
         )}
 
         {availabilityFetcher.state === "loading" && (
-          <Text size="xs" c="dimmed">Checking availability…</Text>
+          <Text size="xs" c="dimmed">{t("planner.checkingAvailability")}</Text>
         )}
 
         {(booked.bookedTeacherIds.length > 0 || booked.bookedClassroomIds.length > 0) && (
-          <Alert color="yellow" variant="light">
-            Some options are already booked in this slot and are disabled below.
+          <Alert color="khaki" variant="light">
+            {t("planner.someBooked")}
           </Alert>
         )}
 
         <Select
-          label="Subject"
+          label={t("planner.subject")}
           data={options.subjects.map((s) => ({ value: s.id, label: s.name }))}
           clearable
           searchable
@@ -243,7 +249,7 @@ export function AddLessonDrawer({
         />
 
         <Select
-          label="Class"
+          label={t("planner.class")}
           data={options.classes.map((c) => ({ value: c.id, label: c.name }))}
           clearable
           searchable
@@ -251,7 +257,7 @@ export function AddLessonDrawer({
         />
 
         <Select
-          label="Teacher"
+          label={t("planner.teacher")}
           data={teacherOptions}
           clearable
           searchable
@@ -259,7 +265,7 @@ export function AddLessonDrawer({
         />
 
         <Select
-          label="Classroom"
+          label={t("planner.classroom")}
           data={classroomOptions}
           clearable
           searchable
@@ -267,9 +273,9 @@ export function AddLessonDrawer({
         />
 
         <Group justify="flex-end" mt="sm">
-          <Button variant="default" onClick={onClose}>Cancel</Button>
+          <Button variant="default" onClick={onClose}>{t("planner.cancel")}</Button>
           <Button onClick={handleAdd} disabled={timeInvalid}>
-            Add lesson
+            {t("planner.addLesson")}
           </Button>
         </Group>
       </Stack>
