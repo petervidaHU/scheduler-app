@@ -19,7 +19,7 @@ import {
   getMembershipsForSwitch,
   resolveSwitchTarget,
 } from "../lib/services/tenancy/switchTenancy.server";
-import { commitUserSession, getOptionalUserSession } from "../lib/auth/session.server";
+import { commitUserSession } from "../lib/auth/session.server";
 import { isSupportedLocale } from "../lib/i18n";
 
 function toSafeLocale(locale: string | undefined) {

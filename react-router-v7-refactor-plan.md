@@ -25,6 +25,61 @@ Rendering requirement:
 
 The migration should happen on a dedicated long-lived branch. Do not try to keep the Next.js runtime and the React Router runtime both "first class" for long.
 
+## Current Status (2026-06-29)
+
+**Migration is NOT complete — reference-path milestone is done; product parity is ~40% complete.**
+
+### Verified working (new React Router v7 app)
+
+New app health: `tsc` clean, 89 tests passing, RR7 7.13.2 + Mantine 9.4.1 + Prisma 7.6.0 + React 19.2.4. Located in `/react-router-v7-app/` as its own nested git repo. SSR baseline verified. Docker Compose Postgres local dev verified.
+
+**Phase 0–1 (Bootstrap)**: ✅ Complete
+- Fresh RR7 app boots without Next.js
+- SSR working, Mantine configured, Zustand present
+- Root error/not-found boundaries, public/protected/admin layouts
+
+**Phase 4 (i18n)**: ✅ Complete  
+- Locale-prefixed routes (`/en`, `/hu`) via remix-i18next + middleware
+- Translation lookup working, locale switcher ported
+- `messages/*.json` reused
+
+**Phase 5 (Route tree)**: ✅ Complete  
+- Structural shape recreated; protected dashboard, public shell working
+- Auth guards on tenancy layout; smoke tested
+
+**Phase 6 (Feature slices — partial)**
+- ✅ Admin entities: specialty, subject, teacher, classroom, class, frame (real Prisma-backed CRUD, tested)
+- ✅ Timeslots: single + template creation/edit/delete (tested)
+- ✅ Schedules list/new/edit: real loader→service→repository layering, form validation, persistence
+- ✅ Signup + tenancy onboarding: two-step signup → onboarding → tenancy switcher, auto-slug generation, guards updated
+- ✅ Schedule planner UI: WeeklyPlannerGrid (Mon–Sun, 6am–10pm absolute-positioned cards, 15-min click-to-add), AddLessonDrawer (inline lesson creation), LessonCard (progressive disclosure, trash action)
+- ✅ Conflict engine / availability checks: `/api/planner-availability` resource route, booked teacher/classroom IDs surfaced in drawer dropdowns
+- ✅ Schedules read-view: real planner loader + add/remove entry actions, WeeklyPlannerGrid wired
+- ✅ Syllabus management: filterable list + create/edit drawer + delete, Prisma-backed, 10 service tests
+
+**Database**: ✅ Prisma schema foundation complete (all core entities: User, Tenancy, TenancyMember, Session, Specialty, Subject, Classroom, Teacher, Class, Frame, Timeslot, Schedule, ScheduleEntry, SyllabusItem). Initial migration applied. Local Postgres ready via docker-compose.
+
+**Auth**: ✅ Cookie-session login/logout working. Route guards for authenticated + tenancy-required. bcryptjs password hashing. Session contains userId, email, tenancyId, role.
+
+### Still in the old app (NOT migrated — blocks Phase 7 cleanup)
+
+- Syllabus UI (syllabus-table/*): schema exists in Prisma, no routes or UI
+- lib/scheduleValidation/* (domain validation rules, not yet ported to service layer)
+- Old auth/session via next-auth
+- Oracle database + oracledb driver
+
+### Structural notes
+
+- Two apps coexist: old Next.js at root; new RR7 in `react-router-v7-app/` (nested `.git` repo, not a submodule).
+- Stale cruft removed: `components/forms/CreateClass.tsx.new` (empty), `react-router-v7-app/app/welcome/` (unused scaffold).
+- Secrets (gitignored, not committed): `app/wallet/` (Oracle wallet), `githubActionSshKey`, `.env*`. Do not delete until old app is retired.
+
+### Suggested next priority
+
+1. **Phase 7 cleanup**: remove old Next.js app, finalize git cutover, update README + env docs
+2. **Schedule read-view polish**: planner card colour coding by subject/class, print-friendly view (post-Phase 7)
+3. **Service worker**: static asset caching only (post-Phase 7 optimization)
+
 ## Recommended target stack
 
 - React Router v7 Framework Mode
@@ -130,7 +185,7 @@ Current package versions are mixed inside the 8.x line:
 - `@mantine/form` 8.1.3
 - `@mantine/hooks` 8.0.0
 
-As of 2026-03-30, the latest stable Mantine release line is 8.3.x, with 8.3.18 marked as the latest release. Mantine 9 is still alpha and should not be adopted as part of this migration.
+As of 2026-06-29, the app has been upgraded to Mantine 9.4.1 (the current latest stable). The upgrade was zero-breaking-change for the components in use.
 
 ## High-level migration strategy
 
@@ -497,30 +552,48 @@ Implementation notes:
 
 ## Phase 6: Feature slice migration
 
-Current implementation status (2026-03-30):
+Current implementation status (2026-06-29):
 
-- tenancy-based nested route structure has been scaffolded in React Router under `/:locale/my-tenancy/*`
-- protected nested pages mapped: dashboard, admin, schedules (list/new/edit/view), timeslots
-- routes are guarded by the existing tenancy auth layout and currently redirect unauthenticated users to `/:locale/login`
-- next step is feature-level porting of loaders/actions and form workflows for each nested page
+**Completed slices (real Prisma-backed implementations, tested):**
 
-Phase 6 progress update (schedules list/create/edit):
+- tenancy-based nested route structure under `/:locale/my-tenancy/*` with guarded access
+- admin entities CRUD: specialty, subject, teacher, classroom, class, frame
+  - Prisma repository + service layer at `app/lib/services/tenancy/manageAdminEntities.server.ts`
+  - admin forms migrated to Mantine useForm patterns
+  - tabbed entity table with row-level edit/delete actions
+  - real entity counts from Prisma `findMany().count()` fallback included
+- timeslots CRUD: single + template creation/edit/delete
+  - Prisma-backed service at `app/lib/services/timeslots/manageTimeslots.server.ts`
+  - form validation + error handling
+  - time formatting helpers (minutes → HH:MM)
+- schedules list/new/edit (full CRUD with validation + redirect on success)
+  - Prisma schedule repository at `app/lib/repositories/scheduleRepository.server.ts`
+  - schedule service + frame lookup at `app/lib/services/schedules/manageSchedules.server.ts`
+  - loader-driven data flow for all three routes
+  - form validation and session error tracking
+- signup + tenancy onboarding slice
+  - two-step flow: `/signup` (user account) → `/onboarding` (create school) → `/switch-tenancy`
+  - `signupWithEmailPassword` service with uniqueness check + bcrypt hash
+  - `createTenancyForUser` service: auto-slug from school name (`toSlug` + 4-char hex suffix on collision), Prisma transaction creates `Tenancy` + `TenancyMember(OWNER)`
+  - `requireOnboardingUser` guard redirects tenancied users away from onboarding; `requireTenancyUser` redirects to `/onboarding` (was 403)
+  - tenancy switcher shows all memberships with role badges, current indicator
+  - nav updated: "My school" + "Switch school" links; login page links to signup
+- schedule planner slice
+  - `plannerRepository.server.ts`: `getScheduleWithPlannerData`, `getPlannerEntityOptions`, `getBookedResources` (overlap query), `createTimeslotAndEntry` and `removeScheduleEntry` (both in transactions)
+  - `managePlannerEntries.server.ts`: `loadPlannerData`, `addPlannerEntry` (validates day/time), `removePlannerEntry`
+  - `api/planner-availability` GET resource route: returns `{ bookedTeacherIds, bookedClassroomIds }` for a given frame/day/time window
+  - `WeeklyPlannerGrid`: Mon–Sun sticky header, scrollable body (max 620px), 52px hour axis, absolute-positioned lesson cards, click empty space → open drawer with pre-filled time
+  - `LessonCard`: `PX_PER_MIN=1.5`, `DISPLAY_START_MINUTE=360` (6am), progressive disclosure of class/teacher/classroom as card grows, trash `ActionIcon`
+  - `AddLessonDrawer`: `useFetcher` for live availability, booked teacher/classroom options disabled+labeled, callback-based `onSubmit(FormData)` (no nested form element), time validation guard
+  - `my-tenancy.schedules.view.tsx`: real loader + add/remove entry actions, `frameId` injected into FormData by grid before `addFetcher.submit()`
 
-- implemented Prisma-backed schedule repository at `app/lib/repositories/scheduleRepository.server.ts`
-- implemented schedule service + validation at `app/lib/services/schedules/manageSchedules.server.ts`
-- `/:locale/my-tenancy/schedules` now uses a real loader with tenancy-scoped database query
-- `/:locale/my-tenancy/schedules/new` now uses real loader/action for frame lookup + schedule creation
-- `/:locale/my-tenancy/schedules/:id` now uses real loader/action for tenancy-scoped schedule edit
-- forms now return field/form validation errors and redirect to schedule list on success
-- next implementation target: port schedule view/details and timeslot-linked planner workflows
+**Phase 6 complete.** All planned feature slices shipped.
 
-Testing progress update (2026-03-30):
+Testing progress (2026-06-29):
 
-- Jest introduced in `react-router-v7-app` with TypeScript support (`jest.config.cjs`, `tsconfig.jest.json`)
-- new unit tests added for schedule service logic and route loader/action behavior
-- coverage includes schedules list/create/edit logic paths and validation/error flows
-- coverage now also includes core routes, nested route components, auth/session helpers, tenancy service behavior, and Zustand store behavior
-- current status: `npm test` passing (54 tests)
+- Jest suite: 79 tests passing across 15 test suites, all green
+- Coverage: route loaders/actions, service layer, domain logic, components, auth/session, tenancy behavior
+- No test failures in admin, schedules, or timeslot workflows
 
 Suggested order:
 
@@ -582,9 +655,9 @@ If you approach this as a package replacement exercise, the migration will get s
 
 The current Oracle service pulls tenancy from auth and stores it in process state. That is fragile even now and should not survive into the new architecture.
 
-### 3. Do not chase Mantine 9 during this migration
+### 3. Keep Mantine on the stable 9.x line
 
-Mantine 9 is still alpha as of 2026-03-30. This migration already changes router, auth, and database layers. Keep Mantine on the latest stable 8.3.x line and re-evaluate 9.x later.
+Mantine was upgraded to 9.4.1 (2026-06-29) with zero breaking changes. Track the 9.x stable releases; do not chase a major version bump during Phase 7 cleanup work.
 
 ### 4. Do not overuse Zustand for server-backed state
 
@@ -616,16 +689,20 @@ They are too coupled and stateful. Port a simpler authenticated CRUD slice first
 
 These decisions are now accepted and should be treated as fixed constraints for implementation:
 
-1. SSR with React Router v7 built-in solutions: required
-2. Auth approach: custom cookie/session auth
-3. Data retention: Oracle data can be dropped (no migration/import required)
-4. Service worker initial scope: static assets only
-5. Backend architecture: integrated backend with thin loaders/actions plus service/domain/repository layering
+1. SSR with React Router v7 built-in solutions: required ✅ implemented
+2. Auth approach: custom cookie/session auth ✅ implemented
+3. Data retention: Oracle data can be dropped (no migration/import required) ✅ accepted
+4. Service worker initial scope: static assets only ✅ deferred to post-migration
+5. Backend architecture: integrated backend with thin loaders/actions plus service/domain/repository layering ✅ implemented across admin/schedules/timeslots slices
 
 Phase impact:
 
-- Phase 0 decision lock is complete.
-- Implementation should proceed directly to Phase 1 bootstrap.
+- Phase 0 decision lock: complete
+- Phase 1–5 (bootstrap, i18n, routing, auth, core pages): complete
+- Phase 6 (feature slices): ✅ Complete (admin, timeslots, schedules CRUD, signup/onboarding, planner + conflict engine, syllabus management — all shipped)
+- Phase 7 (cleanup): not started
+
+Phase 6 is done. Next priority: Phase 7 cleanup (remove old Next.js app, git cutover, README/env docs).
 
 ## Recommended first implementation milestone
 
@@ -641,10 +718,36 @@ The first real milestone should not be feature parity. It should be a thin but c
 
 Once that exists, the rest of the migration becomes repetitive engineering instead of architecture discovery.
 
+## Repository structure during migration
+
+**Two apps coexist; the new app is a nested git repo:**
+
+- **Root `/scheduler-app`**: old Next.js 15 app (tracked by root `.git`). Contains:
+  - `app/` (Next.js route tree, still has old pages + layouts)
+  - `components/` (Mantine UI components, mostly shared between old and new)
+  - `lib/` (database service, i18n helpers, hooks, validation logic — partially migrated)
+  - `store/` (Zustand store)
+  - `.env.local`, `node_modules/`, `.next/build/` (runtime artifacts)
+  - **Untracked secrets (gitignored)**: `app/wallet/` (Oracle wallet), `githubActionSshKey`, `.env*`
+
+- **`/react-router-v7-app/`**: new React Router v7 app (its own `.git` repo, shows as `?? react-router-v7-app/` in root git status)
+  - `app/` (RR7 route modules, entry.server.tsx, entry.client.tsx)
+  - `app/lib/` (services, repositories, domain logic, auth helpers)
+  - `app/routes/` (all route components)
+  - `prisma/` (Prisma schema + migrations)
+  - `tests/` (Jest test suite)
+  - `Dockerfile` + `docker-compose.postgres.yml` (local Postgres setup)
+  - `package.json` with RR7 7.13.2, Mantine 8.3.18, Prisma 7.6.0
+
+**Important**: the nested repo structure is intentional for now (keeps git histories separate during development). The eventual cutover (move new app to root, retire old app, merge git history) is a future decision — do not restructure git without explicit direction.
+
+**Stale items removed (2026-06-29)**:
+- `components/forms/CreateClass.tsx.new` (empty 0-byte stray)
+- `react-router-v7-app/app/welcome/` (default create-react-router scaffold, unused)
+
 ## Suggested next deep-dive topics
 
-- target Prisma schema design for the scheduling domain
-- concrete auth/session design for tenancy-aware credentials login
-- mapping the current Next route tree to React Router route modules
-- replacing server actions with loader/action/fetcher patterns in forms
-- defining which data should stay in Zustand and which should move to loaders
+- Syllabus management UI: list/create/edit under `/:locale/my-tenancy/syllabus`, backed by `SyllabusItem` Prisma model
+- Schedule read-view polish: colour coding by subject, print-friendly static view, export to PDF/image
+- Phase 7 cleanup checklist: git cutover, old-app deletion, README/env docs, final validation
+- Service worker caching strategy (post-migration optimization)

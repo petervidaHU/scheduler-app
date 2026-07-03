@@ -1,22 +1,25 @@
-FROM node:20-alpine AS development-dependencies-env
-COPY . /app
+FROM node:20-alpine AS deps
 WORKDIR /app
+COPY package.json package-lock.json ./
 RUN npm ci
 
-FROM node:20-alpine AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
+FROM node:20-alpine AS builder
 WORKDIR /app
-RUN npm ci --omit=dev
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npx prisma generate && npm run build
 
-FROM node:20-alpine AS build-env
-COPY . /app/
-COPY --from=development-dependencies-env /app/node_modules /app/node_modules
+FROM node:20-alpine AS runner
 WORKDIR /app
-RUN npm run build
+ENV NODE_ENV=production
 
-FROM node:20-alpine
-COPY ./package.json package-lock.json /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
-WORKDIR /app
-CMD ["npm", "run", "start"]
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/generated ./generated
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+
+EXPOSE 3000
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
